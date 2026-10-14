@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1321"><title>FinScope · Leon Wang</title><meta name="description" content="An evidence-grounded financial risk research workbench. Explore fictional scenarios, financial disclosures, alternative data and reproducible audits."><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script></head>
+<body>
+<a class="skip-link" href="#main">Skip to workbench</a>
+<aside class="sidebar">
+ <a class="brand" href="./"><span class="brand-mark" aria-hidden="true">F</span><span>FinScope<small>RESEARCH WORKBENCH</small></span></a>
+ <div class="sidebar-caption">WORKSPACE / 01</div>
+ <nav aria-label="Workbench sections">
+  <button data-page="overview" aria-current="page"><span aria-hidden="true">◫</span> Overview</button>
+  <button data-page="evidence"><span aria-hidden="true">▤</span> Evidence</button>
+  <button data-page="risk"><span aria-hidden="true">⌁</span> Risk Lab</button>
+  <button data-page="strategy"><span aria-hidden="true">↗</span> Strategy</button>
+  <button data-page="audit"><span aria-hidden="true">⊞</span> Data & Audit</button>
+  <button data-page="research"><span aria-hidden="true">◎</span> Research</button>
+ </nav>
+ <div class="sidebar-note"><span class="tiny-label">BUILT BY</span><strong>Leon Wang</strong><p>AI + finance, with evidence you can inspect.</p><a href="https://github.com/leon1111-wgl/finscope" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
+</aside>
+<div class="workspace">
+ <header class="topbar"><div><span class="breadcrumb">Research /</span> <span id="page-name">Overview</span></div><div class="badges"><span id="data-badge" class="badge">Synthetic demo</span><span id="mode-badge" class="badge muted">Snapshot explorer</span></div></header>
+ <main id="main" tabindex="-1">
+  <div class="page-heading"><div><p class="eyebrow">EVIDENCE-GROUNDED FINANCIAL RESEARCH</p><h1 id="page-title">Risk, in context.</h1><p id="page-subtitle">Trace historical forecasts back to their information set.</p></div><button id="export-json" class="button primary" disabled>Export selected view ↓</button></div>
+  <div id="origin-note" class="origin-note">Loading the versioned research snapshot…</div>
+  <form id="filters" class="filters" aria-label="Research view filters">
+   <label>Company<select id="company" disabled><option>Loading…</option></select></label>
+   <label>Forecast horizon<select id="horizon" disabled><option>Loading…</option></select></label>
+   <label>Model<select id="model" disabled><option>Loading…</option></select></label>
+   <label>Selected decision date<input id="as-of" type="date" disabled></label>
+  </form>
+  <div id="scope" class="scope-line"></div>
+  <div id="status" role="status" aria-live="polite" class="status">Loading report…</div>
+  <section id="content" aria-label="Selected research section"></section>
+  <footer>FinScope / Leon Wang <span>Research software · inspect assumptions before interpreting results.</span></footer>
+ </main>
+</div>
+</body></html>

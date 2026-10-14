@@ -1,31 +1,63 @@
-# FinScope
+# FinScope — From profit to proof
 
-**Evidence-Grounded Financial Risk Lab · Leon Wang**
+**Earnings Quality & Financial Resilience · Leon Wang**
 
-[Open the interactive workbench](https://leon1111-wgl.github.io/finscope/) · [Portfolio](https://leon1111-wgl.github.io/leon1111-wgl/) · [Methodology](docs/METHODOLOGY.md) · [Research](docs/RESEARCH.md)
+[Use it online](https://leon1111-wgl.github.io/finscope/) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
 
-A supplier reports a delay on Monday. Your feed receives it on Tuesday. Can a Monday forecast use it? FinScope makes that question visible, then applies it to financial disclosures, social text and rolling model evaluation.
+Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked annual review they can share.
 
-Explore 5- and 20-session volatility forecasts, inspect the evidence available at a historical date, compare five fixed model variants, and change transaction costs. Every result connects to a dated information set and a downloadable experiment record.
+**Open the website, choose a company, test an assumption and download a brief. No account, installation or API key is needed to use the public workspace.**
 
-The public workbench uses **fictional prices and authored events**. A separate panel displays real SEC facts with filing links and retrieval hashes. Those facts are never joined to the fictional market simulation. Local imports keep their own provenance and remain marked **unverified**.
+## What you can do today
 
-## What you can do
-
-| View | Research question |
+| Step | Practical output |
 | --- | --- |
-| Overview | What did the model forecast, and which outcomes had matured by this date? |
-| Evidence | Was each filing, social signal or supply event available and ingested in time? |
-| Risk Lab | Does adding text and alternative data improve on the simple baseline? |
-| Strategy | What happens after delayed execution, fees and slippage? |
-| Data & Audit | Can I inspect the dataset hash, training splits, inputs and saved runs? |
-| Research | Which primary studies informed the design, and what is actually implemented? |
+| Review the evidence | Annual profit/cash trends, liquidity ratios, exact SEC facts and filing links |
+| Compare companies | Six financial profiles with explicit fiscal dates and missing-data labels |
+| Inspect AI triage | Historical-profile anomaly percentile plus underlying ratios and training boundaries |
+| Test assumptions | Browser calculations for revenue, margin, refinancing costs and collection delays |
+| Take your brief | Editable Markdown, source-rich JSON, print/PDF and a shareable research view |
 
-The relationship graph describes supplied connections. It is not a trained graph neural network. The sentiment feature is an inspectable English word list. It is not an LLM.
+The public universe is **AAPL, MSFT, NVDA, AMZN, GOOGL and META**. Official Treasury observations provide rate context, with a separate hypothetical bond sensitivity calculator. The workspace uses real annual disclosures; it is not a live-price terminal.
 
-## Run locally
+## The project story
 
-Use Python **3.12**, the tested environment. Run commands from the cloned repository. The full lock includes the optional SEC parser and local service.
+The original FinScope lab made information timing and model comparisons visible, but its fictional scenario could not answer a real-company review question. A separate table of SEC facts was not enough. The missing piece was a complete path from a question to evidence, assumptions and a portable result.
+
+This release adds that path. Financial statement rules define the inputs. An established unsupervised model helps prioritize unusual profiles. Transparent scenario formulas expose what follows from each assumption. The export carries the data version and source trail so another reader can reproduce the review.
+
+This is an original research workflow built on open-source tools and public data. It does not claim a new anomaly-detection algorithm or measured investment alpha.
+
+## Try a complete case
+
+1. Open the workspace with Microsoft selected.
+2. Compare annual net income and operating cash flow. Open the exact history and filing evidence.
+3. Compare profiles, paying attention to differing fiscal dates.
+4. Select **Test assumptions → Try a downside case**. The preset assumes revenue −10%, margin −2 percentage points, $10B refinanced at +100 basis points and collections delayed by 15 days. Replace these assumptions with your own.
+5. Select **Take your brief** and export Markdown or JSON. Add a human conclusion after reading the latest quarterly filing and management discussion.
+
+[Read the worked numbers, interpretation and follow-up questions](docs/CASE_STUDY.md).
+
+## Architecture
+
+```mermaid
+flowchart LR
+  S[Official SEC CompanyFacts] --> V[Validate annual periods and filing dates]
+  V --> F[Financial ratios and sourced history]
+  F --> M[Earlier-period Isolation Forest]
+  T[Official Treasury curve] --> B[Versioned evidence bundle]
+  F --> B
+  M --> B
+  B --> U[Browser research workspace]
+  A[User scenario assumptions] --> U
+  U --> R[Markdown / JSON / printable brief]
+```
+
+Python validates the evidence and computes saved anomaly profiles. GitHub Pages serves the bundle; JavaScript performs the scenario calculations locally in the visitor's browser. No visitor data is sent to a model API. GitHub Actions refreshes official sources on weekday mornings UTC and deploys only after validation. The banner reports actual dates; a snapshot older than four days is visibly marked overdue.
+
+## Reproduce locally
+
+Tested Python version: **3.12**. Frontend: native JavaScript modules, no npm build.
 
 ```bash
 git clone https://github.com/leon1111-wgl/finscope.git
@@ -34,82 +66,38 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.lock
 python -m pip install --no-deps -e .
-python -m uvicorn finscope.api:app --host 127.0.0.1 --port 8772 --workers 1
+python -m http.server 8773 --bind 127.0.0.1 --directory web
 ```
 
-Open **http://127.0.0.1:8772**. Data & Audit enables CSV/JSON upload, model fitting, saved-run history and reload. Files stay in the local process and ignored `runs/` directory. Stop the service with Ctrl+C.
-
-GitHub Pages hosts a static explorer. It cannot execute Python or train new experiments. To inspect it without installing Python dependencies, serve `web/` with any static HTTP server.
-
-### Inputs
-
-Prices use daily U.S. equity sessions. `close` must already be adjusted for corporate actions:
-
-```csv
-date,ticker,close,volume
-2024-01-02,EXAMPLE,100.25,250000
-2024-01-03,EXAMPLE,101.10,265000
-```
-
-Two rows illustrate the schema, not sufficient training history. Compact 5-session experiments need at least 176 sessions per ticker; 20-session experiments need 221. Longer datasets switch to larger training windows. Use the downloadable demo inputs for a full runnable example.
-
-Events are optional (`[]`). A supply event can look like this:
-
-```json
-[{
-  "id": "shipment-001",
-  "ticker": "EXAMPLE",
-  "kind": "supply",
-  "event_time": "2024-01-02T09:00:00Z",
-  "available_at": "2024-01-02T10:00:00Z",
-  "ingested_at": "2024-01-03T08:00:00Z",
-  "text": "A shipment is expected three days late.",
-  "source": "Authorized internal shipment log",
-  "delay_days": 3,
-  "relationship": "SUPPLIER"
-}]
-```
-
-That event first enters the January 3 information set. Timestamp assertions supplied by the importer are not independently certified. Use only data you may process; review redistribution rights before publishing derived artifacts. [Full data contract](docs/DATA_CONTRACT.md).
-
-### Build and verify
+Open **http://127.0.0.1:8773**. The committed public snapshot works offline after loading. To rebuild from official sources, use a SEC-identifying User-Agent with your own contact address:
 
 ```bash
-python scripts/build_demo.py       # offline: both horizons and downloadable inputs
+export SEC_USER_AGENT='Your Name your-contact@example.com'
+python scripts/build_research.py
+# Rebuild from the downloaded raw files and their original source metadata:
+python scripts/build_research.py --offline
 python -m pytest -q
-node --test tests/ui.test.mjs      # Node 22; no npm dependencies
+node --test tests/*.test.mjs
 ```
 
-For a private command-line experiment:
+For a fork, configure the repository variable `SEC_USER_AGENT` and enable GitHub Pages via Actions. [Refresh operations](docs/ONLINE_OPERATIONS.md). A successful refresh commits the derived JSON and archives public raw sources for 30 days. Git history preserves the compact evidence snapshots beyond that artifact-retention period.
 
-```bash
-python -m finscope.cli run --prices local-data/prices.csv \
-  --events local-data/events.json --horizon 5 --output runs/research.json
-```
+## AI role and evidence limits
 
-CLI outputs use your chosen filename; API history recognizes only its generated run IDs. Do not write private reports under `web/` or `data/demo/`.
+The Isolation Forest detects unusual combinations of six financial ratios. It trains on eligible earlier company-years, with current target periods excluded. A score is an investigation cue, not a probability of default, fraud detector or investment recommendation. The transparent ratios are always available as a baseline.
 
-## How it works
+Historical views reconstruct filing-day eligibility from currently retrieved SEC data. They are not a certified historical raw archive. The selected companies are survivors, fiscal calendars differ, business regimes change and some standard tags are missing. This annual review must be supplemented with newer quarterly filings. [Full model card](docs/RESEARCH_MODEL.md).
 
-```mermaid
-flowchart LR
-  P[Adjusted daily prices] --> V[Validate inputs]
-  E[Filings · social text · supply logs] --> V
-  V --> T[As-of features]
-  T --> R[Purged rolling train / calibration / test]
-  R --> M[Historical volatility + four Ridge variants]
-  M --> A[Errors · intervals · drift · costs]
-  A --> J[Versioned JSON + dataset hash]
-  J --> U[Interactive workbench]
-  S[Official SEC CompanyFacts] --> F[Separate financial facts panel]
-```
+## The separate forecasting research track
 
-## Original contribution and scope
+[Open the forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html) for fictional daily volatility experiments, source-timing audits, five fixed model variants and transaction-cost sensitivity. Social sentiment and supply-chain examples belong to that synthetic track; they are not invented events about the real companies above.
 
-FinScope combines an original evidence schema, timing checks, feature/evidence views, reproducible ablations, local experiment service and interactive audit workflow. It uses scikit-learn for established estimators and preprocessing. EdgarTools has been executed as a separate parser check on the SEC snapshot. It does not claim to invent Ridge regression, TF-IDF, point-in-time analysis or prediction intervals.
+Local CSV/JSON fitting remains available through the loopback service. Start `python -m uvicorn finscope.api:app --host 127.0.0.1 --port 8772 --workers 1` and open **http://127.0.0.1:8772/lab.html**. [Lab setup and input contract](docs/FORECASTING_LAB.md) · [Forecasting methodology](docs/METHODOLOGY.md) · [Research foundations](docs/RESEARCH.md).
 
-This release supports daily risk research. Intraday order books, learned financial networks, calibrated multilingual sentiment, live feeds and broker execution remain future work. Additional features do not consistently win in the demo; all predetermined variants remain visible.
+## Foundations and contribution
 
-[Methodology and equations](docs/METHODOLOGY.md) · [Operations and limits](docs/OPERATIONS.md) · [Contribution map](docs/CONTRIBUTIONS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+Official [SEC CompanyFacts](https://www.sec.gov/search-filings/edgar-application-programming-interfaces) supplies filings. The [Treasury curve dataset](https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates) is listed as CC0. scikit-learn supplies established estimators. EdgarTools was used as an independent parsing check in the original lab.
 
-Original code and authored synthetic fixtures: [MIT license](LICENSE), © 2026 Leon Wang. Third-party software, data and future model weights retain their own terms.
+Original contributions: fiscal-period matching, dated evidence views, training-boundary safeguards, scenario UX and math, reproducible briefs and the integrated public delivery pipeline. [Contribution map](docs/CONTRIBUTIONS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md).
+
+Code and authored examples: [MIT](LICENSE), © 2026 Leon Wang. Third-party data and software retain their terms.

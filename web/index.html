@@ -1,36 +1,26 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1321"><title>FinScope · Leon Wang</title><meta name="description" content="An evidence-grounded financial risk research workbench. Explore fictional scenarios, financial disclosures, alternative data and reproducible audits."><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script></head>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a1422"><title>FinScope — From profit to proof · Leon Wang</title>
+<meta name="description" content="Review real company earnings, trace SEC evidence, compare cash flow and test financial stress scenarios. Export a reproducible research brief. Built by Leon Wang.">
+<link rel="stylesheet" href="./research.css"><script type="module" src="./research-app.js"></script>
+</head>
 <body>
-<a class="skip-link" href="#main">Skip to workbench</a>
-<aside class="sidebar">
- <a class="brand" href="./"><span class="brand-mark" aria-hidden="true">F</span><span>FinScope<small>RESEARCH WORKBENCH</small></span></a>
- <div class="sidebar-caption">WORKSPACE / 01</div>
- <nav aria-label="Workbench sections">
-  <button data-page="overview" aria-current="page"><span aria-hidden="true">◫</span> Overview</button>
-  <button data-page="evidence"><span aria-hidden="true">▤</span> Evidence</button>
-  <button data-page="risk"><span aria-hidden="true">⌁</span> Risk Lab</button>
-  <button data-page="strategy"><span aria-hidden="true">↗</span> Strategy</button>
-  <button data-page="audit"><span aria-hidden="true">⊞</span> Data & Audit</button>
-  <button data-page="research"><span aria-hidden="true">◎</span> Research</button>
- </nav>
- <div class="sidebar-note"><span class="tiny-label">BUILT BY</span><strong>Leon Wang</strong><p>AI + finance, with evidence you can inspect.</p><a href="https://github.com/leon1111-wgl/finscope" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
-</aside>
-<div class="workspace">
- <header class="topbar"><div><span class="breadcrumb">Research /</span> <span id="page-name">Overview</span></div><div class="badges"><span id="data-badge" class="badge">Synthetic demo</span><span id="mode-badge" class="badge muted">Snapshot explorer</span></div></header>
- <main id="main" tabindex="-1">
-  <div class="page-heading"><div><p class="eyebrow">EVIDENCE-GROUNDED FINANCIAL RESEARCH</p><h1 id="page-title">Risk, in context.</h1><p id="page-subtitle">Trace historical forecasts back to their information set.</p></div><button id="export-json" class="button primary" disabled>Export selected view ↓</button></div>
-  <div id="origin-note" class="origin-note">Loading the versioned research snapshot…</div>
-  <form id="filters" class="filters" aria-label="Research view filters">
-   <label>Company<select id="company" disabled><option>Loading…</option></select></label>
-   <label>Forecast horizon<select id="horizon" disabled><option>Loading…</option></select></label>
-   <label>Model<select id="model" disabled><option>Loading…</option></select></label>
-   <label>Selected decision date<input id="as-of" type="date" disabled></label>
-  </form>
-  <div id="scope" class="scope-line"></div>
-  <div id="status" role="status" aria-live="polite" class="status">Loading report…</div>
-  <section id="content" aria-label="Selected research section"></section>
-  <footer>FinScope / Leon Wang <span>Research software · inspect assumptions before interpreting results.</span></footer>
- </main>
-</div>
+<a class="skip" href="#workspace">Skip to research workspace</a>
+<header class="masthead"><a class="brand" href="./"><span class="mark">F</span><span>FinScope<small>FINANCIAL RESEARCH / LEON WANG</small></span></a><div class="header-links"><a href="./lab.html">Forecasting lab ↗</a><a href="https://github.com/leon1111-wgl/finscope">Source ↗</a></div></header>
+<main>
+<section class="hero"><div><p class="eyebrow">FROM REPORTED PROFIT TO A QUESTION YOU CAN TEST</p><h1>Profit tells a story.<br><span>Cash adds the evidence.</span></h1><p class="lead">Review a company’s annual financial health. Follow the filing evidence. Test a weaker operating year. Leave with a research brief you can use.</p><a href="#workspace" class="button primary">Start a company review ↓</a></div><aside class="story"><span class="eyebrow">YOUR NEXT COMPANY REVIEW</span><h2>“Earnings grew. Is the business more resilient?”</h2><p>A headline gives you one number. A useful review connects profit, cash generation and obligations, then makes its assumptions visible.</p><ol><li>Check the reported evidence.</li><li>Compare financial profiles.</li><li>Test a concrete downside.</li><li>Export questions and sources.</li></ol></aside></section>
+<div id="freshness" class="freshness" role="status">Loading official financial evidence…</div>
+<section id="workspace" class="workspace" aria-label="Company research workspace">
+<div class="workspace-heading"><div><p class="eyebrow">RESEARCH WORKSPACE</p><h2>One question. A traceable answer.</h2></div><span class="pill">Real SEC filings · browser calculations</span></div>
+<form class="filters" id="selection" aria-label="Company and information date"><label>Company<select id="company" disabled><option>Loading…</option></select></label><label>Information date<input id="as-of" type="date" disabled></label><button type="button" id="latest" disabled>Use latest snapshot</button></form>
+<p id="scope" class="scope"></p>
+<nav class="steps" aria-label="Research steps"><button data-page="review" aria-current="page">01 <span>Review the evidence</span></button><button data-page="compare">02 <span>Compare companies</span></button><button data-page="stress">03 <span>Test assumptions</span></button><button data-page="brief">04 <span>Take your brief</span></button><button data-page="method">About the project</button></nav>
+<div id="status" role="status" aria-live="polite"></div>
+<div id="content"><p class="empty">The research workspace is loading. No account or API key is required.</p></div>
+</section>
+<footer><strong>FinScope / Leon Wang</strong><span>Evidence → interpretation → assumptions → a portable brief.</span><a href="https://leon1111-wgl.github.io/leon1111-wgl/">Portfolio ↗</a></footer>
+</main>
+<noscript><p>This interactive research workspace needs JavaScript. Read the <a href="https://github.com/leon1111-wgl/finscope#readme">project guide</a> or download the <a href="./data/research.json">evidence bundle</a>.</p></noscript>
 </body></html>

@@ -17,3 +17,12 @@ Dependency distributions retain their own notices, including transitive dependen
 The synthetic trading demo contains no redistributed Yahoo Finance prices, social-media feed, proprietary supply logs or course assignments. A code library's open-source license does not grant rights to data obtained with it. Imported data remains local until the user deliberately exports or publishes it.
 
 Research papers are linked and summarized in original words. Their authors do not endorse FinScope. Qlib and other unimplemented reference projects retain their own licenses and attribution; the research list is not a statement that their models run in this application.
+
+
+## Online annual-financial workspace
+
+SEC CompanyFacts supplies standard US-GAAP facts and filing identifiers. Source: https://www.sec.gov/search-filings/edgar-application-programming-interfaces. Data is attributed to its original filings; no SEC endorsement is implied.
+
+Treasury CMT data is published by the US Treasury Office of Debt Management. The official data.gov listing identifies CC0: https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates. CMT rates are interpolated reference yields, not executed prices or company financing rates.
+
+Isolation Forest is an existing algorithm supplied by scikit-learn; FinScope does not claim to invent it. The scikit-learn BSD license applies to that dependency.

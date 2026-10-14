@@ -1,0 +1,454 @@
+{
+  "title": "MSFT · earnings quality and financial resilience",
+  "author": "FinScope by Leon Wang",
+  "exported_at": "2026-10-14T19:14:07.037Z",
+  "requested_date": "2026-10-14",
+  "snapshot_date": "2026-10-14",
+  "data_retrieved_build": "2026-10-14T19:01:17.398317Z",
+  "dataset_sha256": "687c425e48f615d0a3b460141fe5ff6114e518b01512e8d1fa8d2b6c3db1c735",
+  "company": {
+    "ticker": "MSFT",
+    "cik": 789019,
+    "name": "MICROSOFT CORPORATION"
+  },
+  "annual_period": "2026-06-30",
+  "facts": {
+    "revenue": {
+      "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "priority": 0,
+      "value": 331839000000,
+      "unit": "USD",
+      "start": "2025-07-01",
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "net_income": {
+      "tag": "NetIncomeLoss",
+      "priority": 0,
+      "value": 133749000000,
+      "unit": "USD",
+      "start": "2025-07-01",
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "operating_income": {
+      "tag": "OperatingIncomeLoss",
+      "priority": 0,
+      "value": 155237000000,
+      "unit": "USD",
+      "start": "2025-07-01",
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "operating_cash_flow": {
+      "tag": "NetCashProvidedByUsedInOperatingActivities",
+      "priority": 0,
+      "value": 182935000000,
+      "unit": "USD",
+      "start": "2025-07-01",
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "assets": {
+      "tag": "Assets",
+      "priority": 0,
+      "value": 758376000000,
+      "unit": "USD",
+      "start": null,
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "liabilities": {
+      "tag": "Liabilities",
+      "priority": 0,
+      "value": 315989000000,
+      "unit": "USD",
+      "start": null,
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "current_assets": {
+      "tag": "AssetsCurrent",
+      "priority": 0,
+      "value": 207710000000,
+      "unit": "USD",
+      "start": null,
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "current_liabilities": {
+      "tag": "LiabilitiesCurrent",
+      "priority": 0,
+      "value": 168825000000,
+      "unit": "USD",
+      "start": null,
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "cash": {
+      "tag": "CashAndCashEquivalentsAtCarryingValue",
+      "priority": 0,
+      "value": 20935000000,
+      "unit": "USD",
+      "start": null,
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    },
+    "capex": {
+      "tag": "PaymentsToAcquirePropertyPlantAndEquipment",
+      "priority": 0,
+      "value": 115948000000,
+      "unit": "USD",
+      "start": "2025-07-01",
+      "end": "2026-06-30",
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "form": "10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+    }
+  },
+  "ratios": {
+    "operating_margin": 0.4678081840892722,
+    "net_margin": 0.4030538905915218,
+    "cash_margin": 0.5512763719755664,
+    "current_ratio": 1.2303272619576484,
+    "liabilities_assets": 0.41666534805953775,
+    "cash_coverage": 0.12400414630534577,
+    "accruals": -0.0714197036545497,
+    "revenue_growth": 0.17788686799846665
+  },
+  "prior_annual_period": {
+    "period_start": "2024-07-01",
+    "period_end": "2025-06-30",
+    "known_at": "2026-07-29",
+    "first_filed": "2025-07-30",
+    "metrics": {
+      "revenue": {
+        "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "priority": 0,
+        "value": 281724000000,
+        "unit": "USD",
+        "start": "2024-07-01",
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "net_income": {
+        "tag": "NetIncomeLoss",
+        "priority": 0,
+        "value": 101832000000,
+        "unit": "USD",
+        "start": "2024-07-01",
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "operating_income": {
+        "tag": "OperatingIncomeLoss",
+        "priority": 0,
+        "value": 128528000000,
+        "unit": "USD",
+        "start": "2024-07-01",
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "operating_cash_flow": {
+        "tag": "NetCashProvidedByUsedInOperatingActivities",
+        "priority": 0,
+        "value": 136162000000,
+        "unit": "USD",
+        "start": "2024-07-01",
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "assets": {
+        "tag": "Assets",
+        "priority": 0,
+        "value": 619003000000,
+        "unit": "USD",
+        "start": null,
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "liabilities": {
+        "tag": "Liabilities",
+        "priority": 0,
+        "value": 275524000000,
+        "unit": "USD",
+        "start": null,
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "current_assets": {
+        "tag": "AssetsCurrent",
+        "priority": 0,
+        "value": 191131000000,
+        "unit": "USD",
+        "start": null,
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "current_liabilities": {
+        "tag": "LiabilitiesCurrent",
+        "priority": 0,
+        "value": 141218000000,
+        "unit": "USD",
+        "start": null,
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "cash": {
+        "tag": "CashAndCashEquivalentsAtCarryingValue",
+        "priority": 0,
+        "value": 30242000000,
+        "unit": "USD",
+        "start": null,
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      },
+      "capex": {
+        "tag": "PaymentsToAcquirePropertyPlantAndEquipment",
+        "priority": 0,
+        "value": 64551000000,
+        "unit": "USD",
+        "start": "2024-07-01",
+        "end": "2025-06-30",
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "form": "10-K",
+        "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/"
+      }
+    },
+    "ratios": {
+      "operating_margin": 0.4562195624085985,
+      "net_margin": 0.3614601524896707,
+      "cash_margin": 0.48331700529596344,
+      "current_ratio": 1.3534464445042416,
+      "liabilities_assets": 0.44510931287893596,
+      "cash_coverage": 0.2141511705306689,
+      "accruals": -0.06069842976185635,
+      "revenue_growth": 0.14932156232406713
+    }
+  },
+  "ratio_formulas": {
+    "operating_margin": "Operating income / revenue",
+    "net_margin": "Net income / revenue",
+    "cash_margin": "Operating cash flow / revenue",
+    "current_ratio": "Current assets / current liabilities",
+    "liabilities_assets": "Liabilities / assets",
+    "cash_coverage": "Cash and equivalents / current liabilities",
+    "accruals": "(Net income - operating cash flow) / ((current-year total assets + previous-year total assets) / 2)",
+    "revenue_growth": "Current annual revenue / previous annual revenue - 1"
+  },
+  "anomaly": {
+    "score": 0.4942608215185991,
+    "percentile": 83.9,
+    "imputed_features": [],
+    "context_deviations": [
+      {
+        "feature": "cash_margin",
+        "value": 0.5512763719755664,
+        "training_median": 0.3283825161469386,
+        "robust_deviation": 2.3749611942972533
+      },
+      {
+        "feature": "operating_margin",
+        "value": 0.4678081840892722,
+        "training_median": 0.27835410106706115,
+        "robust_deviation": 2.247783209621019
+      },
+      {
+        "feature": "cash_coverage",
+        "value": 0.12400414630534577,
+        "training_median": 0.43904899376361944,
+        "robust_deviation": 1.4701457169858245
+      }
+    ],
+    "period_end": "2026-06-30"
+  },
+  "training": {
+    "samples": 93,
+    "period_end_before": "2025-09-27",
+    "features": [
+      "operating_margin",
+      "cash_margin",
+      "current_ratio",
+      "liabilities_assets",
+      "cash_coverage",
+      "accruals"
+    ],
+    "seed": 42,
+    "trees": 128,
+    "algorithm": "IsolationForest",
+    "minimum_observed_features": 4,
+    "first_period_end": "2008-09-27",
+    "last_period_end": "2025-06-30",
+    "latest_filed": "2026-07-29"
+  },
+  "assumptions": {
+    "revenuePercent": -10,
+    "marginPoints": -2,
+    "refinanceBillions": 10,
+    "rateBps": 100,
+    "collectionDays": 15
+  },
+  "scenario": {
+    "stressedRevenue": 298655100000,
+    "operatingIncome": 133740198000,
+    "extraInterest": 100000000,
+    "profitProxy": 133640198000,
+    "operatingChange": -21496802000,
+    "cashTiedUp": 12273497260.273973,
+    "cashRemainingProxy": 8661502739.726027
+  },
+  "scenario_error": null,
+  "treasury": {
+    "date": "2026-10-13",
+    "3m": 4.26,
+    "2y": 4.79,
+    "5y": 5,
+    "10y": 5.21,
+    "30y": 5.56
+  },
+  "follow_up": [
+    "Operating cash flow exceeds net income. Check how much comes from recurring operations, non-cash charges and working-capital timing.",
+    "Current assets exceed current liabilities. Check asset liquidity and the timing of obligations; the ratio alone cannot establish resilience.",
+    "Read the latest quarterly filing and management discussion. This workspace uses annual accounts and does not cover every recent development."
+  ],
+  "limitations": [
+    "Filing-day reconstruction from currently retrieved CompanyFacts, not an archived point-in-time database.",
+    "Annual accounts only; subsequent quarterly results are outside this review.",
+    "Six selected surviving technology/platform businesses are not a market-representative sample.",
+    "Anomaly percentiles describe unusual profiles, not fraud/default probabilities or investment returns.",
+    "All stress results are user assumptions, not company forecasts."
+  ],
+  "sources": {
+    "AAPL": {
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+      "raw_sha256": "73a86c6aedc31f77cac2ea4df5f80f0b3bd7e6eb58bb4e01444fbedf3afb9c43",
+      "retrieved_at": "2026-10-14T18:59:43.591315Z"
+    },
+    "MSFT": {
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+      "raw_sha256": "f8aae2965b20ad0df44bdf7ccbedf797d275b6b8dc030154a7a311361bb7246f",
+      "retrieved_at": "2026-10-14T18:59:50.181260Z"
+    },
+    "NVDA": {
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+      "raw_sha256": "19ef503a5770f5660964b3c3aea6937579d9b359da344afe6a9adf59c63d26ff",
+      "retrieved_at": "2026-10-14T18:59:56.533396Z"
+    },
+    "AMZN": {
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
+      "raw_sha256": "7549fb68446eee40e1f50a166fa06b2d2ee6349e07c8553a4828757e032d3cd4",
+      "retrieved_at": "2026-10-14T19:00:01.548593Z"
+    },
+    "GOOGL": {
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
+      "raw_sha256": "a017f26ee88cb4a639d1c1ddb06d53b4afe22f0ac89cabec7cd67c88919fe1c5",
+      "retrieved_at": "2026-10-14T19:00:07.091746Z"
+    },
+    "META": {
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
+      "raw_sha256": "7518e76d6dac2d016e1a3d1dec1cc55ff9ea3bdd58a151b16fcaa067a6c9d94e",
+      "retrieved_at": "2026-10-14T19:00:13.588296Z"
+    },
+    "treasury-2018": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2018",
+      "raw_sha256": "71ae7fd60321e71adad5742f2e93e8f9ea8a3c8c75ab93abe07bb804b8947361",
+      "retrieved_at": "2026-10-14T19:00:20.081993Z"
+    },
+    "treasury-2019": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2019",
+      "raw_sha256": "59cff62db7c1436d031e6ff2285868a997a27427c98f0b14108659efa5d3fe98",
+      "retrieved_at": "2026-10-14T19:00:26.719226Z"
+    },
+    "treasury-2020": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2020",
+      "raw_sha256": "8e369f1aafb88dcc93a2e5cf68dd3970954130d87d5d6701e9a326b53690f9d9",
+      "retrieved_at": "2026-10-14T19:00:33.503090Z"
+    },
+    "treasury-2021": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2021",
+      "raw_sha256": "858a1db3ce49d3a3052b0ffb19c10abb671501a194c45fe7cfd89789358719d5",
+      "retrieved_at": "2026-10-14T19:00:40.194225Z"
+    },
+    "treasury-2022": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2022",
+      "raw_sha256": "14fdbb16c13914dc2f69c5f311f1e5c2c81cf5e1f3bf3cd9937a1e4e96ca19f3",
+      "retrieved_at": "2026-10-14T19:00:46.596734Z"
+    },
+    "treasury-2023": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2023",
+      "raw_sha256": "ea2847de5b05742f718a14ac6e91cabdd0942714f488fc3cba327597de1e87e7",
+      "retrieved_at": "2026-10-14T19:00:53.156597Z"
+    },
+    "treasury-2024": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2024",
+      "raw_sha256": "fa4a1c6f865bcb5b7dd84fe41f27daf6c296484609cc20cbc3b6e98bc2334cd4",
+      "retrieved_at": "2026-10-14T19:00:59.780873Z"
+    },
+    "treasury-2025": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2025",
+      "raw_sha256": "1d8918985fddb5d5ac5ac34b0ec67b0fda05eb8d65b2fc9000708a2f1ed0a0ff",
+      "retrieved_at": "2026-10-14T19:01:06.187810Z"
+    },
+    "treasury-2026": {
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2026",
+      "raw_sha256": "2ac8234bda1936e9358c1cf0e7668862992bf61fa5cff747381eb9899cbfcac0",
+      "retrieved_at": "2026-10-14T19:01:12.582287Z"
+    }
+  }
+}

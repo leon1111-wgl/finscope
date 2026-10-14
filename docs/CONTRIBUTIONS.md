@@ -28,3 +28,8 @@ No upstream application was copied and rebranded. [Qlib](https://github.com/micr
 Submit changes with a concrete research failure case, expected behavior and a reproducible test. A new factor should include its historical availability rule, source/license, missingness policy and baseline ablation. A new model should preserve the same evaluation dates, record tuning decisions and retain negative results. A new data connector should keep secrets and proprietary raw data outside the public tree.
 
 Do not add attractive performance numbers from a differently filtered universe or a repeatedly optimized holdout. Improvements should make conclusions easier to verify, even when a forecast becomes less impressive.
+
+
+## Online annual-financial research workspace
+
+The real-company workspace adds original fiscal-period matching, filing-date snapshots, a historical-profile anomaly pipeline, explicit missing-value handling, browser stress calculations and source-rich Markdown/JSON/print briefs. It uses official SEC and Treasury inputs and the established scikit-learn Isolation Forest estimator. It does not assert algorithmic novelty or investment performance. See [product rationale](PRODUCT.md) and [model card](RESEARCH_MODEL.md).
