@@ -16,7 +16,7 @@ test('every saved company/date brief and reopening link reproduces sourced input
   const link=selectionFromURL(new URL(original.reopen_url).searchParams,bundle);
   for(const selection of [file,link]) {
    const checked=approveSelection(selection,bundle);
-   const restored=buildBrief(bundle,selectSnapshot(bundle.snapshots,checked.date),company,checked.assumptions,checked.date);
+   const restored=buildBrief(bundle,selectSnapshot(bundle.snapshots,checked.date),bundle.companies.find(c=>c.ticker===checked.ticker),checked.assumptions,checked.date);
    for(const key of fields) assert.deepEqual(restored[key],original[key],`${company.ticker} ${date} ${key}`);
   }
   assert.ok(briefMarkdown(original).includes(original.reopen_url));
