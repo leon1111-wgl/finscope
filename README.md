@@ -40,6 +40,8 @@ This is an original research workflow built on open-source tools and public data
 
 [Read the worked numbers, interpretation and follow-up questions](docs/CASE_STUDY.md).
 
+Evidence tables include **Read 10-K / Read 10-Q** links to the matched SEC document, a **Filing index** backup and the exact XBRL tag. The same sources travel with the exported brief. [How filing links are verified](docs/FILING_EVIDENCE.md).
+
 To investigate a newer operating-cash gap, select **NVDA → Review the evidence** and open the fiscal YTD checkpoint. Follow the profit-to-cash waterfall, compare the prior period and expand the source/sign detail. Download the SVG for a presentation or include the full comparison in your research brief. [Cash-flow bridge method and limits](docs/CASH_FLOW_BRIDGE.md).
 
 ## Architecture
@@ -51,6 +53,8 @@ flowchart LR
   F --> M[Earlier-period Isolation Forest]
   T[Official Treasury curve] --> B[Versioned evidence bundle]
   F --> B
+  D[Official SEC Submissions] --> L[Match company, accession, date and form]
+  L --> B
   M --> B
   B --> U[Browser research workspace]
   A[User scenario assumptions] --> U
@@ -100,7 +104,7 @@ Local CSV/JSON fitting remains available through the loopback service. Start `py
 
 ## Foundations and contribution
 
-Official [SEC CompanyFacts](https://www.sec.gov/search-filings/edgar-application-programming-interfaces) supplies filings. The [Treasury curve dataset](https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates) is listed as CC0. scikit-learn supplies established estimators. EdgarTools was used as an independent parsing check in the original lab.
+Official [SEC CompanyFacts and Submissions](https://www.sec.gov/search-filings/edgar-application-programming-interfaces) supply financial facts and matched filing-document metadata. The [Treasury curve dataset](https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates) is listed as CC0. scikit-learn supplies established estimators. EdgarTools was used as an independent parsing check in the original lab.
 
 Original contributions: fiscal-period matching, dated evidence views, training-boundary safeguards, scenario UX and math, reproducible briefs and the integrated public delivery pipeline. [Contribution map](docs/CONTRIBUTIONS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md).
 

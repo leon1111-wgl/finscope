@@ -42,6 +42,7 @@ jobs:
           name: official-source-evidence
           path: |
             local-data/sec/CIK*.json
+            local-data/submissions/CIK*.json
             local-data/treasury-*.xml
             local-data/research-sources.json
           retention-days: 30

@@ -12,7 +12,7 @@ Workflow: `.github/workflows/refresh.yml`. Schedule: 03:37 UTC Tuesday through S
 
 Repository variable `SEC_USER_AGENT` must identify the maintainer and a contact email. Source requests are sequential; SEC requests are throttled to at most four per second with bounded retries. Never disable TLS validation to bypass access failures.
 
-Each run installs pinned dependencies, tests the implementation, downloads SEC and Treasury sources, validates the complete bundle, commits the derived snapshot and deploys that exact working tree. GitHub's default token does not trigger another push workflow from its own commit; refresh explicitly deploys its output. Public raw-source artifacts are retained for 30 days.
+Each run installs pinned dependencies, tests the implementation, downloads SEC and Treasury sources, validates the complete bundle, commits the derived snapshot and deploys that exact working tree. GitHub's default token does not trigger another push workflow from its own commit; refresh explicitly deploys its output. Public raw-source artifacts are retained for 30 days. They include CompanyFacts, SEC Submissions (current and relevant historical files), Treasury XML and the retrieval/hash manifest.
 
 ## Failure behavior
 
@@ -23,5 +23,7 @@ Validation rejects no-data responses, CIK mismatches, nonfinite rates, future-fi
 ## Reproducibility and privacy
 
 `--offline` validates saved raw hashes and reconstructs the research content using the original source retrieval metadata. The build timestamp/hash changes per build; numerical content should match with the same inputs and pinned runtime. Do not claim a raw source is permanently archived: the uploaded raw artifact has a 30-day retention policy. Selected original fact values and source records remain in committed snapshots.
+
+Filing navigation uses the official Submissions `primaryDocument` field. It never guesses a filename from the fiscal period. Missing or unsupported primary-document names fall back to the accession index; unmatched metadata keeps the directory link. Download, schema or offline hash failures stop the build. Existing raw caches created before this feature need one metadata fetch: `python scripts/build_research.py --offline --refresh-filings --as-of YYYY-MM-DD`, with the same identifying `SEC_USER_AGENT`. After that, an ordinary offline rebuild includes filing metadata. This option refreshes navigation metadata while preserving the financial sources and their retrieval records. Metadata downloads are staged until all companies and bundle validation succeed. A failed metadata-only refresh preserves the previous metadata cache and hash manifest for offline rebuilding. Cache promotion uses per-file renames; it is not a disk-crash transaction. [Matching rules](FILING_EVIDENCE.md).
 
 Private local price/event uploads remain under ignored local directories and are unrelated to the public annual-company pipeline. No private financial data, social account access or brokerage connection is required.

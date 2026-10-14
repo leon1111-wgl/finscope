@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 import sklearn
 from finscope.fundamentals import annual_history
+from finscope.filings import evidence_facts, resolve_company_filings, attach_filing_links, staged_filing_sources
 from finscope.interim import interim_snapshots
 from finscope.research import score_profiles
 from finscope.sec import fetch_companyfacts
@@ -79,6 +80,7 @@ def validate(bundle):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--offline', action='store_true', help='Rebuild from saved raw sources and their original metadata')
+    parser.add_argument('--refresh-filings', action='store_true', help='Refresh filing-document metadata even when financial sources use --offline')
     parser.add_argument('--as-of', default=datetime.now(timezone.utc).date().isoformat())
     args = parser.parse_args()
     cutoff = date.fromisoformat(args.as_of)
@@ -139,7 +141,7 @@ def main():
         ai = score_profiles(histories, day)
         snapshots.append({'as_of': day, 'companies': {t: rows[-6:] for t, rows in histories.items()}, 'ai': ai})
     bundle = {
-        'schema_version': '2.2.0', 'data_kind': 'real_official_financial_evidence',
+        'schema_version': '2.3.0', 'data_kind': 'real_official_financial_evidence',
         'as_of': args.as_of, 'generated_at': stamp(), 'sources': sources,
         'companies': [{'ticker': t, 'cik': cik, 'name': payloads[t]['entityName']} for t, cik in COMPANIES.items()],
         'snapshots': snapshots, 'rates': [rates[d] for d in sorted(rates)],
@@ -151,7 +153,21 @@ def main():
                         'The cash-flow bridge maps selected standard-tag adjustments; its residual includes other and unmapped items, not a verified causal explanation.',
                         'Anomaly percentiles describe unusual profiles, not fraud/default probabilities or investment returns.',
                         'All stress results are user assumptions, not company forecasts.']}
-    validate(bundle)
+    records = {}
+    facts = list(evidence_facts(bundle))
+    refresh_filings = not args.offline or args.refresh_filings
+    with staged_filing_sources(cache, sources, refresh=refresh_filings) as filing_cache:
+        for ticker, cik in COMPANIES.items():
+            company_facts = {f['accession']: f for f in facts if f'/data/{cik}/' in f['url']}
+            records.update(resolve_company_filings(cik, list(company_facts.values()), filing_cache, sources,
+                           offline=not refresh_filings, user_agent=os.environ.get('SEC_USER_AGENT', '')))
+            print(f'Filing metadata {ticker}: loaded', flush=True)
+        bundle['filing_links'] = attach_filing_links(bundle, records)
+        bundle['filing_links']['unique_accessions'] = len({f['accession'] for f in facts})
+        bundle['filing_links']['resolved_accessions'] = len({f['accession'] for f in facts if f.get('link_kind')})
+        validate(bundle)
+    if refresh_filings:
+        atomic_json(manifest_path, sources)
     bundle['dataset_sha256'] = hashlib.sha256(json.dumps(bundle, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
     target = ROOT / 'web/data/research.json'
     atomic_json(target, bundle)

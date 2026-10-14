@@ -959,3 +959,7 @@ code {
 .cash-bridge th[scope="row"] { white-space: normal; min-width: 170px; font-weight: 500; }
 .cash-bridge h5 { font-size: 1rem; margin: 24px 0 10px; }
 @media print { .bridge-scroll, #export-cash-svg { display: none; } .cash-bridge { border-color: #aaa; } }
+
+.evidence-links { display: inline-block; line-height: 1.7; }
+.evidence-links small { display: block; font-size: .88rem; color: #b3c3d4; overflow-wrap: anywhere; margin-top: 4px; }
+@media print { .evidence-links small { color: #333; } }

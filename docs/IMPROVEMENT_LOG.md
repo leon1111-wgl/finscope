@@ -6,6 +6,18 @@ Improve an actual user task. Start with a reproducible failure or a clearly unme
 
 Adversarial review is internal work by Codex: take the perspective of a first-time reader, an analyst, a mobile visitor and a recipient of an exported brief. Find and fix weaknesses proactively. It is not a request for a public visitor-feedback or bug-submission feature.
 
+## 2026-10-15 — Open the financial evidence directly
+
+Reproducible user friction: the evidence table and exported brief opened an SEC archive directory, leaving a student or analyst to identify the report among exhibits and XBRL files. A reviewer could trace an accession, but could not immediately read its financial discussion.
+
+Selected improvement: use official SEC Submissions metadata to resolve primary documents. Match company CIK, accession, filing date and form; load only relevant official historical metadata files. The table and cash-flow bridge now offer **Read 10-K / Read 10-Q**, a **Filing index** backup and the XBRL tag. Annual/YTD facts and prior-year denominators retain these links in Markdown and JSON. Unresolved metadata preserves the original directory; unavailable document filenames use an explicitly labeled index. No financial inputs or model results change. [Method, user steps and limitations](FILING_EVIDENCE.md).
+
+Validation: 92 Python and 33 JavaScript tests passed. An offline rebuild verified cached raw hashes. All 19,815 repeated evidence references matched official metadata across 237 distinct accessions. All previous financial/model/interim/rate values and original financial-source retrieval records remained unchanged. 312 real company/date brief exports preserved eligible filing dates and source links. The six latest primary document URLs returned HTTP 200 with HTML content. The new bundle is 14.1 MB uncompressed / 0.62 MB gzip locally; repeated URL provenance compresses well. Unit checks cover wrong company/date/form, malformed or misaligned records, unsafe paths, missing filenames, repeated resolution, cache tampering and transparent fallback.
+
+Browser interaction and layout verification remain unavailable because the browser connection times out. HTTP/source/export checks are not claimed as a substitute for an interactive browser test. Independent review found an interrupted-refresh cache/hash mismatch. Metadata downloads now stage until the full batch and validation succeed; failure and successful-promotion regressions pass, and focused re-review found no remaining blocker. Exact release verification is recorded below after publication.
+
+Next step: make a large cash-flow remainder easier to investigate through reviewed statement/section references and clearly sourced additional adjustments. A direct document link does not yet jump to the exact fact or prove a causal explanation.
+
 ## 2026-10-15 — Explain the profit-to-cash gap
 
 User task: after noticing a newer YTD cash-margin change, identify disclosed accounting adjustments and a concrete question to take into the filing. The previous view showed the change but left this investigation entirely manual.
@@ -41,7 +53,7 @@ Local verification: 61 Python tests and 20 JavaScript tests; actual browser down
 1. The YTD checkpoint now has a five-group partial cash-flow bridge. Investigate material residuals using reviewed disclosure mappings and add balance/debt context; require correct duration alignment before adding TTM calculations.
 2. Missing custom tags prevent some comparisons. Investigate reviewed company-specific mappings with visible provenance; never guess equivalence or replace missing values with zero.
 3. Historical views are coarsened to annual-filing dates. Evaluate snapshot dates for amendments and revised comparisons; make archive/revision limitations explicit.
-4. A reader still needs to locate the right filing note. Replace filing-directory links with verified document/section references where available, and investigate residual adjustments before adding generative summaries.
+4. Primary filing documents are now linked. A reader still needs to locate the right statement or note. Add verified section references where available, and investigate residual adjustments before adding generative summaries.
 5. The six-company universe is narrow. Define sector-specific ratio suitability and data coverage before expansion; banks require different financial logic.
 6. Validate usefulness with actual first-time workflows. No adoption or time-saving statistics have yet been measured.
 

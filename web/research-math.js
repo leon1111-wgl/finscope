@@ -1,3 +1,4 @@
+import {evidenceMarkdown} from './evidence-links.js';
 import {
   bridgeMarkdown
 } from './cash-bridge.js';
@@ -180,16 +181,16 @@ function interimMarkdown(selection) {
     ]) {
     if (!period) continue;
     text += `\n${label}: ${period.period_start} to ${period.period_end}.\n\n`;
-    text += Object.entries(period.metrics).map(([k, f]) => `- ${k}: ${num(f?.value)} · filed ${f?.filed || 'unavailable'} · ${f ? `[${f.tag}](${f.url}) · accession ${f.accession || 'unavailable'}` : 'No matching fact'}`).join('\n') + '\n';
+    text += Object.entries(period.metrics).map(([k, f]) => `- ${k}: ${num(f?.value)} · filed ${f?.filed || 'unavailable'} · ${f ? `${f.tag} · ${evidenceMarkdown(f)} · accession ${f.accession || 'unavailable'}` : 'No matching fact'}`).join('\n') + '\n';
   }
   return text + bridgeMarkdown(c.current, c.prior);
 }
 export function briefMarkdown(b) {
   return `# ${b.title}\n\nPrepared with ${b.author}.\n\nRequested date: ${b.requested_date}. Financial snapshot: ${b.snapshot_date}. Annual period end: ${b.annual_period}.\n\nDataset SHA-256: ${b.dataset_sha256}\nBuilt: ${b.data_retrieved_build}. Exported: ${b.exported_at}.\n\n## Question\n\nDoes reported profit have cash-flow support, and what changes under a weaker operating scenario?\n\n## Reported evidence (USD)\n\n| Metric | Value | Period end | Filed | Source |\n| --- | ---: | --- | --- | --- |\n` +
-    Object.entries(b.facts).map(([k, f]) => `| ${k} | ${num(f?.value)} | ${f?.end||'—'} | ${f?.filed||'—'} | ${f?.url?`[${f.tag||'Filing'}](${f.url})`:'Unavailable'} |`).join('\n') +
+    Object.entries(b.facts).map(([k, f]) => `| ${k} | ${num(f?.value)} | ${f?.end||'—'} | ${f?.filed||'—'} | ${f ? `${f.tag || 'Filing'} · ${evidenceMarkdown(f)}` : 'Unavailable'} |`).join('\n') +
     `\n\n## Prior annual inputs for growth and average assets\n\n` + (b.prior_annual_period ? `Prior period end: ${b.prior_annual_period.period_end}.\n\n` + ['revenue', 'assets'].map(k => {
       const f = b.prior_annual_period.metrics[k];
-      return `- ${k}: ${num(f?.value)} USD · filed ${f?.filed||'unavailable'} · ${f?.url||'source unavailable'}`;
+      return `- ${k}: ${num(f?.value)} USD · filed ${f?.filed||'unavailable'} · ${f ? `${f.tag} · ${evidenceMarkdown(f)} · accession ${f.accession}` : 'Source unavailable'}`;
     }).join('\n') : 'No eligible prior annual period.') +
     `\n\n## Ratios (decimal unless named ratio)\n\n` + Object.entries(b.ratios).map(([k, v]) => `- ${k}: ${num(v)}. Formula: ${b.ratio_formulas[k]}.`).join('\n') +
     interimMarkdown(b.interim) +

@@ -1,6 +1,6 @@
+import {evidenceLink, evidenceMarkdown} from './evidence-links.js';
 import {
-  escapeHTML as e,
-  safeURL
+  escapeHTML as e
 } from './workbench.js';
 
 const valid = p => p?.cash_bridge?.status === 'available';
@@ -130,7 +130,7 @@ export function cashBridgeSVG(period, ticker = '') {
   return svg + `<text x="24" y="349" font-size="14">Blue: reported totals · Teal/orange: signed adjustments · Gray: calculated remainder</text><text x="24" y="373" font-size="13">Partial mapping. Missing lines stay in the remainder. Non-cash add-backs are not cash receipts.</text><text x="24" y="393" font-size="12">FinScope · Leon Wang · SEC filing ${e(period.cash_bridge.accession || '')}</text></g></svg>`;
 }
 
-const link = f => safeURL(f?.url) ? `<a href="${e(safeURL(f.url))}" target="_blank" rel="noopener noreferrer">${e(f.tag)} · ${f.filed} ↗</a>` : 'No matching source';
+const link = f => evidenceLink(f) + (f ? ` · filed ${e(f.filed)}` : '');
 export function bridgeMarkup(current, prior, ticker = '', compact = false) {
   if (!valid(current)) return `<p class="note">Cash-flow reconciliation unavailable: ${e(current?.cash_bridge?.reason || 'No matched source facts.')}</p>`;
   const b = current.cash_bridge,
@@ -147,7 +147,7 @@ export function bridgeMarkdown(current, prior) {
   text += `\n\n${bridgeQuestion(current)}\n\nOther and unmapped adjustments = operating cash flow − net income − selected signed adjustments. This remainder includes unmapped items and is not a sourced causal explanation. Missing values are not zero. Mapping coverage can change across periods. Non-cash add-backs are not cash receipts.\n`;
   for (const p of [current, prior].filter(valid)) {
     text += `\nSource inputs for ${p.period_start} to ${p.period_end}; ${p.cash_bridge.components.length-p.cash_bridge.missing_components.length}/${p.cash_bridge.components.length} selected groups mapped. Effect = raw value × sign.\n\n`;
-    text += p.cash_bridge.components.map(c => `- ${c.label}: ${c.fact ? `${num(c.fact.value)} × ${c.sign} = ${num(c.effect)} USD; [${c.fact.tag}](${safeURL(c.fact.url) || ''}); filed ${c.fact.filed}; accession ${c.fact.accession}` : 'Unavailable'}; ${c.explanation}`).join('\n') + '\n';
+    text += p.cash_bridge.components.map(c => `- ${c.label}: ${c.fact ? `${num(c.fact.value)} × ${c.sign} = ${num(c.effect)} USD; ${c.fact.tag}; ${evidenceMarkdown(c.fact)}; filed ${c.fact.filed}; accession ${c.fact.accession}` : 'Unavailable'}; ${c.explanation}`).join('\n') + '\n';
   }
   return text;
 }
