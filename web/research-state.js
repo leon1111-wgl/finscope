@@ -46,6 +46,7 @@ export function selectionFromBrief(text, bundle) {
   let b;
   try { b = JSON.parse(text); } catch { throw new Error('This file is not valid JSON. Choose a downloaded FinScope evidence brief.'); }
   if (!object(b) || b.author !== 'FinScope by Leon Wang') throw new Error('This is not a recognized FinScope company brief.');
+  if (b.format === 'finscope-company-comparison') throw new Error('This is comparison evidence. Use its reopen_url to open the comparison view. This file input restores single-company briefs.');
   if (('brief_format' in b || 'brief_version' in b) && (b.brief_format !== 'finscope-company-review' || b.brief_version !== 1))
     throw new Error('This brief format is not supported by this version of FinScope.');
   if (!hash(b.dataset_sha256)) throw new Error('The brief is missing a valid dataset identifier.');

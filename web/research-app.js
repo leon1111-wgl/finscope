@@ -1,3 +1,4 @@
+import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';
 import {
@@ -231,12 +232,13 @@ function review() {
 }
 
 function compare() {
-  const rows = bundle.companies.map(c => {
-    const r = snapshot.companies[c.ticker].at(-1),
-      a = snapshot.ai.scores[c.ticker];
+  const comparison = buildComparison(bundle, selectedDate);
+  const rows = comparison.companies.map(c => {
+    const r = c.annual,
+      a = c.anomaly;
     return [`<button class="table-button" data-company="${c.ticker}">${c.ticker} ↗</button>`, r.period_end, pct(r.ratios.operating_margin), pct(r.ratios.cash_margin), ratio(r.ratios.current_ratio), pct(r.ratios.liabilities_assets), a ? `${a.percentile} / 100` : 'Unavailable'];
   });
-  return `<p class="eyebrow">02 / FIND CONTEXT</p><h2>Similar questions. Different businesses.</h2><p class="muted">Compare six selected technology and platform businesses. Their fiscal calendars, business models and capital needs differ.</p>${panel('Financial profiles',table(['Company','Period ended','Operating margin','Cash margin','Current ratio','Liabilities / assets','Anomaly percentile'],rows)+`<p class="note">This is a comparison set, not a sector benchmark or a ranking of investment quality. Some companies have newer fiscal periods. A high anomaly score can reflect exceptional growth or structural differences.</p>`)}${panel('Newer interim coverage',`<p class="note">Choose a company to inspect matched YTD inputs. Fiscal periods differ, so these changes are context rather than a league table.</p>${table(['Company','Newer YTD period','Cash-margin change'],bundle.companies.map(c=>{const i=selectInterim(bundle,c.ticker,selectedDate,snapshot.companies[c.ticker].at(-1));const v=i.checkpoint;return [`<button class="table-button" data-company="${c.ticker}">${c.ticker} ↗</button>`,v?`${v.current.period_start} → ${v.current.period_end}`:i.status==='covered_by_annual'?'Covered by annual accounts':'Unavailable',Number.isFinite(v?.cash_margin_change_pp)?v.cash_margin_change_pp.toFixed(2)+' pp':'—'];}))}`)}${panel('How to use the comparison',`<div class="timeline"><div><strong>1. Start with the business</strong><p>A retailer, a chip designer and a software vendor have different inventory and working-capital needs.</p></div><div><strong>2. Compare the cash margin</strong><p>Ask how much operating cash is generated per dollar of revenue. Then inspect changes over time.</p></div><div><strong>3. Read the maturity note</strong><p>A current ratio gives a snapshot. Debt terms and cash generation determine when funds are needed.</p></div><div><strong>4. Follow the anomaly</strong><p>Use the score to prioritize reading. Confirm the reason in the filing and record uncertainty.</p></div></div>`)}<div class="actions"><button data-go="review">← Back to evidence</button><button class="primary" data-go="stress">Next: test assumptions →</button></div>`;
+  return `<p class="eyebrow">02 / FIND CONTEXT</p><h2>Similar questions. Different businesses.</h2><p class="muted">Compare six selected technology and platform businesses. Their fiscal calendars, business models and capital needs differ.</p><div class="actions"><button class="primary" id="export-comparison-csv">Download comparison (.csv)</button><button id="export-comparison-json">Download comparison evidence (.json)</button></div><p class="note">CSV keeps full numeric precision: margins are decimals (0.20 means 20%); cash-margin changes are percentage points. Empty numeric cells mean unavailable. Save the JSON alongside it for exact facts, filing links and model boundaries. These files contain reported profiles, without your corporate stress assumptions.</p>${panel('Financial profiles',table(['Company','Period ended','Operating margin','Cash margin','Current ratio','Liabilities / assets','Anomaly percentile'],rows)+`<p class="note">This is a comparison set, not a sector benchmark or a ranking of investment quality. Some companies have newer fiscal periods. A high anomaly score can reflect exceptional growth or structural differences.</p>`)}${panel('Newer interim coverage',`<p class="note">Choose a company to inspect matched YTD inputs. Fiscal periods differ, so these changes are context rather than a league table.</p>${table(['Company','Newer YTD period','Cash-margin change'],comparison.companies.map(c=>{const i=c.interim;const v=i.checkpoint;return [`<button class="table-button" data-company="${c.ticker}">${c.ticker} ↗</button>`,v?`${v.current.period_start} → ${v.current.period_end}`:i.status==='covered_by_annual'?'Covered by annual accounts':'Unavailable',Number.isFinite(v?.cash_margin_change_pp)?v.cash_margin_change_pp.toFixed(2)+' pp':'—'];}))}`)}${panel('How to use the comparison',`<div class="timeline"><div><strong>1. Start with the business</strong><p>A retailer, a chip designer and a software vendor have different inventory and working-capital needs.</p></div><div><strong>2. Compare the cash margin</strong><p>Ask how much operating cash is generated per dollar of revenue. Then inspect changes over time.</p></div><div><strong>3. Read the maturity note</strong><p>A current ratio gives a snapshot. Debt terms and cash generation determine when funds are needed.</p></div><div><strong>4. Follow the anomaly</strong><p>Use the score to prioritize reading. Confirm the reason in the filing and record uncertainty.</p></div></div>`)}<div class="actions"><button data-go="review">← Back to evidence</button><button class="primary" data-go="stress">Next: test assumptions →</button></div>`;
 }
 const input = (key, label, min, max, step, help) => `<label>${label}<input type="number" data-assumption="${key}" value="${assumptions[key]}" min="${min}" max="${max}" step="any" required><span class="field-help">${help}</span></label>`;
 
@@ -313,17 +315,17 @@ function updateBond() {
   }
 }
 
-function download(text, type, extension) {
+function download(text, type, extension, comparison = false) {
   const blob = new Blob([text], {
     type
   });
   const url = URL.createObjectURL(blob),
     a = document.createElement('a');
   a.href = url;
-  a.download = `finscope-${company.ticker}-${selectedDate}.${extension}`;
+  a.download = `finscope-${comparison ? 'comparison' : company.ticker}-${selectedDate}.${extension}`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  $('#status').textContent = 'Download prepared with this company, date and scenario.';
+  $('#status').textContent = comparison ? 'All-company comparison prepared for the selected information date. Save the CSV and evidence JSON together.' : 'Download prepared with this company, date and scenario.';
 }
 
 function render() {
@@ -376,6 +378,8 @@ function render() {
     };
     render();
   });
+  $('#export-comparison-csv')?.addEventListener('click', () => download(comparisonCSV(buildComparison(bundle, selectedDate)), 'text/csv;charset=utf-8', 'csv', true));
+  $('#export-comparison-json')?.addEventListener('click', () => download(JSON.stringify(buildComparison(bundle, selectedDate), null, 2), 'application/json', 'json', true));
   $('#export-md')?.addEventListener('click', () => download(briefMarkdown(currentBrief()), 'text/markdown;charset=utf-8', 'md'));
   $('#export-json')?.addEventListener('click', () => download(JSON.stringify(currentBrief(), null, 2), 'application/json', 'json'));
   $('#print-brief')?.addEventListener('click', () => window.print());

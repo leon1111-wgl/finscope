@@ -6,6 +6,14 @@ Improve an actual user task. Start with a reproducible failure or a clearly unme
 
 Adversarial review is internal work by Codex: take the perspective of a first-time reader, an analyst, a mobile visitor and a recipient of an exported brief. Find and fix weaknesses proactively. It is not a request for a public visitor-feedback or bug-submission feature.
 
+## 2026-10-15 — Export the full company comparison
+
+Reproduced user gap: the six-company comparison was visible, but the only downloadable brief represented the selected company. An analyst had to transcribe rounded values and manually retain differing fiscal dates. The comparison now exports a full-precision CSV and a companion evidence JSON for all six companies at the selected information date. Both retain dataset/calculation versions and annual/interim period boundaries. JSON retains sourced facts, prior periods, model context and training metadata; missing numbers stay unavailable and a true zero remains zero. Corporate stress assumptions are excluded. [Workflow and file contract](COMPARISON_EXPORT.md).
+
+Validation: 92 Python and 66 JavaScript tests passed. An independent Python CSV read checked 52 date selections / 312 company profiles against the selected committed evidence, including 56 missing ratio cells that stayed empty. Tests cover invalid dates, historical source cutoffs, missing/zero model scores, numeric precision, quoted text, comparison-file confusion, date changes and both export handlers. No financial data, model score or formula changed. Independent review found no release blocker and confirmed that exported JSON does not mutate its source data. Exact publication evidence will be recorded before this round closes. The browser connection timed out; DOM file-payload checks are distinct from native download and layout verification.
+
+User instruction at the end of this round: complete and check this increment, then pause the FinScope hourly improvement automation until explicitly awakened. Do not resume proactive improvement work after pausing. Historical bundle recovery and cash-flow remainder investigation remain future candidates.
+
 ## 2026-10-15 — Reopen an analyst's saved brief
 
 Reproduced user failures: JSON briefs had no restoration path; shared URLs did not identify the evidence version; invalid shared assumptions silently fell back to zero shock; `2026-02-30` was accepted by the export function. A recipient could think the original analysis had been restored even when inputs or data differed.

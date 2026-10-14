@@ -15,7 +15,7 @@ Earnings have grown. Does that growth have cash-flow support? What would a weake
 | Review the evidence | Annual profit/cash trends, liquidity ratios, exact SEC facts and filing links |
 | Check what changed | Newer fiscal YTD revenue, profit and operating cash flow versus the same period last year |
 | Explain the cash gap | Selected non-cash and working-capital adjustments, visible remainder, source links and a downloadable waterfall |
-| Compare companies | Six financial profiles with explicit fiscal dates and missing-data labels |
+| Compare companies | Six financial profiles, a full-precision CSV and a companion JSON with source evidence |
 | Inspect AI triage | Historical-profile anomaly percentile plus underlying ratios and training boundaries |
 | Test assumptions | Browser calculations for revenue, margin, refinancing costs and collection delays |
 | Take your brief | Editable Markdown, source-rich JSON, print/PDF and a shareable research view |
@@ -34,7 +34,7 @@ This is an original research workflow built on open-source tools and public data
 
 1. Open the workspace with Microsoft selected.
 2. Compare annual net income and operating cash flow. Open the exact history and filing evidence.
-3. Compare profiles, paying attention to differing fiscal dates.
+3. Compare profiles, paying attention to differing fiscal dates. Download the comparison CSV and its evidence JSON to use the six-company table in your own work. [Export units and evidence contract](docs/COMPARISON_EXPORT.md).
 4. Select **Test assumptions → Try a downside case**. The preset assumes revenue −10%, margin −2 percentage points, $10B refinanced at +100 basis points and collections delayed by 15 days. Replace these assumptions with your own.
 5. Select **Take your brief** and export Markdown or JSON. Add a human conclusion after reading the latest quarterly filing and management discussion.
 6. Reopen the JSON through **Open a saved brief**, or use its versioned link. Inspect the restored inputs. If the data or calculation version differs, explicitly choose whether to recalculate. [Reopening and version rules](docs/REOPEN_BRIEF.md).

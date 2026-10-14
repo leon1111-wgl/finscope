@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {buildBrief} from '../web/research-math.js';
+import {buildComparison} from '../web/comparison-export.js';
 const html=fs.readFileSync(new URL('../web/index.html',import.meta.url),'utf8');
 const data=JSON.parse(fs.readFileSync(new URL('../web/data/research.json',import.meta.url)));
 const inputs={revenuePercent:-10,marginPoints:-2.25,refinanceBillions:10,rateBps:100,collectionDays:15.5};
@@ -27,7 +28,7 @@ async function boot(t,query='') {
  const click=selector=>{assert.ok($(selector),selector);$(selector).click();};
  const upload=async text=>{const el=$('#brief-file');Object.defineProperty(el,'files',{value:[{size:Buffer.byteLength(text),text:async()=>text}],configurable:true});el.dispatchEvent(new dom.window.Event('change',{bubbles:true}));await tick();await tick();};
  const exportJSON=async()=>{click('#export-json');return JSON.parse(await downloads.at(-1).text());};
- return {dom,$,click,upload,exportJSON,calls};
+ return {dom,$,click,upload,exportJSON,calls,downloads};
 }
 
 test('saved JSON preview and cancel preserve the current company and do not send the file',async t=>{
@@ -100,4 +101,37 @@ test('an invalid edit made during a file read is retained instead of replaced by
  assert.equal(ui.$('[data-assumption="rateBps"]').value,'');
  assert.equal(ui.$('#scenario-form').checkValidity(),false);
  assert.doesNotMatch(ui.$('#restore-message').textContent,/Reading/);
+});
+
+test('comparison downloads carry every company at the selected date without carrying stress assumptions',async t=>{
+ const ui=await boot(t,saved().reopen_url.replace('https://leon1111-wgl.github.io/finscope/',''));
+ ui.click('[data-page="compare"]');
+ ui.click('#export-comparison-json');
+ const evidence=JSON.parse(await ui.downloads.at(-1).text());
+ assert.deepEqual(evidence.companies.map(c=>c.ticker),['AAPL','MSFT','NVDA','AMZN','GOOGL','META']);
+ assert.equal(evidence.requested_date,data.as_of);
+ assert.deepEqual(evidence.companies.find(c=>c.ticker==='NVDA').annual.metrics.capex,data.snapshots.at(-1).companies.NVDA.at(-1).metrics.capex);
+ assert.equal('assumptions' in evidence,false);
+ ui.click('#export-comparison-csv');
+ const csv=await ui.downloads.at(-1).text();
+ assert.match(csv,/annual_period_end/);assert.match(csv,/NVDA/);assert.match(csv, /dataset_sha256/);
+ assert.match(ui.$('#status').textContent,/comparison/);
+ const date=ui.$('#as-of');date.value='2025-06-02';date.dispatchEvent(new ui.dom.window.Event('change',{bubbles:true}));
+ ui.click('#export-comparison-json');
+ const historical=JSON.parse(await ui.downloads.at(-1).text());
+ assert.equal(historical.requested_date,'2025-06-02');
+ assert.ok(historical.snapshot_date<='2025-06-02');
+ for(const c of historical.companies) assert.ok(c.annual.known_at<='2025-06-02');
+ date.value='1900-01-01';date.dispatchEvent(new ui.dom.window.Event('change',{bubbles:true}));
+ assert.equal(date.value,'2025-06-02');ui.click('#export-comparison-json');
+ assert.equal(JSON.parse(await ui.downloads.at(-1).text()).requested_date,'2025-06-02');
+});
+
+test('comparison evidence is distinguished from a single-company saved brief',async t=>{
+ const ui=await boot(t);ui.click('[data-page="compare"]');
+ await ui.upload(JSON.stringify(buildComparison(data,data.as_of)));
+ assert.match(ui.$('#restore-preview').textContent,/comparison evidence/);
+ assert.match(ui.$('#restore-preview').textContent,/reopen_url/);
+ assert.equal(ui.$('#restore-apply'),null);
+ ui.click('#restore-cancel');assert.ok(ui.$('#export-comparison-csv'));
 });
