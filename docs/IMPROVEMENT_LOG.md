@@ -16,7 +16,7 @@ Adversarial review found and addressed:
 - An invalid scenario could silently export the last valid scenario. Block leaving the scenario form until its inputs are corrected or reset.
 - A brief omitted prior-year denominators needed to recompute growth and accruals. Include prior sourced facts and ratio formulas.
 
-Local verification: 61 Python tests and 20 JavaScript tests; actual browser downloads and invalid-input checks; source membership audit across 51 snapshots; 390 px and 1440 px responsive checks. Published and verified: implementation commit `1c6a706`, Checks run `38622603755` and Pages run `38622603725` succeeded. Six representative live assets matched local bytes. Portfolio update `e670c95` deployed in run `38622653509`; live homepage and profile README matched. The scheduled-refresh workflow is configured; its first manual operational run is the remaining release check.
+Local verification: 61 Python tests and 20 JavaScript tests; actual browser downloads and invalid-input checks; source membership audit across 51 snapshots; 390 px and 1440 px responsive checks. Published and verified: implementation commit `1c6a706`, Checks run `38622603755` and Pages run `38622603725` succeeded. Six representative live assets matched local bytes. Portfolio update `e670c95` deployed in run `38622653509`; live homepage and profile README matched. The first cloud refresh also completed successfully in run `38622980033`, including official-source fetching, tests, raw-source archival, snapshot commit and deployment. Refreshed data commit: `71c51de`. Its live JSON matched the committed bytes. Ongoing hourly reviews are enabled, with explicit adversarial user-workflow checks.
 
 ## Candidate needs, to investigate before implementation
 
