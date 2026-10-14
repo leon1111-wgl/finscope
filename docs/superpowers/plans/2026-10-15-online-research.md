@@ -37,5 +37,5 @@ Files: README, `docs/PRODUCT.md`, `docs/RESEARCH_MODEL.md`, `docs/CASE_STUDY.md`
 
 - [x] Explain problem, requirements, original design, usefulness, worked user journey, precise AI role and limits.
 - [x] Add scheduled refresh with validation before deployment and an artifact version/source manifest. Keep failures observable.
-- [ ] Independent review, full regression suite, build, clean commit and publish. Verify workflow SHA, live bytes and one complete company-to-brief journey.
-- [ ] Update portfolio wording to match delivered capabilities only.
+- [x] Independent review, full regression suite, build, clean commit and publish. Verify workflow SHA, live bytes and one complete company-to-brief journey.
+- [x] Update portfolio wording to match delivered capabilities only.

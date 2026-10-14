@@ -2,7 +2,7 @@
 
 **Timing-aware experiments · Leon Wang**
 
-[Open the online research workspace](https://leon1111-wgl.github.io/finscope/lab.html) · [Portfolio](https://leon1111-wgl.github.io/leon1111-wgl/) · [Methodology](METHODOLOGY.md) · [Research](RESEARCH.md)
+[Open the forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html) · [Portfolio](https://leon1111-wgl.github.io/leon1111-wgl/) · [Methodology](METHODOLOGY.md) · [Research](RESEARCH.md)
 
 A supplier reports a delay on Monday. Your feed receives it on Tuesday. Can a Monday forecast use it? FinScope makes that question visible, then applies it to financial disclosures, social text and rolling model evaluation.
 
