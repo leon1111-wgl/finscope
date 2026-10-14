@@ -25,6 +25,8 @@ FinScope uses fiscal YTD for all four metrics. It does not add quarters together
 
 The model and company stress scenario keep their annual inputs. Interim selection has its own filing-event dates and does not refit the annual anomaly model.
 
+Each current/prior YTD period also carries a [partial cash-flow bridge](CASH_FLOW_BRIDGE.md). Its selected adjustments must match the operating-cash-flow endpoint's exact fiscal dates and filing accession. Missing lines remain null, and unselected differences appear in a calculated residual.
+
 ## Formulas and exported evidence
 
 - Absolute change = current − prior, including negative or zero prior values.

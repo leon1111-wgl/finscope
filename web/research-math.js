@@ -1,3 +1,7 @@
+import {
+  bridgeMarkdown
+} from './cash-bridge.js';
+
 export function selectSnapshot(snapshots, day) {
   return snapshots.filter(s => s.as_of <= day).at(-1) || null;
 }
@@ -178,7 +182,7 @@ function interimMarkdown(selection) {
     text += `\n${label}: ${period.period_start} to ${period.period_end}.\n\n`;
     text += Object.entries(period.metrics).map(([k, f]) => `- ${k}: ${num(f?.value)} · filed ${f?.filed || 'unavailable'} · ${f ? `[${f.tag}](${f.url}) · accession ${f.accession || 'unavailable'}` : 'No matching fact'}`).join('\n') + '\n';
   }
-  return text;
+  return text + bridgeMarkdown(c.current, c.prior);
 }
 export function briefMarkdown(b) {
   return `# ${b.title}\n\nPrepared with ${b.author}.\n\nRequested date: ${b.requested_date}. Financial snapshot: ${b.snapshot_date}. Annual period end: ${b.annual_period}.\n\nDataset SHA-256: ${b.dataset_sha256}\nBuilt: ${b.data_retrieved_build}. Exported: ${b.exported_at}.\n\n## Question\n\nDoes reported profit have cash-flow support, and what changes under a weaker operating scenario?\n\n## Reported evidence (USD)\n\n| Metric | Value | Period end | Filed | Source |\n| --- | ---: | --- | --- | --- |\n` +

@@ -61,6 +61,15 @@ def validate(bundle):
                         if fact:
                             assert fact['filed'] <= record['as_of']
                             assert (fact['start'], fact['end']) == (period['period_start'], period['period_end'])
+                    bridge = period.get('cash_bridge', {})
+                    if bridge.get('status') == 'available':
+                        assert abs(bridge['net_income'] + bridge['selected_adjustments'] + bridge['residual'] - bridge['operating_cash_flow']) < .01
+                        for component in bridge['components']:
+                            fact = component['fact']
+                            if fact:
+                                assert fact['filed'] <= record['as_of']
+                                assert fact['accession'] == bridge['accession']
+                                assert (fact['start'], fact['end']) == (period['period_start'], period['period_end'])
     latest = bundle['snapshots'][-1]
     for rows in latest['companies'].values():
         assert (date.fromisoformat(bundle['as_of']) - date.fromisoformat(rows[-1]['period_end'])).days < 600, 'Annual data unexpectedly stale'
@@ -130,7 +139,7 @@ def main():
         ai = score_profiles(histories, day)
         snapshots.append({'as_of': day, 'companies': {t: rows[-6:] for t, rows in histories.items()}, 'ai': ai})
     bundle = {
-        'schema_version': '2.1.0', 'data_kind': 'real_official_financial_evidence',
+        'schema_version': '2.2.0', 'data_kind': 'real_official_financial_evidence',
         'as_of': args.as_of, 'generated_at': stamp(), 'sources': sources,
         'companies': [{'ticker': t, 'cik': cik, 'name': payloads[t]['entityName']} for t, cik in COMPANIES.items()],
         'snapshots': snapshots, 'rates': [rates[d] for d in sorted(rates)],
@@ -139,6 +148,7 @@ def main():
         'limitations': ['Filing-day reconstruction from currently retrieved CompanyFacts, not an archived point-in-time database.',
                         'Annual model and scenarios; separate fiscal YTD checkpoints cover matched standard 10-Q facts only, not every quarterly disclosure or trailing-twelve-month results.',
                         'Six selected surviving technology/platform businesses are not a market-representative sample.',
+                        'The cash-flow bridge maps selected standard-tag adjustments; its residual includes other and unmapped items, not a verified causal explanation.',
                         'Anomaly percentiles describe unusual profiles, not fraud/default probabilities or investment returns.',
                         'All stress results are user assumptions, not company forecasts.']}
     validate(bundle)

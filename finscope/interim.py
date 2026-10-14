@@ -2,6 +2,7 @@
 from datetime import date, timedelta
 
 from finscope.fundamentals import candidates, divide
+from finscope.cash_bridge import bridge_candidates, cash_bridge
 
 KEYS = ('revenue', 'net_income', 'operating_income', 'operating_cash_flow')
 
@@ -36,6 +37,7 @@ def interim_snapshots(payload, as_of):
     annual = candidates(payload, 'revenue', as_of)
     pool = {key: candidates(payload, key, as_of, forms=('10-Q', '10-Q/A'),
                             duration_bounds=(60, 310)) for key in KEYS}
+    adjustment_pool = bridge_candidates(payload, as_of)
     dates = sorted({f['filed'] for rows in [annual, *pool.values()] for f in rows
                     if f['filed'] >= '2018-01-01'})
     result = []
@@ -56,6 +58,9 @@ def interim_snapshots(payload, as_of):
                          and 350 <= (date.fromisoformat(anchor['end']) - date.fromisoformat(f['end'])).days <= 380
                          and abs((date.fromisoformat(f['end']) - date.fromisoformat(f['start'])).days - duration) <= 8]
         prior = period(pool, max(prior_anchors, key=rank), day) if prior_anchors else None
+        current['cash_bridge'] = cash_bridge(adjustment_pool, current, day)
+        if prior:
+            prior['cash_bridge'] = cash_bridge(adjustment_pool, prior, day)
         changes = {}
         for key in KEYS:
             a, b = value(current, key), value(prior, key)

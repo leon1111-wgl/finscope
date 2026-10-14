@@ -14,6 +14,7 @@ Earnings have grown. Does that growth have cash-flow support? What would a weake
 | --- | --- |
 | Review the evidence | Annual profit/cash trends, liquidity ratios, exact SEC facts and filing links |
 | Check what changed | Newer fiscal YTD revenue, profit and operating cash flow versus the same period last year |
+| Explain the cash gap | Selected non-cash and working-capital adjustments, visible remainder, source links and a downloadable waterfall |
 | Compare companies | Six financial profiles with explicit fiscal dates and missing-data labels |
 | Inspect AI triage | Historical-profile anomaly percentile plus underlying ratios and training boundaries |
 | Test assumptions | Browser calculations for revenue, margin, refinancing costs and collection delays |
@@ -38,6 +39,8 @@ This is an original research workflow built on open-source tools and public data
 5. Select **Take your brief** and export Markdown or JSON. Add a human conclusion after reading the latest quarterly filing and management discussion.
 
 [Read the worked numbers, interpretation and follow-up questions](docs/CASE_STUDY.md).
+
+To investigate a newer operating-cash gap, select **NVDA → Review the evidence** and open the fiscal YTD checkpoint. Follow the profit-to-cash waterfall, compare the prior period and expand the source/sign detail. Download the SVG for a presentation or include the full comparison in your research brief. [Cash-flow bridge method and limits](docs/CASH_FLOW_BRIDGE.md).
 
 ## Architecture
 

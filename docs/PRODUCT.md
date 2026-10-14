@@ -26,6 +26,7 @@ This is a gap in the previous project, not a claim that commercial financial pla
 
 1. Open the live workspace. Microsoft is selected by default.
 2. Read the annual period and filing date. Compare net income with operating cash flow. Check the newer fiscal YTD panel for changes since that annual report.
+   Use the partial cash-flow bridge to identify disclosed adjustments and the remainder still requiring investigation. Inspect its source/sign detail before assigning a business cause.
 3. Open the exact-value table and the reported-input evidence links. Decide what additional filing section you need.
 4. Compare the six profiles. Treat differences as questions about their business models.
 5. Open **Test assumptions**. Try the preset downside, then replace its assumed refinancing exposure with an exposure you want to investigate.

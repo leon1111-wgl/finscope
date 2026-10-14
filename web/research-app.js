@@ -1,4 +1,8 @@
 import {
+  bridgeMarkup,
+  cashBridgeSVG
+} from './cash-bridge.js';
+import {
   escapeHTML as e
 } from './workbench.js';
 import {
@@ -139,7 +143,7 @@ function interimMarkup(selection, includeSources = true) {
     <div class="kpis">${kpi('Current cash margin',pct(c.current_cash_margin),'Operating cash flow ÷ revenue')}${kpi('Prior cash margin',pct(c.prior_cash_margin),'Same fiscal YTD last year')}${kpi('Cash-margin change',pp(c.cash_margin_change_pp),'Percentage points, not percent growth')}${kpi('Operating-margin change',pp(c.operating_margin_change_pp),'Operating income ÷ revenue')}</div>
     <div class="question"><strong>A question worth investigating</strong><p>${e(interimSummary(selection))}</p></div>
     <p class="note">Growth = current / prior − 1. A missing or nonpositive prior value makes percentage growth unavailable; absolute changes remain visible. The annual AI score and scenario do not use or annualize these interim values.</p>
-    ${includeSources ? `<details><summary>Trace the matched YTD facts and formulas</summary><h4>Current YTD · ${period(c.current)}</h4>${factsTable(c.current.metrics)}${c.prior ? `<h4>Prior YTD · ${period(c.prior)}</h4>${factsTable(c.prior.metrics)}` : '<p>Prior matching revenue period unavailable; no growth comparison is made.</p>'}<p>Each flow must match both the fiscal start and end. Prior-year duration may differ by up to eight days to allow a 53-week fiscal calendar. Cash-margin change = (current cash flow / current revenue − prior cash flow / prior revenue) × 100. Operating-margin change uses operating income instead of cash flow.</p><p><a href="https://www.ecfr.gov/current/title-17/chapter-II/part-210/section-210.10-01" target="_blank" rel="noopener noreferrer">Why interim cash-flow comparisons use fiscal YTD ↗</a></p></details>` : `<p class="note">Interim source filings: ${[...new Map([c.current,c.prior].filter(Boolean).flatMap(p=>Object.values(p.metrics).filter(Boolean)).map(f=>[f.url,f])).values()].map(f=>`<a href="${e(f.url)}">${e(f.form)} · ${f.filed} · ${e(f.accession)}</a>`).join('; ')}. Exact metric-to-source mappings are in both downloads.</p>`}`;
+    ${includeSources ? `<details><summary>Trace the matched YTD facts and formulas</summary><h4>Current YTD · ${period(c.current)}</h4>${factsTable(c.current.metrics)}${c.prior ? `<h4>Prior YTD · ${period(c.prior)}</h4>${factsTable(c.prior.metrics)}` : '<p>Prior matching revenue period unavailable; no growth comparison is made.</p>'}<p>Each flow must match both the fiscal start and end. Prior-year duration may differ by up to eight days to allow a 53-week fiscal calendar. Cash-margin change = (current cash flow / current revenue − prior cash flow / prior revenue) × 100. Operating-margin change uses operating income instead of cash flow.</p><p><a href="https://www.ecfr.gov/current/title-17/chapter-II/part-210/section-210.10-01" target="_blank" rel="noopener noreferrer">Why interim cash-flow comparisons use fiscal YTD ↗</a></p></details>` : `<p class="note">Interim source filings: ${[...new Map([c.current,c.prior].filter(Boolean).flatMap(p=>Object.values(p.metrics).filter(Boolean)).map(f=>[f.url,f])).values()].map(f=>`<a href="${e(f.url)}">${e(f.form)} · ${f.filed} · ${e(f.accession)}</a>`).join('; ')}. Exact metric-to-source mappings are in both downloads.</p>`}${bridgeMarkup(c.current,c.prior,company.ticker,!includeSources)}`;
 }
 
 function review() {
@@ -266,6 +270,10 @@ function render() {
     brief,
     method
   } [page] || review)();
+  $('#export-cash-svg')?.addEventListener('click', () => {
+    const selected = selectInterim(bundle, company.ticker, selectedDate, row);
+    if (selected.checkpoint) download(cashBridgeSVG(selected.checkpoint.current, company.ticker), 'image/svg+xml', 'svg');
+  });
   document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
     show(b.dataset.go);
     $('#workspace').scrollIntoView();

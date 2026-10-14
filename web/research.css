@@ -951,3 +951,11 @@ code {
 .interim-periods span, .interim-periods strong { display: block; }
 .interim-periods span { color: #b3c3d4; margin-bottom: 8px; }
 .interim-periods strong { font-size: 1rem; line-height: 1.6; }
+
+.cash-bridge { margin-top: 32px; border-top: 1px solid #35495b; padding-top: 20px; }
+.cash-bridge h4 { font-size: 1.2rem; line-height: 1.5; margin-bottom: 12px; }
+.bridge-scroll { overflow-x: auto; border: 1px solid #35495b; border-radius: 12px; margin: 20px 0 10px; }
+.cash-waterfall { display: block; width: 100%; min-width: 800px; height: auto; }
+.cash-bridge th[scope="row"] { white-space: normal; min-width: 170px; font-weight: 500; }
+.cash-bridge h5 { font-size: 1rem; margin: 24px 0 10px; }
+@media print { .bridge-scroll, #export-cash-svg { display: none; } .cash-bridge { border-color: #aaa; } }

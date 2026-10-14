@@ -17,8 +17,12 @@ METRICS = {
 
 
 def candidates(payload, key, as_of, *, forms=('10-K', '10-K/A'), duration_bounds=(330, 400)):
-    cutoff = date.fromisoformat(as_of)
     kind, tags = METRICS[key]
+    return fact_candidates(payload, tags, as_of, kind=kind, forms=forms, duration_bounds=duration_bounds)
+
+
+def fact_candidates(payload, tags, as_of, *, kind='flow', forms=('10-K', '10-K/A'), duration_bounds=(330, 400)):
+    cutoff = date.fromisoformat(as_of)
     found = []
     for priority, tag in enumerate(tags):
         for row in payload.get('facts', {}).get('us-gaap', {}).get(tag, {}).get('units', {}).get('USD', []):

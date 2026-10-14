@@ -6,6 +6,14 @@ Improve an actual user task. Start with a reproducible failure or a clearly unme
 
 Adversarial review is internal work by Codex: take the perspective of a first-time reader, an analyst, a mobile visitor and a recipient of an exported brief. Find and fix weaknesses proactively. It is not a request for a public visitor-feedback or bug-submission feature.
 
+## 2026-10-15 — Explain the profit-to-cash gap
+
+User task: after noticing a newer YTD cash-margin change, identify disclosed accounting adjustments and a concrete question to take into the filing. The previous view showed the change but left this investigation entirely manual.
+
+Implemented: a partial, same-filing cash-flow bridge for five selected adjustment groups; current/prior signed comparisons; a waterfall with SVG download; source/sign drill-down; a specific working-capital follow-up prompt; portable Markdown/JSON/print content. Missing facts remain null, and other/unmapped adjustments stay a visible calculated remainder. The annual model and scenarios remain separate. [Design and limitations](CASH_FLOW_BRIDGE.md).
+
+Independent review: all 314 current/prior bridges reconcile; 1,288 component facts matched cached SEC records; 282 missing component slots remained null. Browser connection remains unavailable; chart export is rendered and visually inspected separately, while browser interaction verification is pending. Local verification: 76 Python and 29 JavaScript tests passed, including sign reversals, zero versus absent values, source/period boundaries, exclusive tag selection, residual arithmetic, chart geometry and export source retention. The standalone SVG was rasterized and visually inspected; this is not a browser screenshot. All previous annual/model snapshots and interim values remain unchanged, and original source retrieval metadata is preserved. Deployment evidence will follow.
+
 ## 2026-10-15 — Newer interim evidence
 
 User task: decide whether the annual profit/cash picture has changed in subsequent operations. The annual-only workflow left that question unanswered.
