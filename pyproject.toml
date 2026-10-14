@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "finscope"
+version = "0.1.0"
+description = "Evidence-grounded financial risk research workbench"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26,<3", "pandas>=2.0,<3", "scikit-learn>=1.4,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "httpx>=0.28,<1"]
+sec = ["edgartools>=4,<6"]
+server = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1"]
+
+[project.scripts]
+finscope = "finscope.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["finscope*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

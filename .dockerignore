@@ -1,0 +1,9 @@
+*
+!requirements.lock
+!pyproject.toml
+!finscope/
+!finscope/**
+!web/
+!web/**
+**/__pycache__
+**/*.pyc
