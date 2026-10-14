@@ -963,3 +963,10 @@ code {
 .evidence-links { display: inline-block; line-height: 1.7; }
 .evidence-links small { display: block; font-size: .88rem; color: #b3c3d4; overflow-wrap: anywhere; margin-top: 4px; }
 @media print { .evidence-links small { color: #333; } }
+
+.saved-brief { margin: 1rem 0; padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+.saved-brief p { max-width: 75ch; }
+.saved-brief label { display: block; margin-bottom: .5rem; }
+.saved-brief input { max-width: 100%; }
+#restore-preview code { overflow-wrap: anywhere; }
+#restore-message:empty { display: none; }

@@ -4,6 +4,8 @@
 
 GitHub Pages serves `web/`. The public research workspace executes its corporate and bond scenarios in the browser. Python model fitting happens during snapshot builds, not on the public server. The original local experiment API remains loopback-only and is accessed through `lab.html`.
 
+Shared research links and new JSON briefs record both the dataset hash and the client calculation version. A changed or missing version requires an explicit current-data choice before applying saved inputs. See [reopening behavior](REOPEN_BRIEF.md). Increment `CALCULATION_VERSION` when client calculation semantics change. CI installs pinned DOM test dependencies with `npm ci --ignore-scripts`; the public site remains native JavaScript without an npm build.
+
 No credentials or identifying SEC contact address are placed in the public JSON. Data sources are fixed official endpoints. The source manifest records URLs, retrieval timestamps and raw SHA-256 hashes. The bundle hash is SHA-256 of sorted compact JSON before adding its own `dataset_sha256` key. This hash includes build and source metadata.
 
 ## Refresh

@@ -6,6 +6,18 @@ Improve an actual user task. Start with a reproducible failure or a clearly unme
 
 Adversarial review is internal work by Codex: take the perspective of a first-time reader, an analyst, a mobile visitor and a recipient of an exported brief. Find and fix weaknesses proactively. It is not a request for a public visitor-feedback or bug-submission feature.
 
+## 2026-10-15 — Reopen an analyst's saved brief
+
+Reproduced user failures: JSON briefs had no restoration path; shared URLs did not identify the evidence version; invalid shared assumptions silently fell back to zero shock; `2026-02-30` was accepted by the export function. A recipient could think the original analysis had been restored even when inputs or data differed.
+
+Implemented: local JSON selection restore with a preview and apply/cancel; versioned URLs in copied links, JSON and Markdown; explicit approval when the data or calculation version differs or is absent; strict calendar/date/assumption validation; current-data recomputation that ignores imported financial facts and model outputs. Fractional scenario inputs remain editable. No account, upload or archive-retrieval service was added. [User workflow and compatibility rules](REOPEN_BRIEF.md).
+
+Independent review reproduced an asynchronous file-read race that could erase a newly invalid draft. The app now revalidates on both successful and failed reads before opening a preview; the delayed-read regression passes. Focused review found no remaining blocker. Browser connection still times out, so native file selection/downloads, keyboard behavior and visual layout remain unverified. DOM integration tests cover the application handlers and state transitions without a browser, network requests or real downloads.
+
+Validation: 92 Python and 58 JavaScript tests passed, including eight DOM integration flows. All 312 company/date cases reproduced the same selected facts, ratios, interim evidence, anomaly/model records, scenario results and Treasury context through both JSON and versioned URL restoration. Legacy JSON requires an explicit current-version choice. The evidence bundle is byte-identical to the preceding release; no data or model rebuild was performed. Exact deployment verification is recorded after publication.
+
+Next step: preserve or locate a historical evidence bundle when an old version is unavailable; keep recalculation distinct from exact historical reproduction. Continue investigating the cash-flow remainder and statement references separately.
+
 ## 2026-10-15 — Open the financial evidence directly
 
 Reproducible user friction: the evidence table and exported brief opened an SEC archive directory, leaving a student or analyst to identify the report among exhibits and XBRL files. A reviewer could trace an accession, but could not immediately read its financial discussion.

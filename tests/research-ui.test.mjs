@@ -66,3 +66,8 @@ test('brief includes prior sourced denominators and formulas for growth and accr
   assert.match(brief.ratio_formulas.accruals,/previous-year total assets/);
   assert.match(briefMarkdown(brief),/https:\/\/www.sec.gov\/prior/);
 });
+test('brief refuses a nonexistent calendar day instead of normalizing it',()=>{
+  const b={as_of:'2026-03-01',rates:[]};
+  const s={as_of:'2026-02-01',companies:{EX:[row]},ai:{scores:{},training:{}}};
+  assert.throws(()=>buildBrief(b,s,{ticker:'EX'},inputs,'2026-02-30'),/date/i);
+});

@@ -1,3 +1,4 @@
+import {CALCULATION_VERSION, validDate, validateAssumptions, researchQuery} from './research-state.js';
 import {evidenceMarkdown} from './evidence-links.js';
 import {
   bridgeMarkdown
@@ -42,6 +43,7 @@ function bounded(value, lo, hi, name) {
   return value;
 }
 export function stressCompany(row, input) {
+  input = validateAssumptions(input);
   const revenue = row.metrics.revenue?.value,
     operating = row.metrics.operating_income?.value;
   if (!Number.isFinite(revenue) || revenue <= 0 || !Number.isFinite(operating)) throw new Error('Revenue and operating income are required for this scenario.');
@@ -113,7 +115,7 @@ export function reviewQuestions(row) {
   return questions;
 }
 export function buildBrief(bundle, snapshot, company, assumptions, requestedDate) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedDate) || !Number.isFinite(Date.parse(requestedDate)) || requestedDate < snapshot.as_of || (bundle.as_of && requestedDate > bundle.as_of)) throw new Error('Information date must include the selected snapshot and remain within the dataset range.');
+  if (!validDate(requestedDate) || requestedDate < snapshot.as_of || (bundle.as_of && requestedDate > bundle.as_of)) throw new Error('Information date must include the selected snapshot and remain within the dataset range.');
   const row = snapshot.companies[company.ticker].at(-1);
   let scenario = null,
     scenarioError = null;
@@ -122,7 +124,15 @@ export function buildBrief(bundle, snapshot, company, assumptions, requestedDate
   } catch (error) {
     scenarioError = error.message;
   }
+  let reopenURL = null;
+  try {
+    if (/^[a-f0-9]{64}$/.test(bundle.dataset_sha256)) reopenURL = 'https://leon1111-wgl.github.io/finscope/?' + researchQuery({ticker: company.ticker, date: requestedDate, view: 'brief', assumptions}, bundle.dataset_sha256) + '#workspace';
+  } catch { /* An invalid scenario has no restorable link. */ }
   return {
+    brief_format: 'finscope-company-review',
+    brief_version: 1,
+    calculation_version: CALCULATION_VERSION,
+    reopen_url: reopenURL,
     title: `${company.ticker} · earnings quality and financial resilience`,
     author: 'FinScope by Leon Wang',
     exported_at: new Date().toISOString(),
@@ -186,7 +196,7 @@ function interimMarkdown(selection) {
   return text + bridgeMarkdown(c.current, c.prior);
 }
 export function briefMarkdown(b) {
-  return `# ${b.title}\n\nPrepared with ${b.author}.\n\nRequested date: ${b.requested_date}. Financial snapshot: ${b.snapshot_date}. Annual period end: ${b.annual_period}.\n\nDataset SHA-256: ${b.dataset_sha256}\nBuilt: ${b.data_retrieved_build}. Exported: ${b.exported_at}.\n\n## Question\n\nDoes reported profit have cash-flow support, and what changes under a weaker operating scenario?\n\n## Reported evidence (USD)\n\n| Metric | Value | Period end | Filed | Source |\n| --- | ---: | --- | --- | --- |\n` +
+  return `# ${b.title}\n\nPrepared with ${b.author}.\n\n${b.reopen_url ? `[Reopen this research view](${b.reopen_url})\n\n` : ''}To restore a JSON brief, use Open a saved brief in the workspace. The file stays on your device. FinScope restores selection inputs and recalculates from its own data. A changed dataset requires an explicit choice; a matching identifier is not proof that an imported file is authentic.\n\nRequested date: ${b.requested_date}. Financial snapshot: ${b.snapshot_date}. Annual period end: ${b.annual_period}.\n\nDataset SHA-256: ${b.dataset_sha256}\nCalculation version: ${b.calculation_version}.\nBuilt: ${b.data_retrieved_build}. Exported: ${b.exported_at}.\n\n## Question\n\nDoes reported profit have cash-flow support, and what changes under a weaker operating scenario?\n\n## Reported evidence (USD)\n\n| Metric | Value | Period end | Filed | Source |\n| --- | ---: | --- | --- | --- |\n` +
     Object.entries(b.facts).map(([k, f]) => `| ${k} | ${num(f?.value)} | ${f?.end||'—'} | ${f?.filed||'—'} | ${f ? `${f.tag || 'Filing'} · ${evidenceMarkdown(f)}` : 'Unavailable'} |`).join('\n') +
     `\n\n## Prior annual inputs for growth and average assets\n\n` + (b.prior_annual_period ? `Prior period end: ${b.prior_annual_period.period_end}.\n\n` + ['revenue', 'assets'].map(k => {
       const f = b.prior_annual_period.metrics[k];

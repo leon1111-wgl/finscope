@@ -14,6 +14,9 @@
 <div id="freshness" class="freshness" role="status">Loading official financial evidence…</div>
 <section id="workspace" class="workspace" aria-label="Company research workspace">
 <div class="workspace-heading"><div><p class="eyebrow">RESEARCH WORKSPACE</p><h2>One question. A traceable answer.</h2></div><span class="pill">Real SEC filings · browser calculations</span></div>
+<details id="saved-brief" class="saved-brief no-print"><summary>Open a saved brief</summary><p>Restore the company, date and assumptions from a downloaded FinScope JSON brief. The file stays on your device. Financial values and conclusions in the file are not imported.</p><label for="brief-file">Choose evidence brief (.json, up to 2 MB)</label><input id="brief-file" type="file" accept=".json,application/json" disabled></details>
+<p id="restore-message" class="note no-print" role="status" aria-live="polite"></p>
+<div id="restore-preview" class="no-print" hidden></div>
 <form class="filters" id="selection" aria-label="Company and information date"><label>Company<select id="company" disabled><option>Loading…</option></select></label><label>Information date<input id="as-of" type="date" disabled></label><button type="button" id="latest" disabled>Use latest snapshot</button></form>
 <p id="scope" class="scope"></p>
 <nav class="steps" aria-label="Research steps"><button data-page="review" aria-current="page">01 <span>Review the evidence</span></button><button data-page="compare">02 <span>Compare companies</span></button><button data-page="stress">03 <span>Test assumptions</span></button><button data-page="brief">04 <span>Take your brief</span></button><button data-page="method">About the project</button></nav>

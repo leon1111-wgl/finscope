@@ -37,6 +37,7 @@ This is an original research workflow built on open-source tools and public data
 3. Compare profiles, paying attention to differing fiscal dates.
 4. Select **Test assumptions → Try a downside case**. The preset assumes revenue −10%, margin −2 percentage points, $10B refinanced at +100 basis points and collections delayed by 15 days. Replace these assumptions with your own.
 5. Select **Take your brief** and export Markdown or JSON. Add a human conclusion after reading the latest quarterly filing and management discussion.
+6. Reopen the JSON through **Open a saved brief**, or use its versioned link. Inspect the restored inputs. If the data or calculation version differs, explicitly choose whether to recalculate. [Reopening and version rules](docs/REOPEN_BRIEF.md).
 
 [Read the worked numbers, interpretation and follow-up questions](docs/CASE_STUDY.md).
 
@@ -85,6 +86,7 @@ python scripts/build_research.py
 # Rebuild from the downloaded raw files and their original source metadata:
 python scripts/build_research.py --offline
 python -m pytest -q
+npm ci --ignore-scripts  # DOM test dependency only; no frontend build
 node --test tests/*.test.mjs
 ```
 

@@ -1,3 +1,4 @@
+import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';
 import {
   bridgeMarkup,
@@ -42,6 +43,7 @@ const names = {
 };
 const ratioFormat = (key, value) => ['current_ratio', 'cash_coverage'].includes(key) ? ratio(value) : pct(value);
 let bundle, snapshot, company, row, selectedDate, page = 'review';
+let pendingRestore = null, restoreSequence = 0, ready = false;
 let assumptions = {
   revenuePercent: 0,
   marginPoints: 0,
@@ -56,17 +58,87 @@ const table = (heads, rows) => `<div class="table-wrap" tabindex="0" role="regio
 const factsTable = metrics => table(['Reported metric', 'USD billions', 'Period end', 'Filed', 'Evidence'], Object.entries(metrics).map(([key, f]) => [names[key] || e(key), money(f?.value), f?.end || '—', f?.filed || '—', f ? evidenceLink(f) : 'No matching standard USD fact']));
 
 function updateURL() {
-  const query = new URLSearchParams({
-    company: company.ticker,
-    date: selectedDate,
-    view: page
-  });
-  for (const [key, value] of Object.entries(assumptions))
-    if (value !== 0) query.set(key, value);
+  if (!ready || pendingRestore) return;
+  const query = researchQuery({ticker: company.ticker, date: selectedDate, view: page, assumptions}, bundle.dataset_sha256);
   history.replaceState(null, '', `${location.pathname}?${query}${location.hash}`);
 }
 
+function setResearchSelection(ticker, day) {
+  company = bundle.companies.find(c => c.ticker === ticker);
+  selectedDate = day;
+  snapshot = selectSnapshot(bundle.snapshots, day);
+  row = snapshot.companies[ticker].at(-1);
+  $('#company').value = ticker;
+  $('#as-of').value = day;
+  $('#scope').textContent = `${company.name} · Annual period ended ${row.period_end} · Financial snapshot ${snapshot.as_of} (on or before your selected date) · Latest selected annual filing ${row.known_at}.`;
+}
+
+function lockResearch(locked) {
+  for (const el of document.querySelectorAll('#selection input, #selection select, #selection button, [data-page], #brief-file')) el.disabled = locked;
+}
+
+function applySavedSelection(selection, allowCurrentData = false) {
+  const accepted = approveSelection(selection, bundle, {allowCurrentData});
+  pendingRestore = null;
+  $('#restore-preview').hidden = true;
+  assumptions = accepted.assumptions;
+  page = accepted.view;
+  setResearchSelection(accepted.ticker, accepted.date);
+  lockResearch(false);
+  $('#status').textContent = '';
+  render();
+}
+
+function previewSavedSelection(selection, error = null, source = 'file') {
+  pendingRestore = {selection, source};
+  lockResearch(true);
+  const target = $('#restore-preview');
+  target.hidden = false;
+  const version = selection?.versionStatus;
+  const heading = error ? 'Saved view could not be opened' : version === 'changed' ? 'The data or calculation version has changed' : version === 'unversioned' ? 'The saved version is incomplete' : 'Review the saved inputs';
+  const detail = error ? `<p class="error">${e(error)}</p>` : `<p>${e(selection.ticker)} · Information date ${e(selection.date)}</p><p>${version === 'match' ? 'The recorded data and calculation versions match this site. Restore the inputs and recompute the results.' : 'The original calculations cannot be reproduced with this site’s current data and calculation rules with certainty. You can explicitly recalculate the saved inputs using current data, or cancel.'}</p><dl><dt>Saved dataset</dt><dd><code>${e(selection.dataset || 'Not recorded')}</code></dd><dt>Current dataset</dt><dd><code>${e(bundle.dataset_sha256)}</code></dd><dt>Calculation version</dt><dd>Saved: ${e(selection.calculation || 'Not recorded')} · Current: ${CALCULATION_VERSION}</dd></dl>${table(['Assumption','Saved input'],[['Revenue change',selection.assumptions.revenuePercent+'%'],['Margin change',selection.assumptions.marginPoints+' percentage points'],['Refinancing exposure',selection.assumptions.refinanceBillions+' USD billions'],['Rate change',selection.assumptions.rateBps+' basis points'],['Collection delay',selection.assumptions.collectionDays+' days']])}<p class="note">Only these inputs are restored. Saved financial values and model outputs are not trusted or imported. A matching identifier does not authenticate an edited file.</p>`;
+  target.innerHTML = panel(heading, `${detail}<div class="actions">${selection ? `<button class="primary" id="restore-apply">${version === 'match' ? 'Restore these inputs' : 'Recalculate with current data'}</button>` : ''}<button id="restore-cancel">${source === 'link' ? 'Start a new review' : 'Cancel and keep my review'}</button></div>`);
+  $('#scope').textContent = 'Saved inputs have not been applied.';
+  $('#content').innerHTML = '<p class="empty">Review the saved inputs above before continuing. No recalculated result is shown yet.</p>';
+  $('#restore-apply')?.addEventListener('click', () => {
+    try {
+      const original = pendingRestore.selection;
+      applySavedSelection(original, original.versionStatus !== 'match');
+      $('#restore-message').textContent = original.versionStatus === 'match' ? 'Inputs restored. Results were recomputed from this site’s data; saved financial values were not imported.' : 'Recalculated with current data and formulas. These results may differ from the original brief. New exports record both current versions.';
+    } catch (err) { $('#status').textContent = err.message; }
+  });
+  $('#restore-cancel').addEventListener('click', () => {
+    applySavedSelection({ticker: company.ticker, date: selectedDate, view: page, assumptions, dataset: bundle.dataset_sha256, calculation: CALCULATION_VERSION});
+    $('#restore-message').textContent = 'Saved inputs were not applied. Your current review is available.';
+  });
+  const title = target.querySelector('h3');
+  title.tabIndex = -1;
+  title.focus();
+}
+
+async function openSavedBrief(event) {
+  const file = event.target.files[0];
+  if (!file || !validScenarioDraft()) { event.target.value = ''; return; }
+  const sequence = ++restoreSequence;
+  $('#restore-message').textContent = 'Reading the brief on your device…';
+  try {
+    if (file.size > MAX_BRIEF_BYTES) throw new Error('Choose a FinScope JSON brief smaller than 2 MB.');
+    const text = await file.text();
+    if (sequence !== restoreSequence) return;
+    if (!validScenarioDraft()) { $('#restore-message').textContent = 'The file was not applied. Correct the current scenario, then choose the file again.'; return; }
+    previewSavedSelection(selectionFromBrief(text, bundle));
+    $('#restore-message').textContent = '';
+  } catch (error) {
+    if (sequence === restoreSequence) {
+      if (!validScenarioDraft()) { $('#restore-message').textContent = 'The file was not applied. Correct the current scenario, then choose the file again.'; return; }
+      previewSavedSelection(null, error.message);
+      $('#restore-message').textContent = '';
+    }
+  } finally { if (sequence === restoreSequence) event.target.value = ''; }
+}
+
 function validScenarioDraft() {
+  if (pendingRestore) { $('#status').textContent = 'Choose how to handle the saved view above before continuing.'; return false; }
   const form = $('#scenario-form');
   if (form && !form.checkValidity()) {
     $('#status').textContent = 'Correct the scenario inputs before changing the research view or exporting.';
@@ -83,16 +155,12 @@ function useSelection() {
     return;
   }
   const day = $('#as-of').value;
-  if (!day || day < bundle.snapshots[0].as_of || day > bundle.as_of) {
+  if (!validDate(day) || day < bundle.snapshots[0].as_of || day > bundle.as_of) {
     $('#as-of').value = selectedDate;
     $('#status').textContent = `Choose a date from ${bundle.snapshots[0].as_of} through ${bundle.as_of}. Your previous valid selection is restored.`;
     return;
   }
-  selectedDate = day;
-  snapshot = selectSnapshot(bundle.snapshots, day);
-  company = bundle.companies.find(c => c.ticker === $('#company').value);
-  row = snapshot.companies[company.ticker].at(-1);
-  $('#scope').textContent = `${company.name} · Annual period ended ${row.period_end} · Financial snapshot ${snapshot.as_of} (on or before your selected date) · Latest selected annual filing ${row.known_at}.`;
+  setResearchSelection($('#company').value, day);
   $('#status').textContent = '';
   render();
 }
@@ -170,7 +238,7 @@ function compare() {
   });
   return `<p class="eyebrow">02 / FIND CONTEXT</p><h2>Similar questions. Different businesses.</h2><p class="muted">Compare six selected technology and platform businesses. Their fiscal calendars, business models and capital needs differ.</p>${panel('Financial profiles',table(['Company','Period ended','Operating margin','Cash margin','Current ratio','Liabilities / assets','Anomaly percentile'],rows)+`<p class="note">This is a comparison set, not a sector benchmark or a ranking of investment quality. Some companies have newer fiscal periods. A high anomaly score can reflect exceptional growth or structural differences.</p>`)}${panel('Newer interim coverage',`<p class="note">Choose a company to inspect matched YTD inputs. Fiscal periods differ, so these changes are context rather than a league table.</p>${table(['Company','Newer YTD period','Cash-margin change'],bundle.companies.map(c=>{const i=selectInterim(bundle,c.ticker,selectedDate,snapshot.companies[c.ticker].at(-1));const v=i.checkpoint;return [`<button class="table-button" data-company="${c.ticker}">${c.ticker} ↗</button>`,v?`${v.current.period_start} → ${v.current.period_end}`:i.status==='covered_by_annual'?'Covered by annual accounts':'Unavailable',Number.isFinite(v?.cash_margin_change_pp)?v.cash_margin_change_pp.toFixed(2)+' pp':'—'];}))}`)}${panel('How to use the comparison',`<div class="timeline"><div><strong>1. Start with the business</strong><p>A retailer, a chip designer and a software vendor have different inventory and working-capital needs.</p></div><div><strong>2. Compare the cash margin</strong><p>Ask how much operating cash is generated per dollar of revenue. Then inspect changes over time.</p></div><div><strong>3. Read the maturity note</strong><p>A current ratio gives a snapshot. Debt terms and cash generation determine when funds are needed.</p></div><div><strong>4. Follow the anomaly</strong><p>Use the score to prioritize reading. Confirm the reason in the filing and record uncertainty.</p></div></div>`)}<div class="actions"><button data-go="review">← Back to evidence</button><button class="primary" data-go="stress">Next: test assumptions →</button></div>`;
 }
-const input = (key, label, min, max, step, help) => `<label>${label}<input type="number" data-assumption="${key}" value="${assumptions[key]}" min="${min}" max="${max}" step="${step}" required><span class="field-help">${help}</span></label>`;
+const input = (key, label, min, max, step, help) => `<label>${label}<input type="number" data-assumption="${key}" value="${assumptions[key]}" min="${min}" max="${max}" step="any" required><span class="field-help">${help}</span></label>`;
 
 function stress() {
   const rates = bundle.rates.filter(r => r.date <= selectedDate),
@@ -314,7 +382,7 @@ function render() {
   $('#copy-link')?.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(location.href);
-      $('#status').textContent = 'Link copied. It includes your company, date and corporate scenario.';
+      $('#status').textContent = 'Link copied with company, date, scenario, data and calculation versions. A version change will require a new choice.';
     } catch {
       $('#status').textContent = 'Copy the current browser address; it includes this research view.';
     }
@@ -340,26 +408,10 @@ async function init() {
     bundle = await response.json();
     if (bundle.data_kind !== 'real_official_financial_evidence') throw new Error('Unexpected data type');
     $('#company').innerHTML = bundle.companies.map(c => `<option value="${c.ticker}">${c.ticker} · ${e(c.name)}</option>`).join('');
-    $('#company').value = bundle.companies.some(c => c.ticker === params.get('company')) ? params.get('company') : 'MSFT';
     const dateInput = $('#as-of');
     dateInput.min = bundle.snapshots[0].as_of;
     dateInput.max = bundle.as_of;
-    const requested = params.get('date');
-    dateInput.value = requested && requested >= dateInput.min && requested <= dateInput.max ? requested : bundle.as_of;
-    selectedDate = dateInput.value;
-    page = ['review', 'compare', 'stress', 'brief', 'method'].includes(params.get('view')) ? params.get('view') : 'review';
-    const proposed = {
-      ...assumptions
-    };
-    for (const k of Object.keys(proposed))
-      if (params.has(k)) proposed[k] = Number(params.get(k));
-    const first = selectSnapshot(bundle.snapshots, dateInput.value).companies[$('#company').value].at(-1);
-    try {
-      stressCompany(first, proposed);
-      assumptions = proposed;
-    } catch {
-      /* Invalid shared assumptions fall back to zero-shock baseline. */
-    }
+    setResearchSelection('MSFT', bundle.as_of);
     const age = Math.floor((Date.now() - Date.parse(bundle.generated_at)) / 86400000),
       lastRate = bundle.rates.at(-1).date;
     $('#freshness').innerHTML = `<strong>Official-source snapshot</strong> · Built ${e(bundle.generated_at.slice(0,10))} UTC · Treasury observations through ${lastRate} · Six companies · Annual + interim evidence${age>4?` · Refresh overdue: build is ${age} days old.`:''}`;
@@ -375,7 +427,17 @@ async function init() {
       useSelection();
     });
     document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => show(b.dataset.page)));
-    useSelection();
+    $('#brief-file').addEventListener('change', openSavedBrief);
+    ready = true;
+    lockResearch(false);
+    let saved, linkError;
+    try { saved = selectionFromURL(params, bundle); } catch (error) { linkError = error.message; }
+    if (linkError) previewSavedSelection(null, linkError, 'link');
+    else if (saved && saved.versionStatus !== 'match') previewSavedSelection(saved, null, 'link');
+    else if (saved) {
+      applySavedSelection(saved);
+      $('#restore-message').textContent = 'Saved link restored with a matching data and calculation versions. Results are recomputed from this site’s evidence.';
+    } else render();
     new ResizeObserver(drawTrend).observe($('#content'));
   } catch (error) {
     $('#status').textContent = error.message;
