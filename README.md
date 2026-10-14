@@ -4,7 +4,7 @@
 
 [Use it online](https://leon1111-wgl.github.io/finscope/) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
 
-Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked annual review they can share.
+Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked financial review they can share.
 
 **Open the website, choose a company, test an assumption and download a brief. No account, installation or API key is needed to use the public workspace.**
 
@@ -13,12 +13,13 @@ Earnings have grown. Does that growth have cash-flow support? What would a weake
 | Step | Practical output |
 | --- | --- |
 | Review the evidence | Annual profit/cash trends, liquidity ratios, exact SEC facts and filing links |
+| Check what changed | Newer fiscal YTD revenue, profit and operating cash flow versus the same period last year |
 | Compare companies | Six financial profiles with explicit fiscal dates and missing-data labels |
 | Inspect AI triage | Historical-profile anomaly percentile plus underlying ratios and training boundaries |
 | Test assumptions | Browser calculations for revenue, margin, refinancing costs and collection delays |
 | Take your brief | Editable Markdown, source-rich JSON, print/PDF and a shareable research view |
 
-The public universe is **AAPL, MSFT, NVDA, AMZN, GOOGL and META**. Official Treasury observations provide rate context, with a separate hypothetical bond sensitivity calculator. The workspace uses real annual disclosures; it is not a live-price terminal.
+The public universe is **AAPL, MSFT, NVDA, AMZN, GOOGL and META**. Official Treasury observations provide rate context, with a separate hypothetical bond sensitivity calculator. The workspace uses real annual disclosures plus matched interim checkpoints; it is not a live-price terminal.
 
 ## The project story
 
@@ -42,7 +43,7 @@ This is an original research workflow built on open-source tools and public data
 
 ```mermaid
 flowchart LR
-  S[Official SEC CompanyFacts] --> V[Validate annual periods and filing dates]
+  S[Official SEC CompanyFacts] --> V[Validate annual / YTD periods and filing dates]
   V --> F[Financial ratios and sourced history]
   F --> M[Earlier-period Isolation Forest]
   T[Official Treasury curve] --> B[Versioned evidence bundle]
@@ -86,7 +87,7 @@ For a fork, configure the repository variable `SEC_USER_AGENT` and enable GitHub
 
 The Isolation Forest detects unusual combinations of six financial ratios. It trains on eligible earlier company-years, with current target periods excluded. A score is an investigation cue, not a probability of default, fraud detector or investment recommendation. The transparent ratios are always available as a baseline.
 
-Historical views reconstruct filing-day eligibility from currently retrieved SEC data. They are not a certified historical raw archive. The selected companies are survivors, fiscal calendars differ, business regimes change and some standard tags are missing. This annual review must be supplemented with newer quarterly filings. [Full model card](docs/RESEARCH_MODEL.md).
+Historical views reconstruct filing-day eligibility from currently retrieved SEC data. They are not a certified historical raw archive. The selected companies are survivors, fiscal calendars differ, business regimes change and some standard tags are missing. The separate YTD checkpoint adds newer standard-tag revenue, profit and cash flow. It does not provide complete quarterly coverage or trailing-twelve-month values. Read the filing notes for explanations. [Interim matching method](docs/INTERIM_CHECKPOINT.md). [Full model card](docs/RESEARCH_MODEL.md).
 
 ## The separate forecasting research track
 

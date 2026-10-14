@@ -945,3 +945,9 @@ code {
   table { table-layout: fixed; }
   th, td { overflow-wrap: anywhere; padding: 6px; }
 }
+
+.interim-periods { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; margin: 20px 0; }
+.interim-periods div { border-left: 3px solid var(--accent, #5de4d0); padding: 10px 16px; background: rgba(93, 228, 208, .04); }
+.interim-periods span, .interim-periods strong { display: block; }
+.interim-periods span { color: #b3c3d4; margin-bottom: 8px; }
+.interim-periods strong { font-size: 1rem; line-height: 1.6; }

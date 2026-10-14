@@ -4,6 +4,16 @@
 
 Improve an actual user task. Start with a reproducible failure or a clearly unmet need. State the target user, expected behavior, evidence, implementation and verification. Prefer a completed useful increment to another panel or a longer feature list. Keep reported facts, user assumptions, synthetic examples and model outputs distinct.
 
+Adversarial review is internal work by Codex: take the perspective of a first-time reader, an analyst, a mobile visitor and a recipient of an exported brief. Find and fix weaknesses proactively. It is not a request for a public visitor-feedback or bug-submission feature.
+
+## 2026-10-15 — Newer interim evidence
+
+User task: decide whether the annual profit/cash picture has changed in subsequent operations. The annual-only workflow left that question unanswered.
+
+Implemented: fiscal YTD checkpoints for revenue, net income, operating income and operating cash flow; comparable prior YTD inputs; growth and margin changes; source drill-down; a coverage table across the six companies; shared HTML/Markdown/JSON brief content. The annual model and scenario retain their original annual basis.
+
+Internal adversarial checks target mixed quarter/YTD/TTM facts, future amendments, missing comparators, nonpositive prior values and older quarters already covered by the latest annual report. [Matching design](INTERIM_CHECKPOINT.md). Local verification: 70 Python and 24 JavaScript tests passed. Independent review matched all 1,256 selected facts across 157 checkpoints to cached SEC records and reproduced each checkpoint at its own cutoff. Browser checks covered the day before a filing, annual supersession, 390/1440 px layouts and actual Markdown/JSON downloads. A minor review finding was fixed: Markdown now retains both cash and operating margins and their changes. A fresh official-source build succeeded; all 51 annual/model snapshots remained unchanged. Publication verification follows below.
+
 ## 2026-10-15 — Online annual-company research
 
 Problem: the original synthetic forecasting lab could demonstrate a method but could not support an initial financial review of a real company or deliver a portable evidence pack.
@@ -20,7 +30,7 @@ Local verification: 61 Python tests and 20 JavaScript tests; actual browser down
 
 ## Candidate needs, to investigate before implementation
 
-1. Annual-only reviews lag newer quarterly information. Design an explicit trailing-period/quarter view with correct duration alignment and no double counting.
+1. The new YTD checkpoint covers four flows. Next investigate a sourced cash-flow reconciliation and complete balance/debt context; require correct duration alignment before adding TTM calculations.
 2. Missing custom tags prevent some comparisons. Investigate reviewed company-specific mappings with visible provenance; never guess equivalence or replace missing values with zero.
 3. Historical views are coarsened to annual-filing dates. Evaluate snapshot dates for amendments and revised comparisons; make archive/revision limitations explicit.
 4. A reader still needs to locate the right filing note. Explore direct document/section evidence and a cash-flow bridge before adding generative summaries.

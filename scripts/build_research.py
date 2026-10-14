@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 import hashlib
 import json
 import os
@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 import sklearn
 from finscope.fundamentals import annual_history
+from finscope.interim import interim_snapshots
 from finscope.research import score_profiles
 from finscope.sec import fetch_companyfacts
 from finscope.treasury import parse_treasury
@@ -50,6 +51,16 @@ def validate(bundle):
         if ai['scores']:
             assert ai['training']['last_period_end'] < min(r[-1]['period_end'] for r in snapshot['companies'].values())
     assert bundle['rates'] and bundle['rates'][-1]['date'] <= bundle['as_of']
+    for records in bundle['interim'].values():
+        for record in records:
+            assert record['as_of'] <= bundle['as_of']
+            assert record['current']['period_start'] == (date.fromisoformat(record['annual_baseline_end']) + timedelta(days=1)).isoformat()
+            for period in (record['current'], record['prior']):
+                if period:
+                    for fact in period['metrics'].values():
+                        if fact:
+                            assert fact['filed'] <= record['as_of']
+                            assert (fact['start'], fact['end']) == (period['period_start'], period['period_end'])
     latest = bundle['snapshots'][-1]
     for rows in latest['companies'].values():
         assert (date.fromisoformat(bundle['as_of']) - date.fromisoformat(rows[-1]['period_end'])).days < 600, 'Annual data unexpectedly stale'
@@ -119,13 +130,14 @@ def main():
         ai = score_profiles(histories, day)
         snapshots.append({'as_of': day, 'companies': {t: rows[-6:] for t, rows in histories.items()}, 'ai': ai})
     bundle = {
-        'schema_version': '2.0.0', 'data_kind': 'real_official_financial_evidence',
+        'schema_version': '2.1.0', 'data_kind': 'real_official_financial_evidence',
         'as_of': args.as_of, 'generated_at': stamp(), 'sources': sources,
         'companies': [{'ticker': t, 'cik': cik, 'name': payloads[t]['entityName']} for t, cik in COMPANIES.items()],
         'snapshots': snapshots, 'rates': [rates[d] for d in sorted(rates)],
+        'interim': {t: interim_snapshots(p, args.as_of) for t, p in payloads.items()},
         'runtime': {'python': platform.python_version(), 'sklearn': sklearn.__version__},
         'limitations': ['Filing-day reconstruction from currently retrieved CompanyFacts, not an archived point-in-time database.',
-                        'Annual accounts only; subsequent quarterly results are outside this review.',
+                        'Annual model and scenarios; separate fiscal YTD checkpoints cover matched standard 10-Q facts only, not every quarterly disclosure or trailing-twelve-month results.',
                         'Six selected surviving technology/platform businesses are not a market-representative sample.',
                         'Anomaly percentiles describe unusual profiles, not fraud/default probabilities or investment returns.',
                         'All stress results are user assumptions, not company forecasts.']}

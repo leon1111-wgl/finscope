@@ -25,7 +25,7 @@ This is a gap in the previous project, not a claim that commercial financial pla
 ## A five-minute user journey
 
 1. Open the live workspace. Microsoft is selected by default.
-2. Read the annual period and filing date. Compare net income with operating cash flow.
+2. Read the annual period and filing date. Compare net income with operating cash flow. Check the newer fiscal YTD panel for changes since that annual report.
 3. Open the exact-value table and the reported-input evidence links. Decide what additional filing section you need.
 4. Compare the six profiles. Treat differences as questions about their business models.
 5. Open **Test assumptions**. Try the preset downside, then replace its assumed refinancing exposure with an exposure you want to investigate.
@@ -42,7 +42,7 @@ The existing forecasting lab adds a second, clearly separated research track: re
 
 Useful today: annual financial statement review, classroom cases, first-pass research memos, scenario explanation and reproducibility demonstrations.
 
-Not established: predictive alpha, company credit ratings, fraud detection, comprehensive accounting normalization, whole-market screening, live trading, intraday feeds or production institutional adoption. There are six selected surviving businesses, not an unbiased investment universe. An annual-only review must be supplemented with newer quarterly filings.
+Not established: predictive alpha, company credit ratings, fraud detection, comprehensive accounting normalization, whole-market screening, live trading, intraday feeds or production institutional adoption. There are six selected surviving businesses, not an unbiased investment universe. A newer fiscal YTD checkpoint compares four matched flow metrics with the same period last year. It supplements the annual baseline; it does not provide complete quarterly coverage or explain changes without the filing notes.
 
 ## How to evaluate usefulness next
 

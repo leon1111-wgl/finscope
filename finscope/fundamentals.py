@@ -16,7 +16,7 @@ METRICS = {
 }
 
 
-def candidates(payload, key, as_of):
+def candidates(payload, key, as_of, *, forms=('10-K', '10-K/A'), duration_bounds=(330, 400)):
     cutoff = date.fromisoformat(as_of)
     kind, tags = METRICS[key]
     found = []
@@ -28,9 +28,9 @@ def candidates(payload, key, as_of):
                 value = row['val']
                 if isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value):
                     continue
-                if end > cutoff or filed > cutoff or filed < end or row.get('form') not in ('10-K', '10-K/A'):
+                if end > cutoff or filed > cutoff or filed < end or row.get('form') not in forms:
                     continue
-                if kind == 'flow' and (start is None or not 330 <= (end - start).days <= 400):
+                if kind == 'flow' and (start is None or not duration_bounds[0] <= (end - start).days <= duration_bounds[1]):
                     continue
                 if kind == 'instant' and start is not None:
                     continue

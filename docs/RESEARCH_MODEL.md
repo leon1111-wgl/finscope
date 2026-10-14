@@ -46,3 +46,7 @@ The sample is six surviving technology/platform businesses. Accounting policies,
 ## Verification
 
 Automated checks use small-number independent ratio expectations, future-filing exclusion, restatement timing, mismatched annual/quarterly periods, missing and nonfinite facts, deterministic scoring and target-period exclusion. Browser calculations separately test zero-shock identity, basis-point conversion, bond present values and export provenance. These checks establish implemented invariants, not economic predictive validity.
+
+## Separate interim evidence
+
+The newer fiscal YTD checkpoint is a deterministic financial comparison. It is not a model input or an annualized estimate. The anomaly model and stress scenarios continue to use annual statements. Interim selection follows the requested information date at each eligible filing event, independently of the coarser saved annual-model dates. [Matching rules and limitations](INTERIM_CHECKPOINT.md).
