@@ -12,7 +12,7 @@ User task: after noticing a newer YTD cash-margin change, identify disclosed acc
 
 Implemented: a partial, same-filing cash-flow bridge for five selected adjustment groups; current/prior signed comparisons; a waterfall with SVG download; source/sign drill-down; a specific working-capital follow-up prompt; portable Markdown/JSON/print content. Missing facts remain null, and other/unmapped adjustments stay a visible calculated remainder. The annual model and scenarios remain separate. [Design and limitations](CASH_FLOW_BRIDGE.md).
 
-Independent review: all 314 current/prior bridges reconcile; 1,288 component facts matched cached SEC records; 282 missing component slots remained null. Browser connection remains unavailable; chart export is rendered and visually inspected separately, while browser interaction verification is pending. Local verification: 76 Python and 29 JavaScript tests passed, including sign reversals, zero versus absent values, source/period boundaries, exclusive tag selection, residual arithmetic, chart geometry and export source retention. The standalone SVG was rasterized and visually inspected; this is not a browser screenshot. All previous annual/model snapshots and interim values remain unchanged, and original source retrieval metadata is preserved. Deployment evidence will follow.
+Independent review: all 314 current/prior bridges reconcile; 1,288 component facts matched cached SEC records; 282 missing component slots remained null. Browser connection remains unavailable; chart export is rendered and visually inspected separately, while browser interaction verification is pending. Local verification: 76 Python and 29 JavaScript tests passed, including sign reversals, zero versus absent values, source/period boundaries, exclusive tag selection, residual arithmetic, chart geometry and export source retention. The standalone SVG was rasterized and visually inspected; this is not a browser screenshot. All previous annual/model snapshots and interim values remain unchanged, and original source retrieval metadata is preserved. Published implementation `7dc1f5e`: Checks `38631123950` and Pages `38631124016` succeeded at that exact commit. Five live assets (app, math, bridge module, CSS and data) matched local bytes. All 314 generated SVGs and six complete real-company exports also passed consistency checks. Browser interaction remains unverified this release because the browser bridge still times out; revisit this when the connection is available. The previously pending documentation commit `374bb22` was synchronized with this release.
 
 ## 2026-10-15 — Newer interim evidence
 
@@ -38,10 +38,10 @@ Local verification: 61 Python tests and 20 JavaScript tests; actual browser down
 
 ## Candidate needs, to investigate before implementation
 
-1. The new YTD checkpoint covers four flows. Next investigate a sourced cash-flow reconciliation and complete balance/debt context; require correct duration alignment before adding TTM calculations.
+1. The YTD checkpoint now has a five-group partial cash-flow bridge. Investigate material residuals using reviewed disclosure mappings and add balance/debt context; require correct duration alignment before adding TTM calculations.
 2. Missing custom tags prevent some comparisons. Investigate reviewed company-specific mappings with visible provenance; never guess equivalence or replace missing values with zero.
 3. Historical views are coarsened to annual-filing dates. Evaluate snapshot dates for amendments and revised comparisons; make archive/revision limitations explicit.
-4. A reader still needs to locate the right filing note. Explore direct document/section evidence and a cash-flow bridge before adding generative summaries.
+4. A reader still needs to locate the right filing note. Replace filing-directory links with verified document/section references where available, and investigate residual adjustments before adding generative summaries.
 5. The six-company universe is narrow. Define sector-specific ratio suitability and data coverage before expansion; banks require different financial logic.
 6. Validate usefulness with actual first-time workflows. No adoption or time-saving statistics have yet been measured.
 
