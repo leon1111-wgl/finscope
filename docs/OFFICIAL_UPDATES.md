@@ -22,7 +22,7 @@ Treasury captures include the previous and current calendar year. The feed retai
 
 ## Failure and audit behavior
 
-A collection publishes only after all six SEC and both Treasury sources validate. On source/network failure, the prior public feed remains intact and the workflow fails visibly. Browser timeouts, invalid payloads and older responses keep the previous validated display with an error message. The initial failure shows no invented numbers. The collector and browser both reject future information relative to the current capture boundary.
+A collection publishes only after all six SEC and both Treasury sources validate. Empty annual Treasury responses are rejected except for a valid current-year empty feed during January 1–7, when a new business-day observation may not yet exist. On source/network failure, the prior public feed remains intact and the workflow fails visibly. Browser timeouts, invalid payloads and older responses keep the previous validated display with an error message. The initial failure shows no invented numbers. The collector and browser both reject future information relative to the current capture boundary.
 
 Each source record contains a fixed official URL, retrieval timestamp and raw SHA-256. `feed_sha256` hashes sorted, compact JSON with that field omitted. This identifies a capture; it does not certify economic conclusions. Raw responses are retained as a GitHub Actions artifact for seven days; the public feed persists in Git history. The SEC identifying User-Agent stays in a repository variable and is not published.
 

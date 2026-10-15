@@ -18,6 +18,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          # A queued push must not restore a feed older than a completed refresh.
+          ref: main
+      - name: Record the deployed revision
+        run: git rev-parse HEAD
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'

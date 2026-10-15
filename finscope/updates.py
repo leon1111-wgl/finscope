@@ -7,7 +7,8 @@ from pathlib import Path
 import re
 import time
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+from urllib.request import Request, HTTPRedirectHandler, build_opener
 import xml.etree.ElementTree as ET
 
 from .treasury import parse_treasury
@@ -79,13 +80,27 @@ def recent_filings(payload, cik, captured_at):
     return sorted(result.values(), key=lambda r: (r['filed'], r['accepted_at'] or '', r['accession']), reverse=True)[:20]
 
 
+class OfficialRedirect(HTTPRedirectHandler):
+    """Check the destination before urllib forwards the identifying header."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        origin, target = urlparse(req.full_url), urlparse(newurl)
+        if target.scheme != 'https' or target.netloc != origin.netloc:
+            raise HTTPError(newurl, code, 'Unsafe official-source redirect', headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def fetch_official(url, user_agent):
     """Paced, identified requests; no credentials are written to the feed."""
     allowed = {'data.sec.gov', 'home.treasury.gov'}
+    source = urlparse(url)
+    if source.scheme != 'https' or source.netloc not in allowed:
+        raise ValueError('Invalid official source URL')
+    opener = build_opener(OfficialRedirect())
+    identity = user_agent if source.hostname == 'data.sec.gov' else 'FinScope/1.0 https://github.com/leon1111-wgl/finscope'
     for attempt in range(3):
         time.sleep(.4 * (attempt + 1))
         try:
-            with urlopen(Request(url, headers={'User-Agent': user_agent}), timeout=25) as response:
+            with opener.open(Request(url, headers={'User-Agent': identity}), timeout=25) as response:
                 target = urlparse(response.geturl())
                 if target.scheme != 'https' or target.hostname not in allowed:
                     raise ValueError('Unexpected official-source redirect')
@@ -134,6 +149,11 @@ def collect_updates(output, user_agent, *, fetch=None, now=None, evidence_dir=No
         if root.tag.split('}')[-1] != 'feed':
             raise ValueError('Unexpected Treasury XML document')
         has_entries = any(e.tag.split('}')[-1] == 'entry' for e in root.iter())
+        if not has_entries:
+            metadata = {'title', 'id', 'updated', 'link', 'author', 'category'}
+            new_year_grace = year == started.year and started.month == 1 and started.day <= 7
+            if not new_year_grace or any(e.tag.split('}')[-1] not in metadata for e in root):
+                raise ValueError('Unexpectedly empty Treasury year')
         rows = parse_treasury(raw) if has_entries else []
         for row in rows:
             observed = day(row['date'])

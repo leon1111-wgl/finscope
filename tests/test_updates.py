@@ -107,3 +107,41 @@ def test_year_boundary_accepts_no_new_year_rates_and_keeps_previous_business_day
     result = collect_updates(tmp_path/'feed.json', 'Test test@example.com', fetch=year_fetch,
                              now=datetime(2026, 1, 1, 12, tzinfo=timezone.utc))
     assert result['treasury']['observations'][-1]['date'] == '2025-12-31'
+
+
+@pytest.mark.parametrize('target', ['http://data.sec.gov/submissions/new.json',
+                                  'https://other.example/submissions/new.json',
+                                  'https://home.treasury.gov/redirect'])
+def test_redirect_is_rejected_before_contact_headers_can_leave_the_source(target):
+    from urllib.request import Request
+    from finscope.updates import OfficialRedirect
+    request = Request('https://data.sec.gov/submissions/CIK0000789019.json',
+                      headers={'User-Agent': 'Test test@example.com'})
+    with pytest.raises(OSError):
+        OfficialRedirect().redirect_request(request, None, 302, 'redirect', {}, target)
+
+
+def test_same_host_https_redirect_can_proceed():
+    from urllib.request import Request
+    from finscope.updates import OfficialRedirect
+    request = Request('https://data.sec.gov/submissions/old.json')
+    redirected = OfficialRedirect().redirect_request(request, None, 302, 'redirect', {},
+                                                     'https://data.sec.gov/submissions/new.json')
+    assert redirected.full_url == 'https://data.sec.gov/submissions/new.json'
+
+
+@pytest.mark.parametrize('empty', [b'<feed />', b'<feed><unexpected>upstream unavailable</unexpected></feed>'])
+def test_empty_current_year_outside_new_year_preserves_prior_feed(tmp_path, empty):
+    output = tmp_path/'updates.json'; output.write_bytes(b'previous validated feed')
+    def empty_current_year(url, user_agent):
+        return empty if url.endswith('2026') else fetch(url, user_agent)
+    with pytest.raises(ValueError):
+        collect_updates(output, 'Test test@example.com', fetch=empty_current_year, now=NOW)
+    assert output.read_bytes() == b'previous validated feed'
+
+
+def test_empty_previous_year_is_not_a_complete_source_capture(tmp_path):
+    def empty_previous_year(url, user_agent):
+        return b'<feed />' if url.endswith('2025') else fetch(url, user_agent)
+    with pytest.raises(ValueError):
+        collect_updates(tmp_path/'updates.json', 'Test test@example.com', fetch=empty_previous_year, now=NOW)
