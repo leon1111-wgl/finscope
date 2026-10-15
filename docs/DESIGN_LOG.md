@@ -34,4 +34,6 @@ Actual local browser: company control now starts at about 398 px on desktop and 
 
 Screenshots retained locally under `.work/design-entry/`: `before-desktop.jpg`, `before-mobile.jpg`, `after-desktop.jpg`, `after-mobile.jpg`, `invalid-mobile.jpg`, `restore-desktop.jpg`. These are actual browser captures, not generated mockups. A local browser reused old CSS after HTML changed; the stylesheet now has an explicit entry-release query token, and the final captures/measurements used the new styles. Native print and artificially induced stale/loading failures were not newly exercised; their selectors and semantics remain unchanged.
 
+Released as `f8c1c92`; Checks `38806949403` and Pages `38806949544` succeeded at that exact revision. CI passed 118 Python and 90 JavaScript tests, and seven live files matched the tested bytes. Live browser navigation timed out; desktop/mobile screenshots and restored-brief download verification above were local-browser checks.
+
 Next visual pass: simplify ordinary reading panels and KPI presentation, then perform the coordinated light-theme/chart migration described in the guide. Preserve date/source prominence and test all chart/print/export states before claiming that migration complete.
