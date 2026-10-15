@@ -970,3 +970,28 @@ code {
 .saved-brief input { max-width: 100%; }
 #restore-preview code { overflow-wrap: anywhere; }
 #restore-message:empty { display: none; }
+
+/* Current monitoring is separate from the dated research workspace. */
+.official-updates { margin: 1.25rem 0 2rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+.official-updates > summary { padding: 1.1rem 1.4rem; cursor: pointer; font-weight: 650; font-size: 1.1rem; }
+.official-updates > summary span { display: block; margin: .25rem 0 0 1.2rem; font-size: 1rem; font-weight: 400; color: var(--muted); }
+.updates-body { padding: 0 1.4rem 1.4rem; }
+.updates-controls { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap; }
+.updates-controls label { display: grid; gap: .35rem; }
+.updates-controls select { min-width: 11rem; }
+#updates-content > section { padding: 1.2rem 0; border-top: 1px solid var(--border); }
+.updates-scroll { max-height: 32rem; overflow: auto; }
+.official-updates small { display: block; font-size: .9rem; color: var(--muted); margin-top: .35rem; }
+.updates-rates { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .8rem; margin: 1rem 0 1.5rem; }
+.updates-rates > div { padding: .9rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+.updates-rates span, .updates-rates strong { display: block; }
+.updates-rates strong { font-size: 1.3rem; margin-top: .25rem; overflow-wrap: anywhere; }
+.updates-warning { color: var(--amber); }
+.updates-provenance { border-top: 1px solid var(--border); padding-top: 1rem; }
+.updates-provenance code { overflow-wrap: anywhere; white-space: normal; font-size: .95rem; }
+.updates-provenance li { margin: 1rem 0; }
+@media (max-width: 680px) {
+ .updates-body { padding: 0 1rem 1rem; }
+ .updates-rates { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .updates-controls { align-items: stretch; flex-direction: column; }
+}

@@ -1,0 +1,60 @@
+name: Refresh official updates
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: python -m pip install -r requirements.lock
+      - run: python -m pip install --no-deps -e .
+      - run: python -m pytest tests/test_updates.py -q
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/official-updates.test.mjs
+      - name: Collect official announcements and daily yields
+        env:
+          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+        run: python scripts/build_updates.py
+      - name: Validate the captured feed in the browser contract
+        run: node --input-type=module -e "import fs from 'node:fs'; import {validateUpdates} from './web/official-updates.js'; validateUpdates(JSON.parse(fs.readFileSync('web/data/updates.json','utf8')));"
+      - name: Retain raw official evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-update-sources
+          path: local-data/updates/
+          retention-days: 7
+      - name: Record the published capture
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add web/data/updates.json
+          git commit -m 'data: refresh official announcements and daily rates'
+          git push origin HEAD:main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4

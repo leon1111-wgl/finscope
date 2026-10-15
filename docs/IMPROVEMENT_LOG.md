@@ -1,5 +1,15 @@
 # Continuous improvement log
 
+## 2026-10-15 — Current official announcements and daily rates
+
+User request: add dynamic data, starting with new filings and official macro context, then iterate gradually. Reproduced gap: the dated research snapshot did not tell a reader which disclosures were newly available, and a static page could not directly call the SEC API because it does not support browser CORS.
+
+Implemented a separate, collapsed current-monitoring section: six companies, recent 10-K/10-Q/8-K forms and amendments, official document/index links, daily Treasury yields, source hashes and three distinct times (filing/observation, collection, browser check). An hourly GitHub workflow collects a small feed; the open, visible section checks the published feed every five minutes. This feed does not enter historical calculations, saved briefs or print. Failed collection preserves the published file; failed browser checks retain prior validated data and report failure. Capture age over three hours and rate observations over seven days are visibly marked. [Use and operational limits](OFFICIAL_UPDATES.md).
+
+Local verification so far: 111 Python and 81 JavaScript tests passed. One existing Starlette/httpx deprecation warning remains. A real official-source collection produced 23 recent filing links and 60 daily Treasury rows; all records matched captured raw sources and hashes. The latest rate observation was 2026-10-14. The 14,917-byte public feed passed the browser schema. `research.json` is unchanged by this feature. Independent review, browser inspection and deployment verification are tracked below when completed.
+
+The user has explicitly awakened the previously paused hourly improvement automation; its ACTIVE status was verified separately. The new official-data workflow is a separate scheduled collector. Next useful iteration: identify the gap between a newly disclosed filing and the evidence currently incorporated in the research snapshot, before adding broader macro series or derived analysis.
+
 ## Working rule
 
 Improve an actual user task. Start with a reproducible failure or a clearly unmet need. State the target user, expected behavior, evidence, implementation and verification. Prefer a completed useful increment to another panel or a longer feature list. Keep reported facts, user assumptions, synthetic examples and model outputs distinct.

@@ -5,6 +5,7 @@
 <meta name="theme-color" content="#0a1422"><title>FinScope — From profit to proof · Leon Wang</title>
 <meta name="description" content="Review real company earnings, trace SEC evidence, compare cash flow and test financial stress scenarios. Export a reproducible research brief. Built by Leon Wang.">
 <link rel="stylesheet" href="./research.css"><script type="module" src="./research-app.js"></script>
+<script type="module">import {initOfficialUpdates} from "./official-updates.js"; initOfficialUpdates(document);</script>
 </head>
 <body>
 <a class="skip" href="#workspace">Skip to research workspace</a>
@@ -12,6 +13,16 @@
 <main>
 <section class="hero"><div><p class="eyebrow">FROM REPORTED PROFIT TO A QUESTION YOU CAN TEST</p><h1>Profit tells a story.<br><span>Cash adds the evidence.</span></h1><p class="lead">Review annual financial health and newer interim results. Follow the filing evidence. Test a weaker operating year. Leave with a research brief you can use.</p><a href="#workspace" class="button primary">Start a company review ↓</a></div><aside class="story"><span class="eyebrow">YOUR NEXT COMPANY REVIEW</span><h2>“Earnings grew. Is the business more resilient?”</h2><p>A headline gives you one number. A useful review connects profit, cash generation and obligations, then makes its assumptions visible.</p><ol><li>Check the reported evidence.</li><li>Compare financial profiles.</li><li>Test a concrete downside.</li><li>Export questions and sources.</li></ol></aside></section>
 <div id="freshness" class="freshness" role="status">Loading official financial evidence…</div>
+<details id="official-updates" class="official-updates no-print">
+<summary>Latest official updates <span>Filing announcements + daily Treasury yields</span></summary>
+<div class="updates-body">
+<p class="note"><strong>Current monitoring.</strong> These updates are not filtered by the research date below. They are not included in financial calculations or exported historical briefs.</p>
+<p>Official sources are collected hourly when the scheduled job runs. Publication can be delayed. This section checks the published feed every five minutes while open and visible.</p>
+<div class="updates-controls"><label for="updates-company">Watch company<select id="updates-company"><option>AAPL</option><option selected>MSFT</option><option>NVDA</option><option>AMZN</option><option>GOOGL</option><option>META</option></select></label><button id="updates-check" type="button">Check published updates</button></div>
+<p>This button checks our latest published capture; it does not request a new collection from SEC or Treasury.</p>
+<p id="updates-status" role="status" aria-live="polite">Open this section to check the latest published capture.</p>
+<div id="updates-content"></div>
+</div></details>
 <section id="workspace" class="workspace" aria-label="Company research workspace">
 <div class="workspace-heading"><div><p class="eyebrow">RESEARCH WORKSPACE</p><h2>One question. A traceable answer.</h2></div><span class="pill">Real SEC filings · browser calculations</span></div>
 <details id="saved-brief" class="saved-brief no-print"><summary>Open a saved brief</summary><p>Restore the company, date and assumptions from a downloaded FinScope JSON brief. The file stays on your device. Financial values and conclusions in the file are not imported.</p><label for="brief-file">Choose evidence brief (.json, up to 2 MB)</label><input id="brief-file" type="file" accept=".json,application/json" disabled></details>
