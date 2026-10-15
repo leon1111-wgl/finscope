@@ -12,6 +12,7 @@ Earnings have grown. Does that growth have cash-flow support? What would a weake
 
 | Step | Practical output |
 | --- | --- |
+| Watch official updates | Recent SEC announcements and daily Treasury yields, with collection times and original source links |
 | Review the evidence | Annual profit/cash trends, liquidity ratios, exact SEC facts and filing links |
 | Check what changed | Newer fiscal YTD revenue, profit and operating cash flow versus the same period last year |
 | Explain the cash gap | Selected non-cash and working-capital adjustments, visible remainder, source links and a downloadable waterfall |
@@ -45,6 +46,8 @@ Evidence tables include **Read 10-K / Read 10-Q** links to the matched SEC docum
 
 To investigate a newer operating-cash gap, select **NVDA → Review the evidence** and open the fiscal YTD checkpoint. Follow the profit-to-cash waterfall, compare the prior period and expand the source/sign detail. Download the SVG for a presentation or include the full comparison in your research brief. [Cash-flow bridge method and limits](docs/CASH_FLOW_BRIDGE.md).
 
+Open **Latest official updates** above the workspace to monitor recent disclosures and daily rates. An hourly collector publishes a separate feed; the open section checks for updates every five minutes. Scheduling can be delayed. Current monitoring is independent of your historical research date and does not enter its calculations or exports. [Coverage, freshness and failure behavior](docs/OFFICIAL_UPDATES.md).
+
 ## Architecture
 
 ```mermaid
@@ -60,6 +63,9 @@ flowchart LR
   B --> U[Browser research workspace]
   A[User scenario assumptions] --> U
   U --> R[Markdown / JSON / printable brief]
+  D --> C[Hourly official monitor capture]
+  T --> C
+  C --> W[Separate current-monitoring section]
 ```
 
 Python validates the evidence and computes saved anomaly profiles. GitHub Pages serves the bundle; JavaScript performs the scenario calculations locally in the visitor's browser. No visitor data is sent to a model API. GitHub Actions refreshes official sources on weekday mornings UTC and deploys only after validation. The banner reports actual dates; a snapshot older than four days is visibly marked overdue.
