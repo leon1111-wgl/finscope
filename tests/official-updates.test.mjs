@@ -20,11 +20,11 @@ function fixture(){
  return {schema_version:1,captured_at:capture,feed_sha256:hash,companies,sources,treasury:{observations:[{date:'2026-10-14','3m':3.8,'2y':null,'5y':4,'10y':4.1,'30y':4.5}]}};
 }
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-async function boot(t,fetcher){
+async function boot(t,fetcher,research=()=>null){
  const dom=new JSDOM(html,{url:'https://example.test/finscope/?date=2021-10-15',pretendToBeVisual:true});
  const requests=[];let callback;let time=now();
  const cleanup=initOfficialUpdates(dom.window.document,{fetch:async(url,options)=>{requests.push(url);return fetcher?fetcher(url,options):{ok:true,text:async()=>JSON.stringify(fixture())};},now:()=>time,
-  setInterval:cb=>{callback=cb;return 1;},clearInterval:()=>{},timeoutMs:15});
+  research,setInterval:cb=>{callback=cb;return 1;},clearInterval:()=>{},timeoutMs:15});
  t.after(()=>{cleanup();dom.window.close();});
  const $=s=>dom.window.document.querySelector(s);
  const open=async()=>{$('#official-updates').open=true;$('#official-updates').dispatchEvent(new dom.window.Event('toggle'));await tick();await tick();};
@@ -85,4 +85,19 @@ test('invalid newer feed cannot replace a previously valid feed',async t=>{
  let bad=false;const ui=await boot(t,async()=>{const feed=fixture();if(bad)feed.companies=[];return{ok:true,text:async()=>JSON.stringify(feed)};});
  await ui.open();const before=ui.$('#updates-content').innerHTML;bad=true;ui.$('#updates-check').click();await tick();await tick();
  assert.equal(ui.$('#updates-content').innerHTML,before);assert.match(ui.$('#updates-status').textContent,/failed/i);
+});
+
+test('coverage can arrive after the feed without a second fetch or changing the historical selection',async t=>{
+ let research=null;
+ const data=JSON.parse(fs.readFileSync(new URL('../web/data/research.json',import.meta.url)));
+ const feed=fixture();feed.companies[1].filings[0]={...feed.companies[1].filings[0],form:'10-K'};
+ const ui=await boot(t,async()=>({ok:true,text:async()=>JSON.stringify(feed)}),()=>research);
+ await ui.open();assert.match(ui.$('.updates-coverage').textContent,/unavailable/i);
+ const url=ui.dom.window.location.href,selection=ui.$('#selection').innerHTML;
+ research=data;ui.dom.window.document.dispatchEvent(new ui.dom.window.Event('finscope-research-ready'));
+ assert.match(ui.$('.updates-coverage').textContent,new RegExp(data.as_of));
+ assert.match(ui.$('.filing-coverage').textContent,/Not referenced/);
+ const link=ui.$('.updates-coverage a');assert.equal(new URL(link.href).searchParams.get('date'),data.as_of);
+ assert.equal(link.target,'_blank');assert.equal(new URL(link.href).searchParams.get('dataset'),data.dataset_sha256);
+ assert.equal(ui.dom.window.location.href,url);assert.equal(ui.$('#selection').innerHTML,selection);assert.equal(ui.requests.length,1);
 });

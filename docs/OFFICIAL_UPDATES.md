@@ -39,3 +39,8 @@ The collector writes only `web/data/updates.json` and ignored `local-data/update
 Official documentation: [SEC APIs and CORS](https://www.sec.gov/search-filings/edgar-application-programming-interfaces), [SEC fair access](https://www.sec.gov/about/developer-resources), [Treasury daily rates](https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics), [Treasury XML](https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics/interest-rate-xml-files).
 
 Next increments should first connect a new filing to the last financial evidence date and make the refresh gap clear. Broader macro series and analysis need source-specific release times and revision handling before they can enter historical research.
+
+
+## Does a new announcement appear in the research?
+
+The filing table now compares reports with selected facts in the research bundle loaded in this tab. Its cutoff and version are separate from the current feed and from your historical workspace selection. Read the **Research coverage** column, then open the full SEC report or the versioned research link. A match means selected facts were referenced, not that the full report was analyzed. [Status definitions and limitations](FILING_COVERAGE.md).

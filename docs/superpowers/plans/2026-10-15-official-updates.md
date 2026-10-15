@@ -61,4 +61,4 @@ Files: `.github/workflows/updates.yml`, `docs/OFFICIAL_UPDATES.md`, `docs/IMPROV
 - [x] Add hourly/manual workflow with `ref: main`, concurrency `pages`, existing pinned dependencies, focused collector/UI tests, bounded source artifact retention, feed commit and explicit Pages deployment.
 - [x] Run full Python and JavaScript tests. Audit feed membership against captured raw sources. Verify research.json has no feature-branch diff.
 - [x] Request independent read-only review, fix material findings, and attempt real browser usage and layout inspection.
-- [ ] Fast-forward authorized main and publish; check exact workflow SHAs and live asset bytes. Manually dispatch the scheduled workflow once to verify collection plus publication. Record evidence and any remaining browser limitations in the log.
+- [x] Fast-forward authorized main and publish; check exact workflow SHAs and live asset bytes. Manually dispatch the scheduled workflow once to verify collection plus publication. Record evidence and any remaining browser limitations in the log.

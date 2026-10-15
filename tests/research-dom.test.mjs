@@ -11,11 +11,11 @@ const inputs={revenuePercent:-10,marginPoints:-2.25,refinanceBillions:10,rateBps
 const saved=()=>buildBrief(data,data.snapshots.at(-1),data.companies.find(c=>c.ticker==='NVDA'),inputs,data.as_of);
 let sequence=0;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-async function boot(t,query='') {
+async function boot(t,query='',monitor=false) {
  const dom=new JSDOM(html,{url:'https://example.test/finscope/'+query});
  const calls=[],downloads=[];
  Object.assign(globalThis,{window:dom.window,document:dom.window.document,history:dom.window.history,location:dom.window.location,
-  ResizeObserver:class{observe(){}},fetch:async url=>{calls.push(url);assert.equal(url,'./data/research.json');return {ok:true,json:async()=>data};}});
+  ResizeObserver:class{observe(){}},fetch:async url=>{calls.push(url);if(monitor&&url==='./data/updates.json')return{ok:true,text:async()=>fs.readFileSync(new URL('../web/data/updates.json',import.meta.url),'utf8')};assert.equal(url,'./data/research.json');return {ok:true,json:async()=>data};}});
  const originalURL=URL.createObjectURL;
  URL.createObjectURL=blob=>{downloads.push(blob);return 'blob:test';};
  dom.window.HTMLAnchorElement.prototype.click=function(){};
@@ -134,4 +134,21 @@ test('comparison evidence is distinguished from a single-company saved brief',as
  assert.match(ui.$('#restore-preview').textContent,/reopen_url/);
  assert.equal(ui.$('#restore-apply'),null);
  ui.click('#restore-cancel');assert.ok(ui.$('#export-comparison-csv'));
+});
+
+test('current coverage uses the shared loaded bundle while a historical brief stays historical',async t=>{
+ const ui=await boot(t,'?company=MSFT&date=2021-10-15&view=brief',true);
+ // An unversioned shared link requires the existing explicit recalculation choice.
+ if(ui.$('#restore-apply'))ui.click('#restore-apply');
+ const before=await ui.exportJSON();
+ ui.$('#official-updates').open=true;ui.$('#official-updates').dispatchEvent(new ui.dom.window.Event('toggle'));await tick();await tick();
+ assert.match(ui.$('.updates-coverage').textContent,/research loaded in this tab/);
+ assert.equal(new URL(ui.$('.updates-coverage a').href).searchParams.get('date'),data.as_of);
+ assert.equal(ui.$('#as-of').value,'2021-10-15');
+ ui.$('#updates-company').value='NVDA';ui.$('#updates-company').dispatchEvent(new ui.dom.window.Event('change'));
+ assert.equal(ui.$('#company').value,'MSFT');
+ assert.equal(new URL(ui.$('.updates-coverage a').href).searchParams.get('company'),'NVDA');
+ const after=await ui.exportJSON();delete before.exported_at;delete after.exported_at;
+ assert.deepEqual(after,before);assert.equal(after.requested_date,'2021-10-15');
+ assert.deepEqual(ui.calls,['./data/research.json','./data/updates.json']);
 });

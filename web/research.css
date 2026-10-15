@@ -998,3 +998,9 @@ code {
  .updates-rates { grid-template-columns: repeat(2,minmax(0,1fr)); }
  .updates-controls { align-items: stretch; flex-direction: column; }
 }
+/* Coverage is a reading column, not an additional dashboard. */
+.updates-coverage { margin: 1rem 0; line-height: 1.6; }
+.updates-coverage code { overflow-wrap: anywhere; }
+.official-updates td.filing-coverage { white-space: normal; min-width: 18rem; max-width: 23rem; }
+.filing-coverage strong { font-size: 1rem; }
+.filing-coverage small { line-height: 1.5; }

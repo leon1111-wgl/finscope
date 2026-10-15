@@ -1,5 +1,7 @@
-// Isolated current monitoring. This module never reads or writes research state.
+// Current monitoring can read published evidence, but never changes research selection or exports.
 import {escapeHTML as esc} from './workbench.js';
+import {publishedCoverage,filingCoverage} from './filing-coverage.js';
+import {CALCULATION_VERSION} from './research-state.js';
 const COMPANIES={AAPL:320193,MSFT:789019,NVDA:1045810,AMZN:1018724,GOOGL:1652044,META:1326801};
 const TENORS=['3m','2y','5y','10y','30y'];
 const DAY=86400000,INTERVAL=300000;
@@ -49,18 +51,22 @@ export function validateUpdates(data,now=Date.now()){
 }
 const utc=value=>value.replace('T',' ').replace('Z',' UTC');
 const yieldText=value=>value===null?'Unavailable':value.toFixed(2)+'%';
-function renderFeed(feed,ticker,now){
+function renderFeed(feed,ticker,now,research){
+ const coverage=publishedCoverage(research,ticker);
  const company=feed.companies.find(c=>c.ticker===ticker),rates=feed.treasury.observations,latest=rates.at(-1);
  const oldRates=now-dateValue(latest.date)>7*DAY;
  const link=(url,label)=>`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`;
- const table=company.filings.length?`<div class="table-wrap updates-scroll" tabindex="0" role="region" aria-label="Recent filing announcements"><table><thead><tr><th scope="col">Filed</th><th scope="col">Form</th><th scope="col">Report date</th><th scope="col">Original evidence</th></tr></thead><tbody>${company.filings.map(r=>`<tr><td>${esc(r.filed)}<small>Accepted: ${r.accepted_at?esc(utc(r.accepted_at)):'Unavailable'}</small></td><td>${esc(r.form)}</td><td>${esc(r.report_date||'Unavailable')}</td><td>${link(r.document_url||r.filing_index_url,r.document_url?'Read filing':'Filing index')}<small>${esc(r.accession)} · ${link(r.filing_index_url,'Index')}</small></td></tr>`).join('')}</tbody></table></div>`:'<p>No supported filings in this 120-day window. This is not a complete disclosure history.</p>';
- return `<section aria-label="Recent company disclosures"><h3>${esc(ticker)} · Recent disclosures</h3><p>Up to 20 filings in the last 120 days. 10-K: annual report. 10-Q: quarterly report. 8-K: current report covering a range of company events. /A marks an amendment.</p>${table}</section>
+ const coverageCell=r=>{const c=filingCoverage(r,coverage);return `<td class="filing-coverage" data-coverage="${c.status}"><strong>${esc(c.label)}</strong><small>${esc(c.detail)}</small></td>`;};
+ const query=coverage.status==='available'?new URLSearchParams({company:ticker,date:coverage.date,view:'review',dataset:coverage.dataset,calculation:CALCULATION_VERSION}):null;
+ const context=query?`Research cutoff: <strong>${esc(coverage.date)}</strong> · Built ${esc(coverage.generatedAt.slice(0,10))} UTC. Compared with research loaded in this tab, independent of your selected historical date. ${link('?'+query+'#workspace','Open '+ticker+' at this cutoff in a new tab')}<details><summary>Coverage method and research version</summary><p>The research bundle loads once. Checking announcements does not refresh it. Open the research link in a new tab to check the published version. If versions differ, the workspace asks before recalculating.</p><p>Financial snapshot: ${esc(coverage.snapshotDate)}. Built: ${esc(coverage.generatedAt)}.</p><p>Matches company, accession, form and filing date against annual history and the latest eligible interim checkpoint, including its prior-period and cash-flow facts. Duplicate facts count once. Missing values do not count. Narrative, exhibits and other filings are not fully analyzed. A source match does not prove completeness or accuracy.</p><p>Research SHA-256: <code>${esc(coverage.dataset)}</code></p><p>The original research data was retrieved later than many historical filing dates. This check does not certify an archived point-in-time dataset. These monitoring statuses are not included in research exports.</p></details>`:'Research coverage unavailable. The evidence snapshot is still loading or could not be read. Announcements remain available below.';
+ const table=company.filings.length?`<div class="table-wrap updates-scroll" tabindex="0" role="region" aria-label="Recent filing announcements"><table><thead><tr><th scope="col">Filed</th><th scope="col">Form</th><th scope="col">Report date</th><th scope="col">Research coverage</th><th scope="col">Original evidence</th></tr></thead><tbody>${company.filings.map(r=>`<tr><td>${esc(r.filed)}<small>Accepted: ${r.accepted_at?esc(utc(r.accepted_at)):'Unavailable'}</small></td><td>${esc(r.form)}</td><td>${esc(r.report_date||'Unavailable')}</td>${coverageCell(r)}<td>${link(r.document_url||r.filing_index_url,r.document_url?'Read filing':'Filing index')}<small>${esc(r.accession)} · ${link(r.filing_index_url,'Index')}</small></td></tr>`).join('')}</tbody></table></div>`:'<p>No supported filings in this 120-day window. This is not a complete disclosure history.</p>';
+ return `<section aria-label="Recent company disclosures"><h3>${esc(ticker)} · Recent disclosures</h3><p>Up to 20 filings in the last 120 days. 10-K: annual report. 10-Q: quarterly report. 8-K: current report covering a range of company events. /A marks an amendment.</p><div class="updates-coverage">${context}</div>${table}</section>
  <section aria-label="Daily Treasury rates"><h3>US Treasury · Daily par yields</h3><p>Observation date: <strong>${esc(latest.date)}</strong>. Percent per year; these are daily observations, not intraday quotes.${oldRates?' <strong class="updates-warning">This observation is over 7 days old.</strong>':''}</p>
  <div class="updates-rates">${TENORS.map(t=>`<div><span>${esc(t.toUpperCase())}</span><strong>${yieldText(latest[t])}</strong></div>`).join('')}</div>
  <details><summary>Recent daily observations (up to 10)</summary><div class="table-wrap" tabindex="0" role="region" aria-label="Recent Treasury observations"><table><thead><tr><th scope="col">Date</th>${TENORS.map(t=>`<th scope="col">${t.toUpperCase()}</th>`).join('')}</tr></thead><tbody>${rates.slice(-10).reverse().map(r=>`<tr><td>${esc(r.date)}</td>${TENORS.map(t=>`<td>${yieldText(r[t])}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details></section>
  <details class="updates-provenance"><summary>Sources and capture record</summary><p>Each raw source has a SHA-256 fingerprint. The feed fingerprint identifies this published capture; it is not proof of financial accuracy.</p><p>Feed SHA-256: <code>${esc(feed.feed_sha256)}</code></p><ul>${feed.sources.map(s=>`<li>${link(s.url,s.file)}<br>Retrieved ${esc(utc(s.retrieved_at))}<br><code>${esc(s.raw_sha256)}</code></li>`).join('')}</ul></details>`;
 }
-export function initOfficialUpdates(doc,{fetch:fetcher=globalThis.fetch,now=Date.now,setInterval:schedule,clearInterval:unschedule,timeoutMs=15000}={}){
+export function initOfficialUpdates(doc,{fetch:fetcher=globalThis.fetch,now=Date.now,setInterval:schedule,clearInterval:unschedule,timeoutMs=15000,research=()=>null}={}){
  const root=doc.querySelector('#official-updates');if(!root)return()=>{};
  const win=doc.defaultView,$=s=>root.querySelector(s),button=$('#updates-check'),status=$('#updates-status'),content=$('#updates-content'),company=$('#updates-company');
  schedule=schedule||win.setInterval.bind(win);unschedule=unschedule||win.clearInterval.bind(win);
@@ -79,14 +85,14 @@ export function initOfficialUpdates(doc,{fetch:fetcher=globalThis.fetch,now=Date
     if(!response.ok)throw new Error('unavailable');const text=await response.text();if(text.length>1000000)throw new Error('oversized');return validateUpdates(JSON.parse(text),now());})();
    const next=await Promise.race([load,timeout]);if(disposed)return;
    if(feed&&next.captured_at<feed.captured_at)throw new Error('older capture');
-   feed=next;content.innerHTML=renderFeed(feed,company.value,now());displayStatus();
+   feed=next;content.innerHTML=renderFeed(feed,company.value,now(),research());displayStatus();
   }catch{
    if(!disposed)displayStatus(feed?'Check failed. Showing the previous validated capture.':'Check failed. Official updates are unavailable. Please try again.');
   }finally{win.clearTimeout(timer);busy=false;if(!disposed)button.disabled=false;}
  }
  const maybeCheck=()=>{if(root.open&&doc.visibilityState!=='hidden'&&now()-lastAttempt>=INTERVAL)void check();};
- const change=()=>{if(feed)content.innerHTML=renderFeed(feed,company.value,now());};
- root.addEventListener('toggle',maybeCheck);doc.addEventListener('visibilitychange',maybeCheck);button.addEventListener('click',check);company.addEventListener('change',change);
+ const change=()=>{if(feed)content.innerHTML=renderFeed(feed,company.value,now(),research());};
+ doc.addEventListener('finscope-research-ready',change);root.addEventListener('toggle',maybeCheck);doc.addEventListener('visibilitychange',maybeCheck);button.addEventListener('click',check);company.addEventListener('change',change);
  const interval=schedule(maybeCheck,INTERVAL);maybeCheck();
- return()=>{disposed=true;controller?.abort();unschedule(interval);root.removeEventListener('toggle',maybeCheck);doc.removeEventListener('visibilitychange',maybeCheck);button.removeEventListener('click',check);company.removeEventListener('change',change);};
+ return()=>{disposed=true;controller?.abort();unschedule(interval);doc.removeEventListener('finscope-research-ready',change);root.removeEventListener('toggle',maybeCheck);doc.removeEventListener('visibilitychange',maybeCheck);button.removeEventListener('click',check);company.removeEventListener('change',change);};
 }

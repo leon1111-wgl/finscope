@@ -1,3 +1,4 @@
+import {initOfficialUpdates} from './official-updates.js';
 import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';
@@ -433,6 +434,7 @@ async function init() {
     document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => show(b.dataset.page)));
     $('#brief-file').addEventListener('change', openSavedBrief);
     ready = true;
+    document.dispatchEvent(new window.Event('finscope-research-ready'));
     lockResearch(false);
     let saved, linkError;
     try { saved = selectionFromURL(params, bundle); } catch (error) { linkError = error.message; }
@@ -449,4 +451,5 @@ async function init() {
     $('#freshness').textContent = 'Evidence snapshot unavailable.';
   }
 }
+initOfficialUpdates(document,{research:()=>ready?bundle:null});
 init();
