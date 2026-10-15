@@ -22,3 +22,16 @@ Next action: implement the compact workbench structure and coherent light theme,
 ## 2026-10-16 — Filing coverage within the existing table
 
 The functional iteration added one prose column and a compact research-cutoff sentence to the existing current-monitoring table. No new panel, decorative colors or card collection was added. Method/version detail uses a disclosure. At 1280 px the complete table fits; at 390 px its own scroll region retains 16 px body text and 14.4 px explanatory text without expanding the page. Visible keyboard focus and horizontal scrolling were checked in the local browser. The complete workbench theme pass above remains pending.
+
+
+## 2026-10-16 — Bring company selection into the first screen
+
+Reproduced problem: at 1280 px the company control started about 1,086 px down the page; at 390 px it started about 1,660 px down. A large promotional hero, story card, repeated workspace slogan and saved-brief utility preceded the primary action. Mobile brand text was only 9 px and navigation labels were 13 px.
+
+Selected a bounded entrance/navigation pass. Replaced the hero with “Company research” and one short sentence, reduced the masthead, removed the decorative gradient/story card/pill, moved the intact restoration utility after company/date/scope, and made navigation plain underlined buttons. Current monitoring remains separate and clearly names its time boundary. Brand attribution is now at least 14 px; navigation and selection inputs are 16 px, with navigation targets about 48 px high. The dark research/chart palette remains, so this pass does not pretend to complete the proposed light theme or remaining panel/KPI consolidation.
+
+Actual local browser: company control now starts at about 398 px on desktop and 541 px on mobile; mobile date input starts at 632 px. Both inputs are visible in the first 390 × 844 screen. All five views were navigable at both widths without page overflow (document width 1,265/375 inside 1,280/390 viewports). Empty scenario input prevented navigation and displayed a visible correction prompt. Restoring an actual historical JSON brief focused its confirmation, disabled selection during preview, and preserved its date on apply. A native download exactly matched the prior brief except export time. All 90 existing JavaScript tests passed; no new CSS mirror tests were added. Independent review/release status is recorded in the improvement log.
+
+Screenshots retained locally under `.work/design-entry/`: `before-desktop.jpg`, `before-mobile.jpg`, `after-desktop.jpg`, `after-mobile.jpg`, `invalid-mobile.jpg`, `restore-desktop.jpg`. These are actual browser captures, not generated mockups. A local browser reused old CSS after HTML changed; the stylesheet now has an explicit entry-release query token, and the final captures/measurements used the new styles. Native print and artificially induced stale/loading failures were not newly exercised; their selectors and semantics remain unchanged.
+
+Next visual pass: simplify ordinary reading panels and KPI presentation, then perform the coordinated light-theme/chart migration described in the guide. Preserve date/source prominence and test all chart/print/export states before claiming that migration complete.

@@ -1,5 +1,12 @@
 # Continuous improvement log
 
+## 2026-10-16 — Compact research entry and navigation
+
+The designer iteration reproduced a concrete obstacle: company selection was below 1,086 px on desktop and 1,660 px on mobile. Implemented a compact header/introduction, simpler current-update disclosure, company/date-first workspace order and quiet navigation tabs. The company control now starts at about 398/541 px respectively. Research warnings, dates, source links, selection IDs, restoration and export controls remain available. The dark chart palette and financial logic/data are unchanged. [Design choices, screenshots and next pass](DESIGN_LOG.md).
+
+Local verification: 90 JavaScript tests passed. Browser checks covered all five views at 1280 and 390 px without page overflow, blank-input validation, actual file-picker restoration/focus and a native historical JSON download. Its contents matched the original brief exactly except export time. Before/after screenshots are retained locally. Independent read-only review found no blockers after checking IDs, navigation, print selectors and four browser screenshots. Release verification follows below.
+
+
 ## 2026-10-16 — Connect announcements to published research
 
 Reproduced user gap: the current monitor linked recent SEC reports but did not show whether selected financial facts from those reports appeared in the research. An analyst had to cross-check accessions manually; a first-time reader could confuse a new announcement with a refreshed analysis.
@@ -9,6 +16,8 @@ Implemented a coverage column in the existing filing table. It distinguishes mat
 Validation: 118 Python and 90 JavaScript tests passed; the existing Starlette/httpx deprecation warning remains. Real local browser checks verified the MSFT annual reference and 8-K distinction, NVDA switching, 1280/390 px layout, 16 px table body text, visible keyboard focus and horizontal scrolling without page overflow. A native JSON download for MSFT at 2021-10-15 retained 20 eligible filing references (latest 2021-07-29), historical Treasury context and no monitor payload. DOM integration confirms opening/switching the monitor leaves the historical brief unchanged except its export timestamp. Independent review identified stale-tab wording and a test that pinned an accession in mutable data. Both were corrected; 34 focused tests passed again and the reviewer found no remaining blocker. The link target opened with the expected company/date/version in a separate browser tab; the in-app browser did not expose a new tab from the native target-blank click, so that popup handoff is not claimed as verified. Deployment verification is recorded below.
 
 Published `a0deb44e88ece873a2595edb7d8eba57152dc9a8`: Checks `38803544129` and Pages `38803544272` succeeded at that exact revision. Seven live assets (HTML, CSS, research app, monitor, coverage module and both data bundles) matched the tested local bytes. The research dataset identity remains `806380bde9beed8a40375bdc35fd010a37cc2c831bcefb35e3a020aafb44fb9e`; no financial data or model recalculation was performed. Live browser navigation timed out after successful local interaction/download/layout checks. Live HTTP/byte verification is not a claim that live browser interaction was verified.
+
+Final documentation handoff: release-verification commit `6e051f5` remains local after three bounded Git push failures (HTTP/1.1 and HTTP/2). Feature commit `a0deb44` is already published and its deployed assets were verified. Preserve these documentation changes; fetch current remote state and integrate any newer data commits before the next documentation push. Do not overwrite the cloud feed or force-push.
 
 At the start of this round, Git transport recovered. Fast-forwarded the pending official-monitor release to remote data commit `1f34c0d`; collector run `38791641474` succeeded. Preserved the newer public feed and prior documentation/design setup. The broad workbench restyle remains the designer's separate next pass.
 

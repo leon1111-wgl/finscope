@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0a1422"><title>FinScope — From profit to proof · Leon Wang</title>
+<meta name="theme-color" content="#0a1422"><title>FinScope — Company research · Leon Wang</title>
 <meta name="description" content="Review real company earnings, trace SEC evidence, compare cash flow and test financial stress scenarios. Export a reproducible research brief. Built by Leon Wang.">
-<link rel="stylesheet" href="./research.css"><script type="module" src="./research-app.js"></script>
+<link rel="stylesheet" href="./research.css?v=20261016-entry"><script type="module" src="./research-app.js"></script>
 </head>
 <body>
 <a class="skip" href="#workspace">Skip to research workspace</a>
-<header class="masthead"><a class="brand" href="./"><span class="mark">F</span><span>FinScope<small>FINANCIAL RESEARCH / LEON WANG</small></span></a><div class="header-links"><a href="./lab.html">Forecasting lab ↗</a><a href="https://github.com/leon1111-wgl/finscope">Source ↗</a></div></header>
+<header class="masthead"><a class="brand" href="./"><span class="mark">F</span><span>FinScope<small>By Leon Wang</small></span></a><div class="header-links"><a href="./lab.html">Forecasting lab ↗</a><a href="https://github.com/leon1111-wgl/finscope">Source ↗</a></div></header>
 <main>
-<section class="hero"><div><p class="eyebrow">FROM REPORTED PROFIT TO A QUESTION YOU CAN TEST</p><h1>Profit tells a story.<br><span>Cash adds the evidence.</span></h1><p class="lead">Review annual financial health and newer interim results. Follow the filing evidence. Test a weaker operating year. Leave with a research brief you can use.</p><a href="#workspace" class="button primary">Start a company review ↓</a></div><aside class="story"><span class="eyebrow">YOUR NEXT COMPANY REVIEW</span><h2>“Earnings grew. Is the business more resilient?”</h2><p>A headline gives you one number. A useful review connects profit, cash generation and obligations, then makes its assumptions visible.</p><ol><li>Check the reported evidence.</li><li>Compare financial profiles.</li><li>Test a concrete downside.</li><li>Export questions and sources.</li></ol></aside></section>
+<section class="hero"><h1>Company research</h1><p class="lead">Review reported results, trace filing evidence and test downside assumptions.</p></section>
 <div id="freshness" class="freshness" role="status">Loading official financial evidence…</div>
 <details id="official-updates" class="official-updates no-print">
-<summary>Latest official updates <span>Filing announcements + daily Treasury yields</span></summary>
+<summary>Current updates <span>Filings and Treasury yields · independent of research date</span></summary>
 <div class="updates-body">
 <p class="note"><strong>Current monitoring.</strong> These updates are not filtered by the research date below. They are not included in financial calculations or exported historical briefs.</p>
 <p>Official sources are collected hourly when the scheduled job runs. Publication can be delayed. This section checks the published feed every five minutes while open and visible.</p>
@@ -23,13 +23,14 @@
 <div id="updates-content"></div>
 </div></details>
 <section id="workspace" class="workspace" aria-label="Company research workspace">
-<div class="workspace-heading"><div><p class="eyebrow">RESEARCH WORKSPACE</p><h2>One question. A traceable answer.</h2></div><span class="pill">Real SEC filings · browser calculations</span></div>
+<div class="workspace-heading"><h2>Select company and date</h2></div>
+
+<form class="filters" id="selection" aria-label="Company and information date"><label>Company<select id="company" disabled><option>Loading…</option></select></label><label>Information date<input id="as-of" type="date" disabled></label><button type="button" id="latest" disabled>Use latest snapshot</button></form>
+<p id="scope" class="scope"></p>
 <details id="saved-brief" class="saved-brief no-print"><summary>Open a saved brief</summary><p>Restore the company, date and assumptions from a downloaded FinScope JSON brief. The file stays on your device. Financial values and conclusions in the file are not imported.</p><label for="brief-file">Choose evidence brief (.json, up to 2 MB)</label><input id="brief-file" type="file" accept=".json,application/json" disabled></details>
 <p id="restore-message" class="note no-print" role="status" aria-live="polite"></p>
 <div id="restore-preview" class="no-print" hidden></div>
-<form class="filters" id="selection" aria-label="Company and information date"><label>Company<select id="company" disabled><option>Loading…</option></select></label><label>Information date<input id="as-of" type="date" disabled></label><button type="button" id="latest" disabled>Use latest snapshot</button></form>
-<p id="scope" class="scope"></p>
-<nav class="steps" aria-label="Research steps"><button data-page="review" aria-current="page">01 <span>Review the evidence</span></button><button data-page="compare">02 <span>Compare companies</span></button><button data-page="stress">03 <span>Test assumptions</span></button><button data-page="brief">04 <span>Take your brief</span></button><button data-page="method">About the project</button></nav>
+<nav class="steps" aria-label="Research views"><button data-page="review" aria-current="page">Evidence</button><button data-page="compare">Comparison</button><button data-page="stress">Scenarios</button><button data-page="brief">Brief</button><button data-page="method">Method &amp; sources</button></nav>
 <div id="status" role="status" aria-live="polite"></div>
 <div id="content"><p class="empty">The research workspace is loading. No account or API key is required.</p></div>
 </section>

@@ -8,7 +8,7 @@ The first screen should help someone select a company and information date, unde
 
 ## First implementation pass
 
-Focus on `web/index.html` and `web/research.css`. Implement this as one coherent change, then inspect all research views before publication.
+The entry/navigation portion (items 1–3 and 6) was implemented on 2026-10-16 in `web/index.html` and `web/research.css`. Company/date controls now appear in the first screen at 1280 and 390 px. Saved-brief restoration follows selection; current monitoring stays outside the dated workspace. Items 4–5 and the coordinated light theme remain pending. Continue from the current source rather than repeating the entry rewrite.
 
 1. Replace the large marketing hero and story card with a compact introduction: **Company research**. Supporting sentence: **Review reported results, trace filing evidence and test downside assumptions.** Retain the actual research and export functionality.
 2. Reduce the masthead to approximately 68 px on desktop, with a 21 px wordmark and a simple 28 px square mark. Keep the source, portfolio and separate forecasting-lab routes discoverable.
@@ -22,7 +22,7 @@ This pass must not change calculations, source selection, model outputs, data re
 
 ## Visual system
 
-The initial design recommendation is a light neutral workbench with restrained green and blue accents. It is not yet implemented. Validate the complete theme, including charts and states, before release.
+The initial design recommendation is a light neutral workbench with restrained green and blue accents. It is not yet implemented; the bounded entry pass retained the tested dark chart palette and removed the decorative body gradient. Validate the complete theme, including charts and states, before release.
 
 | Token | Value | Purpose |
 | --- | --- | --- |
