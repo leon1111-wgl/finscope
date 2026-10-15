@@ -981,6 +981,9 @@ code {
 .updates-controls select { min-width: 11rem; }
 #updates-content > section { padding: 1.2rem 0; border-top: 1px solid var(--border); }
 .updates-scroll { max-height: 32rem; overflow: auto; }
+.official-updates table { min-width: 700px; font-size: 1rem; }
+.official-updates th { font-size: .95rem; }
+.official-updates td { white-space: nowrap; }
 .official-updates small { display: block; font-size: .9rem; color: var(--muted); margin-top: .35rem; }
 .updates-rates { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .8rem; margin: 1rem 0 1.5rem; }
 .updates-rates > div { padding: .9rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
