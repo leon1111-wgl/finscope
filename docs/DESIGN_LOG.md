@@ -1,5 +1,17 @@
 # FinScope design log
 
+## 2026-10-20 — Readable metric bands and distinct editing surfaces
+
+Reproduced in the actual browser: KPI names and supporting periods/notes were 13 px; at 390 px, the annual period date wrapped between its year and month. Detached tinted KPI cards and rounded reading panels also gave editable controls and explanatory sections similar visual weight. The repository was clean and no release was pending before this pass.
+
+Implemented guide items 4–5 as screen-only CSS. Ordinary reading sections now have a top rule and whitespace. Scenario/bond forms and saved-brief confirmation retain an enclosed surface. Financial KPIs use one ruled band with four desktop columns or two narrow-screen columns. Supporting text is 14 px with 1.5 line height; tabular values are 28 px desktop/25 px mobile. Two-line label space aligns each mobile row's values. Existing dark charts, source/warning treatments, print styles, data and financial logic are unchanged. The stylesheet cache token was advanced for this release.
+
+Actual local browser verification: all five research views at 1280 × 900 and 390 × 844 stayed within document widths of 1,265/375 px. MSFT annual dates fit completely; NVDA interim labels and signed percentage-point changes remain readable. Treasury reference yields and nested hypothetical-bond KPIs retain units/context. A deliberately extreme hypothetical bond (30% coupon, 50 years, zero yield/shock) displayed $1600.00 in each 150/151 px mobile cell without overflow; this was an explicit scenario, not a reported financial fact. NVDA's unavailable capital expenditure remained visible in the evidence table. An out-of-range 2010 date restored the valid selection and displayed correction text. A blank scenario input kept navigation blocked with visible feedback and focus. Native selection of an exported NVDA 2021-10-15 JSON brief displayed the enclosed confirmation with wrapping dataset hashes; applying and downloading again reproduced all content except export time.
+
+All 94 existing JavaScript tests pass. Screenshots are retained locally in `.work/design-metrics/`: `before-desktop.jpg`, `before-mobile.jpg`, `after-desktop.jpg`, `after-mobile.jpg`, `controls-desktop.jpg`, `invalid-mobile.jpg`, `extreme-mobile.jpg`, `interim-mobile.jpg`, and `restore-mobile.jpg`. Native printing and artificially induced missing KPI data were not newly exercised; print rules are outside this screen-only change. Release evidence is recorded in the improvement log.
+
+Next visual candidate: audit table reading/navigation and long source labels, or coordinate a complete light-theme/chart migration. Preserve the existing dark palette until every chart and state can be checked together.
+
 ## 2026-10-15 — Dedicated designer established
 
 User feedback: the interface feels too AI-generated. The user selected a restrained financial research workbench over an editorial magazine or dense terminal direction.

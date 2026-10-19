@@ -1,5 +1,13 @@
 # Continuous improvement log
 
+## 2026-10-20 — Readable KPI bands and clearer editing surfaces
+
+The designer reproduced small 13 px metric context, a split fiscal date on mobile, and visually similar boxes around ordinary explanations and editable forms. Implemented screen-only reading sections with rules/whitespace, continuous four/two-column KPI bands and 14 px labels/notes. Forms and saved-brief decisions retain clear enclosed surfaces. No financial data, logic, chart colors, export formats or print rules changed. [Design rationale and local captures](DESIGN_LOG.md).
+
+Local validation: all 94 JavaScript tests passed. Actual 1280/390 px browser checks covered all five views, MSFT annual and NVDA interim metrics, Treasury context, long hypothetical-bond values, unavailable capital expenditure, out-of-range date feedback and blocked navigation for a blank scenario input. No page overflow occurred. A native historical NVDA JSON restore/download round trip matched exactly except export time, with dataset hashes and confirmation controls retained. Before/after and failure-state screenshots are in `.work/design-metrics/`. Independent read-only review found no concrete regression or release blocker after checking the screen/print scope, generated form/restoration selectors, all four-item KPI groups and desktop/mobile captures. Deployment results follow when verified.
+
+Next candidate: improve table comparison and source-label navigation if a concrete reading obstacle is reproduced; preserve all dates, assumptions and source context. The coordinated light theme remains separate work.
+
 ## 2026-10-20 — Inspect the facts behind filing coverage
 
 Reproduced gap: the announcement monitor reported 25 matched facts for Microsoft's annual filing but offered no way to see which amounts or periods established that count. A reviewer had to search the research bundle manually. The bounded improvement adds **Inspect N facts**, opening the associated disclosure below the table with metric labels, stored numeric values, units, periods and XBRL tags. The original filing/index remains linked. Newer period ends appear first; comparative periods and raw cash-flow inputs are explicitly distinguished from totals or signed bridge effects.
