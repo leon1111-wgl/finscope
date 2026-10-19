@@ -4,7 +4,7 @@
 
 An analyst sees a new SEC announcement and needs to decide whether the published financial review already uses facts from it. Previously, the monitor only linked the report. A student could mistake a fresh announcement feed for a fresh financial analysis.
 
-Open **Latest official updates**, select a company and read the **Research coverage** column. The comparison uses the latest research cutoff in the bundle loaded by this tab, displayed above the table, independent of the historical date in your workspace. The versioned **Open [company] at this cutoff in a new tab** link preserves the current research draft. Read the original SEC filing for the full disclosure.
+Open **Current updates**, select a company and read the **Research coverage** column. The comparison uses the latest research cutoff in the bundle loaded by this tab, displayed above the table, independent of the historical date in your workspace. The versioned **Open [company] at this cutoff in a new tab** link preserves the current research draft. Read the original SEC filing for the full disclosure.
 
 | Status | Meaning and next action |
 | --- | --- |
@@ -13,6 +13,14 @@ Open **Latest official updates**, select a company and read the **Research cover
 | Read event report | 8-K and 8-K/A narrative and exhibits are outside the structured financial-fact pipeline. They need manual reading even if another filing from the same day supplies financial facts. |
 | Not referenced | No selected financial facts match within this scope. Older or superseded reports and unsupported metrics can cause this. It is not proof that collection failed or that the company did not disclose the information. |
 | Coverage unavailable | Research data is not yet available or its comparison metadata is incomplete. Do not treat this as zero coverage. |
+
+## Inspect the matched facts
+
+Choose **Inspect N facts** in a referenced announcement. The matching disclosure opens below the announcement table and receives keyboard focus. It lists the metric, exact numeric value stored in the research bundle, unit, start/end dates (or a single balance-sheet date) and XBRL tag. Newer period ends appear first. The source link uses the validated announcement document or its filing-index fallback.
+
+This answers “which facts support this coverage count?” without switching the dated research workspace. Comparative periods remain separate: a 2026 filing can also supply 2025 and 2024 figures. These are reported values, not signed cash-flow effects; do not sum the list. Missing amounts are omitted from the count and list, while zero stays visible. Missing units are explicitly unavailable. Opening the filing does not jump to an exact tagged value or establish a causal explanation.
+
+An announcement refresh retains open fact disclosures and summary focus when the same filing is still listed. The detail belongs to the watched company, not the company/date currently selected for a brief. It remains outside research exports and print. No new official-data request, model run or calculation is triggered.
 
 ## Matching and boundaries
 

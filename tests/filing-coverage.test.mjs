@@ -41,3 +41,29 @@ test('a current sourced annual fact in the real bundle can be traced without fre
  const f=Object.values(data.snapshots.at(-1).companies.MSFT.at(-1).metrics).find(f=>Number.isFinite(f?.value));
  assert.ok(f);assert.equal(coverage.filingCoverage(f,coverage.publishedCoverage(data,'MSFT')).status,'referenced');
 });
+
+test('referenced facts retain reported amounts, periods and units without changing the bundle',()=>{
+ const b=bundle(),metrics=b.snapshots[0].companies.MSFT[0].metrics;
+ metrics.cash={...fact,tag:'CashAndCashEquivalentsAtCarryingValue',start:null,value:-1234.5};
+ metrics.unknownUnit={...fact,tag:'Other',unit:null,value:12.123456789};
+ metrics.duplicate={...fact};metrics.absent={...fact,tag:'Missing',value:null};
+ const before=structuredClone(b),result=coverage.filingCoverage(filing,coverage.publishedCoverage(b,'MSFT'));
+ assert.ok(Array.isArray(result.facts),'Matching facts must be inspectable, not just counted');
+ assert.equal(result.facts.length,3);assert.equal(result.count,result.facts.length);
+ assert.deepEqual(result.facts.map(f=>[f.tag,f.value,f.unit,f.start,f.end]).sort(),[
+  ['CashAndCashEquivalentsAtCarryingValue',-1234.5,'USD',null,'2026-06-30'],
+  ['Other',12.123456789,null,'2025-07-01','2026-06-30'],
+  ['Revenue',0,'USD','2025-07-01','2026-06-30']
+ ].sort());
+ result.facts[0].value=999;assert.deepEqual(b,before);
+});
+
+test('different comparative periods remain separate while future and absent facts stay excluded',()=>{
+ const b=bundle();b.snapshots[0].companies.MSFT[0].metrics={
+  current:fact,prior:{...fact,start:'2024-07-01',end:'2025-06-30',value:5},
+  future:{...fact,end:'2026-10-16',value:99},absent:{...fact,value:null}
+ };
+ const c=coverage.publishedCoverage(b,'MSFT'),r=coverage.filingCoverage(filing,c);
+ assert.equal(r.facts?.length,2);assert.deepEqual(r.facts.map(f=>f.end).sort(),['2025-06-30','2026-06-30']);
+ for(const f of [{...filing,form:'8-K'},{...filing,filed:'2026-10-16'},{...filing,form:'10-K/A'}])assert.equal(coverage.filingCoverage(f,c).facts,undefined);
+});

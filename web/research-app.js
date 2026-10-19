@@ -1,4 +1,4 @@
-import {initOfficialUpdates} from './official-updates.js';
+import {initOfficialUpdates} from './official-updates.js?v=20261020-facts2';
 import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';

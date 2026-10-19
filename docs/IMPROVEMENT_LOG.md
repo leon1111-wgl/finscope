@@ -1,5 +1,17 @@
 # Continuous improvement log
 
+## 2026-10-20 — Inspect the facts behind filing coverage
+
+Reproduced gap: the announcement monitor reported 25 matched facts for Microsoft's annual filing but offered no way to see which amounts or periods established that count. A reviewer had to search the research bundle manually. The bounded improvement adds **Inspect N facts**, opening the associated disclosure below the table with metric labels, stored numeric values, units, periods and XBRL tags. The original filing/index remains linked. Newer period ends appear first; comparative periods and raw cash-flow inputs are explicitly distinguished from totals or signed bridge effects.
+
+The detail uses the same exact company/accession/form/filing-date matching and current published research boundary as the existing coverage count. It does not fetch data, recompute a model or change historical selection/exports. Missing amounts are omitted and zeros remain; unavailable units are labeled. Disclosures retain their open state and summary focus across refreshes when the same filing remains. The existing design uses full-width reading rows and a stacked mobile layout, without another dashboard card. [Workflow and boundaries](FILING_COVERAGE.md).
+
+Validation: four new regression tests were first observed failing for the missing fact list and disclosure; the inspect/focus interaction was also checked red-to-green. All 94 JavaScript tests pass, including historical export isolation. A six-company audit matched all 109 displayed facts in six referenced filings to stored evidence and confirmed unchanged input data. Actual local browser checks covered MSFT annual and NVDA interim facts, 1280/390 px layouts, long tags, keyboard disclosure control and source links. The page stayed within both viewport widths; values are 16 px and XBRL context 14.4 px. Two native historical MSFT JSON downloads before/after inspecting and refreshing NVDA monitoring matched exactly except export time. Missing-unit/zero/negative/decimal values and failed/stale feeds were covered by DOM tests, not fabricated public data. Screenshots and audit results are retained locally in `.work/filing-facts/`.
+
+Continuation: rebased the previous local release notes onto cloud data commit `9505d53`, preserving all scheduled data updates. The research cutoff is now 2026-10-17; the latest local feed was captured 2026-10-19. These updates came from the existing workflows, not this feature. Independent read-only review found no critical or important blocker. It separately checked filing-index fallback, descending period order, focus/open-state/table-scroll restoration and historical-state isolation. Release verification follows below.
+
+Next candidate: historical bundle retrieval for a saved brief whose dataset has changed. Keep reproduction claims explicit; a current-source reconstruction is not an archived point-in-time database.
+
 ## 2026-10-16 — Compact research entry and navigation
 
 The designer iteration reproduced a concrete obstacle: company selection was below 1,086 px on desktop and 1,660 px on mobile. Implemented a compact header/introduction, simpler current-update disclosure, company/date-first workspace order and quiet navigation tabs. The company control now starts at about 398/541 px respectively. Research warnings, dates, source links, selection IDs, restoration and export controls remain available. The dark chart palette and financial logic/data are unchanged. [Design choices, screenshots and next pass](DESIGN_LOG.md).

@@ -867,3 +867,16 @@ code {
 .official-updates td.filing-coverage { white-space: normal; min-width: 18rem; max-width: 23rem; }
 .filing-coverage strong { font-size: 1rem; }
 .filing-coverage small { line-height: 1.5; }
+
+/* Expand filing evidence at full width rather than crowding the coverage column. */
+.inspect-filing { display: block; margin-top: .5rem; padding: .5rem 0; min-height: 44px; border: 0; background: none; color: var(--accent); text-align: left; text-decoration: underline; font-size: 1rem; }
+.filing-facts { margin: 1rem 0; scroll-margin-top: 1rem; }
+.filing-facts > summary { min-height: 44px; padding: .5rem 0; font-size: 1rem; }
+.filing-facts p { font-size: .9rem; line-height: 1.55; overflow-wrap: anywhere; }
+.filing-facts ol { list-style: none; padding: 0; margin: 0; }
+.filing-facts li { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr); gap: 1.5rem; padding: 1rem 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; font-size: 1rem; }
+.filing-facts .fact-value { font-variant-numeric: tabular-nums; }
+.filing-facts code { white-space: normal; overflow-wrap: anywhere; font-size: .9rem; }
+@media (max-width: 680px) {
+ .filing-facts li { grid-template-columns: minmax(0,1fr); gap: .5rem; }
+}

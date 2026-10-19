@@ -13,15 +13,17 @@ export function publishedCoverage(bundle,ticker){
   const snapshot=selectSnapshot(bundle.snapshots,bundle.as_of),rows=snapshot?.companies?.[ticker];
   if(!validDate(snapshot?.as_of)||!Array.isArray(rows)||!rows.length||rows.some(r=>!r.metrics||!validDate(r.period_end)))return unavailable;
   const references=new Map();
-  const visit=value=>{
+  const visit=(value,label='')=>{
    if(!value||typeof value!=='object')return;
    if(typeof value.accession==='string'&&/^\d{10}-\d{2}-\d{6}$/.test(value.accession)&&financialForms.has(value.form)&&
     validDate(value.filed)&&value.filed<=bundle.as_of&&validDate(value.end)&&value.end<=bundle.as_of&&
     typeof value.tag==='string'&&Number.isFinite(value.value)){
-    const key=sourceKey(value),facts=references.get(key)||new Set();
-    facts.add(JSON.stringify([value.tag,value.start||null,value.end,value.unit||null,value.value]));references.set(key,facts);
+    const key=sourceKey(value),facts=references.get(key)||new Map();
+    const identity=JSON.stringify([value.tag,value.start||null,value.end,value.unit||null,value.value]);
+    facts.set(identity,{label,tag:value.tag,start:value.start||null,end:value.end,unit:value.unit||null,value:value.value});
+    references.set(key,facts);
    }
-   for(const child of Object.values(value))if(child&&typeof child==='object')visit(child);
+   for(const [name,child] of Object.entries(value))if(child&&typeof child==='object')visit(child,name==='fact'&&typeof value.label==='string'?value.label:name.replaceAll('_',' ').replace(/^./,c=>c.toUpperCase()));
   };
   visit(rows);
   visit(selectInterim(bundle,ticker,bundle.as_of,rows.at(-1)).checkpoint);
@@ -34,6 +36,6 @@ export function filingCoverage(filing,coverage){
  if(coverage?.status!=='available')return {status:'unavailable',label:'Coverage unavailable',detail:'Research data is not ready for comparison. No coverage conclusion is available.'};
  if(filing.filed>coverage.date)return {status:'after_cutoff',label:'After research cutoff',detail:'This filing is newer than the published research date. Read it before using the older analysis.'};
  const count=coverage.references.get(sourceKey(filing))?.size||0;
- if(count)return {status:'referenced',count,label:'Financial facts referenced',detail:`${count} distinct sourced fact${count===1?'':'s'}. Read the full filing for context.`};
+ if(count)return {status:'referenced',count,facts:[...coverage.references.get(sourceKey(filing)).values()].map(f=>({...f})),label:'Financial facts referenced',detail:`${count} distinct sourced fact${count===1?'':'s'}. Read the full filing for context.`};
  return {status:'not_referenced',label:'Not referenced',detail:'No selected facts matched. This may reflect an older report or unsupported metrics; it does not establish a failed refresh.'};
 }

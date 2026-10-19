@@ -145,6 +145,8 @@ test('current coverage uses the shared loaded bundle while a historical brief st
  assert.match(ui.$('.updates-coverage').textContent,/research loaded in this tab/);
  assert.equal(new URL(ui.$('.updates-coverage a').href).searchParams.get('date'),data.as_of);
  assert.equal(ui.$('#as-of').value,'2021-10-15');
+ const inspect=ui.$('[data-inspect-filing]');assert.ok(inspect);inspect.click();
+ assert.equal(ui.$('.filing-facts').open,true);
  ui.$('#updates-company').value='NVDA';ui.$('#updates-company').dispatchEvent(new ui.dom.window.Event('change'));
  assert.equal(ui.$('#company').value,'MSFT');
  assert.equal(new URL(ui.$('.updates-coverage a').href).searchParams.get('company'),'NVDA');

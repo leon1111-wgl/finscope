@@ -26,6 +26,7 @@ async function boot(t,fetcher,research=()=>null){
  const cleanup=initOfficialUpdates(dom.window.document,{fetch:async(url,options)=>{requests.push(url);return fetcher?fetcher(url,options):{ok:true,text:async()=>JSON.stringify(fixture())};},now:()=>time,
   research,setInterval:cb=>{callback=cb;return 1;},clearInterval:()=>{},timeoutMs:15});
  t.after(()=>{cleanup();dom.window.close();});
+ dom.window.HTMLElement.prototype.scrollIntoView=function(){};
  const $=s=>dom.window.document.querySelector(s);
  const open=async()=>{$('#official-updates').open=true;$('#official-updates').dispatchEvent(new dom.window.Event('toggle'));await tick();await tick();};
  return {dom,$,requests,open,poll:async()=>{time+=300001;callback();await tick();await tick();}};
@@ -100,4 +101,34 @@ test('coverage can arrive after the feed without a second fetch or changing the 
  const link=ui.$('.updates-coverage a');assert.equal(new URL(link.href).searchParams.get('date'),data.as_of);
  assert.equal(link.target,'_blank');assert.equal(new URL(link.href).searchParams.get('dataset'),data.dataset_sha256);
  assert.equal(ui.dom.window.location.href,url);assert.equal(ui.$('#selection').innerHTML,selection);assert.equal(ui.requests.length,1);
+});
+
+function matchedResearch(){
+ const f={accession:'0000789019-26-000002',form:'10-K',filed:'2026-10-14',tag:'Revenue',start:'2025-07-01',end:'2026-06-30',value:0,unit:'USD'};
+ return {data_kind:'real_official_financial_evidence',as_of:'2026-10-15',generated_at:capture,dataset_sha256:hash,companies:[{ticker:'MSFT'}],snapshots:[{as_of:'2026-10-15',companies:{MSFT:[{period_end:'2026-06-30',metrics:{
+  revenue:f,cash:{...f,tag:'Cash & <test>',start:null,value:-1234.5},unknown:{...f,tag:'Unknown',unit:null,value:12.123456789},missing:{...f,tag:'Missing',value:null}
+ }}]}}],interim:{MSFT:[]}};
+}
+test('an analyst can inspect exact referenced values with periods and missing-unit warnings',async t=>{
+ const feed=fixture();feed.companies[1].filings[0].form='10-K';const data=matchedResearch();
+ const ui=await boot(t,async()=>({ok:true,text:async()=>JSON.stringify(feed)}),()=>data);await ui.open();
+ const details=ui.$('.filing-facts');assert.ok(details,'Referenced filing needs a fact disclosure');
+ const items=[...details.querySelectorAll('li')];assert.equal(items.length,3);
+ assert.ok(ui.$('[data-inspect-filing]'),'Announcement must open its associated evidence');ui.$('[data-inspect-filing]').click();assert.equal(details.open,true);assert.equal(ui.dom.window.document.activeElement,details.querySelector('summary'));
+ assert.match(details.textContent,/0 USD/);assert.match(details.textContent,/-1,234\.5 USD/);
+ assert.match(details.textContent,/12\.123456789/);assert.match(details.textContent,/Unit unavailable/);
+ assert.match(details.textContent,/2025-07-01.*2026-06-30/);assert.match(details.textContent,/At 2026-06-30/);
+ assert.match(details.textContent,/Cash & <test>/);assert.equal(details.querySelector('test'),null);
+ assert.doesNotMatch(details.textContent,/Missing/);assert.match(details.textContent,/not cash-flow effects/);
+ assert.equal(ui.$('#as-of').value,'');assert.equal(ui.dom.window.location.search,'?date=2021-10-15');
+ ui.$('#updates-company').value='NVDA';ui.$('#updates-company').dispatchEvent(new ui.dom.window.Event('change'));
+ assert.equal(ui.$('.filing-facts'),null);
+});
+
+test('refreshing announcements preserves an open fact disclosure and its summary focus',async t=>{
+ const feed=fixture();feed.companies[1].filings[0].form='10-K';
+ const ui=await boot(t,async()=>({ok:true,text:async()=>JSON.stringify(feed)}),()=>matchedResearch());await ui.open();
+ const details=ui.$('.filing-facts');assert.ok(details);details.open=true;details.querySelector('summary').focus();
+ await ui.poll();assert.equal(ui.$('.filing-facts').open,true);
+ assert.equal(ui.dom.window.document.activeElement,ui.$('.filing-facts summary'));
 });

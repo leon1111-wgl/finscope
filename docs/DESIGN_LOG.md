@@ -37,3 +37,10 @@ Screenshots retained locally under `.work/design-entry/`: `before-desktop.jpg`, 
 Released as `f8c1c92`; Checks `38806949403` and Pages `38806949544` succeeded at that exact revision. CI passed 118 Python and 90 JavaScript tests, and seven live files matched the tested bytes. Live browser navigation timed out; desktop/mobile screenshots and restored-brief download verification above were local-browser checks.
 
 Next visual pass: simplify ordinary reading panels and KPI presentation, then perform the coordinated light-theme/chart migration described in the guide. Preserve date/source prominence and test all chart/print/export states before claiming that migration complete.
+
+
+## 2026-10-20 — Read referenced facts without crowding the announcement table
+
+The monitor's coverage count did not expose its supporting values. An initial local implementation put a long list inside the coverage column; real-browser inspection showed that it cramped labels and dates. The final interaction opens a native disclosure below the announcement table. At desktop width, each row separates metric/tag, amount/unit and period; at 390 px the same row stacks without page overflow. The existing exact-source link and cutoff context remain visible. No theme, chart or financial calculation changed.
+
+Local browser verified MSFT annual and NVDA interim details, keyboard focus and disclosure toggling, and unchanged historical research after monitoring-company changes and a manual refresh. Before/after desktop and final mobile screenshots are in `.work/filing-facts/`. Long XBRL tags wrap at 14.4 px; values remain 16 px. The full regression suite passed 94 JavaScript tests. The remaining panel/KPI and coordinated theme work in the guide is still pending. Release status is recorded in the improvement log.
