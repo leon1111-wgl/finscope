@@ -10,6 +10,8 @@ Actual local browser verification: all five research views at 1280 × 900 and 39
 
 All 94 existing JavaScript tests pass. Screenshots are retained locally in `.work/design-metrics/`: `before-desktop.jpg`, `before-mobile.jpg`, `after-desktop.jpg`, `after-mobile.jpg`, `controls-desktop.jpg`, `invalid-mobile.jpg`, `extreme-mobile.jpg`, `interim-mobile.jpg`, and `restore-mobile.jpg`. Native printing and artificially induced missing KPI data were not newly exercised; print rules are outside this screen-only change. Release evidence is recorded in the improvement log.
 
+Released `b9ea4b3`; both CI workflows succeeded at that revision, seven live assets matched, and live desktop/mobile interaction and historical JSON download were verified. See the improvement log for run IDs and verification limits.
+
 Next visual candidate: audit table reading/navigation and long source labels, or coordinate a complete light-theme/chart migration. Preserve the existing dark palette until every chart and state can be checked together.
 
 ## 2026-10-15 — Dedicated designer established
