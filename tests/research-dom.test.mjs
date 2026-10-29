@@ -11,11 +11,11 @@ const inputs={revenuePercent:-10,marginPoints:-2.25,refinanceBillions:10,rateBps
 const saved=()=>buildBrief(data,data.snapshots.at(-1),data.companies.find(c=>c.ticker==='NVDA'),inputs,data.as_of);
 let sequence=0;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-async function boot(t,query='',monitor=false) {
+async function boot(t,query='',monitor=false,researchFetch=null) {
  const dom=new JSDOM(html,{url:'https://example.test/finscope/'+query});
  const calls=[],downloads=[];
  Object.assign(globalThis,{window:dom.window,document:dom.window.document,history:dom.window.history,location:dom.window.location,
-  ResizeObserver:class{observe(){}},fetch:async url=>{calls.push(url);if(monitor&&url==='./data/updates.json')return{ok:true,text:async()=>fs.readFileSync(new URL('../web/data/updates.json',import.meta.url),'utf8')};assert.equal(url,'./data/research.json');return {ok:true,json:async()=>data};}});
+  ResizeObserver:class{observe(){}},fetch:async (url,options)=>{calls.push(url);if(monitor&&url==='./data/updates.json')return{ok:true,text:async()=>fs.readFileSync(new URL('../web/data/updates.json',import.meta.url),'utf8')};assert.equal(url,'./data/research.json');return researchFetch?researchFetch(options):{ok:true,json:async()=>data};}});
  const originalURL=URL.createObjectURL;
  URL.createObjectURL=blob=>{downloads.push(blob);return 'blob:test';};
  dom.window.HTMLAnchorElement.prototype.click=function(){};
@@ -153,4 +153,39 @@ test('current coverage uses the shared loaded bundle while a historical brief st
  const after=await ui.exportJSON();delete before.exported_at;delete after.exported_at;
  assert.deepEqual(after,before);assert.equal(after.requested_date,'2021-10-15');
  assert.deepEqual(ui.calls,['./data/research.json','./data/updates.json']);
+});
+
+// A transient load failure must not strand a recipient or erase their shared inputs.
+test('failed evidence can be retried once and restores the original versioned selection',async t=>{
+ let attempt=0,finish;
+ const ui=await boot(t,saved().reopen_url.replace('https://leon1111-wgl.github.io/finscope/',''),false,()=>{
+  if(++attempt===1)return {ok:false,status:503};
+  return new Promise(resolve=>{finish=resolve;});
+ });
+ assert.match(ui.$('#content').textContent,/could not be loaded/);
+ assert.ok(ui.$('#retry-evidence'),'failed load needs an in-page recovery action');
+ assert.ok([...ui.dom.window.document.querySelectorAll('[data-page]')].every(b=>b.disabled));
+ assert.equal(ui.$('#export-json'),null);
+ const retry=ui.$('#retry-evidence');retry.click();retry.click();await tick();
+ assert.equal(attempt,2,'repeated clicks must not start concurrent loads');
+ assert.equal(ui.$('#content').getAttribute('aria-busy'),'true');
+ finish({ok:true,json:async()=>data});await tick();await tick();
+ assert.equal(ui.$('#retry-evidence'),null);
+ assert.equal(ui.$('#content').getAttribute('aria-busy'),'false');
+ assert.equal(ui.$('#company').value,'NVDA');
+ assert.deepEqual((await ui.exportJSON()).assumptions,inputs);
+ assert.equal(ui.downloads.length,1,'recovery must not duplicate download listeners');
+ assert.deepEqual(ui.calls,['./data/research.json','./data/research.json']);
+});
+
+test('retry still requires explicit approval when a saved dataset changed',async t=>{
+ let attempt=0;
+ const ui=await boot(t,`?company=NVDA&date=2021-10-15&view=brief&dataset=${'0'.repeat(64)}&calculation=1&rateBps=125`,false,()=>++attempt===1?Promise.reject(new Error('offline')):{ok:true,json:async()=>data});
+ assert.ok(ui.$('#retry-evidence'),'offline load needs recovery');
+ ui.click('#retry-evidence');await tick();await tick();
+ assert.match(ui.$('#restore-preview').textContent,/version has changed/);
+ assert.equal(ui.$('#export-json'),null);
+ assert.equal(ui.$('#company').disabled,true);
+ ui.click('#restore-apply');
+ const b=await ui.exportJSON();assert.equal(b.requested_date,'2021-10-15');assert.equal(b.assumptions.rateBps,125);
 });

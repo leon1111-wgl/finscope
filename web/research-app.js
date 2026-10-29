@@ -1,3 +1,4 @@
+import {loadResearchEvidence} from './research-load.js';
 import {initOfficialUpdates} from './official-updates.js?v=20261020-facts2';
 import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
@@ -46,6 +47,7 @@ const names = {
 const ratioFormat = (key, value) => ['current_ratio', 'cash_coverage'].includes(key) ? ratio(value) : pct(value);
 let bundle, snapshot, company, row, selectedDate, page = 'review';
 let pendingRestore = null, restoreSequence = 0, ready = false;
+let loadingEvidence = false, controlsBound = false;
 let assumptions = {
   revenuePercent: 0,
   marginPoints: 0,
@@ -407,11 +409,18 @@ function drawTrend() {
   target.dataset.width = String(width);
 }
 async function init() {
+  if (loadingEvidence || ready) return;
+  const retrying = Boolean($('#retry-evidence'));
+  loadingEvidence = true;
+  lockResearch(true);
+  $('#content').setAttribute('aria-busy', 'true');
+  $('#content').innerHTML = '<p class="empty">Loading the evidence snapshot. Large downloads may take a moment.</p>';
+  $('#freshness').textContent = 'Loading official financial evidence…';
+  $('#freshness').classList.remove('stale');
+  $('#status').textContent = 'Loading evidence…';
+  if (retrying) { $('#status').tabIndex = -1; $('#status').focus(); }
   try {
-    const response = await fetch('./data/research.json');
-    if (!response.ok) throw new Error(`Evidence request failed (${response.status})`);
-    bundle = await response.json();
-    if (bundle.data_kind !== 'real_official_financial_evidence') throw new Error('Unexpected data type');
+    bundle = await loadResearchEvidence();
     $('#company').innerHTML = bundle.companies.map(c => `<option value="${c.ticker}">${c.ticker} · ${e(c.name)}</option>`).join('');
     const dateInput = $('#as-of');
     dateInput.min = bundle.snapshots[0].as_of;
@@ -424,18 +433,21 @@ async function init() {
     $('#company').disabled = false;
     dateInput.disabled = false;
     $('#latest').disabled = false;
-    $('#selection').addEventListener('submit', ev => ev.preventDefault());
-    $('#company').addEventListener('change', useSelection);
-    dateInput.addEventListener('change', useSelection);
-    $('#latest').addEventListener('click', () => {
-      dateInput.value = bundle.as_of;
-      useSelection();
-    });
-    document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => show(b.dataset.page)));
-    $('#brief-file').addEventListener('change', openSavedBrief);
+    if (!controlsBound) {
+      $('#selection').addEventListener('submit', ev => ev.preventDefault());
+      $('#company').addEventListener('change', useSelection);
+      dateInput.addEventListener('change', useSelection);
+      $('#latest').addEventListener('click', () => {
+        dateInput.value = bundle.as_of;
+        useSelection();
+      });
+      document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => show(b.dataset.page)));
+      $('#brief-file').addEventListener('change', openSavedBrief);
+      controlsBound = true;
+    }
     ready = true;
-    document.dispatchEvent(new window.Event('finscope-research-ready'));
     lockResearch(false);
+    $('#status').textContent = '';
     let saved, linkError;
     try { saved = selectionFromURL(params, bundle); } catch (error) { linkError = error.message; }
     if (linkError) previewSavedSelection(null, linkError, 'link');
@@ -445,10 +457,27 @@ async function init() {
       $('#restore-message').textContent = 'Saved link restored with a matching data and calculation versions. Results are recomputed from this site’s evidence.';
     } else render();
     new ResizeObserver(drawTrend).observe($('#content'));
+    document.dispatchEvent(new window.Event('finscope-research-ready'));
+    if (retrying && !pendingRestore) {
+      const title = $('#content h2');
+      title.tabIndex = -1;
+      title.focus();
+    }
   } catch (error) {
+    ready = false;
+    bundle = null;
+    pendingRestore = null;
+    lockResearch(true);
+    $('#restore-preview').hidden = true;
+    $('#scope').textContent = '';
+    $('#restore-message').textContent = '';
     $('#status').textContent = error.message;
-    $('#content').innerHTML = '<div class="error">The evidence snapshot could not be loaded. Reload the page or <a href="https://github.com/leon1111-wgl/finscope">read the project guide</a>. No placeholder financial values are shown.</div>';
+    $('#content').innerHTML = '<div class="error"><h3>The evidence snapshot could not be loaded</h3><p>Your link has been kept. Retry to load the published evidence before reviewing the company, date and assumptions. No financial results are available yet.</p><div class="actions"><button type="button" id="retry-evidence">Retry loading evidence</button><a href="https://github.com/leon1111-wgl/finscope">Read the project guide ↗</a></div></div>';
+    $('#retry-evidence').addEventListener('click', init);
     $('#freshness').textContent = 'Evidence snapshot unavailable.';
+  } finally {
+    loadingEvidence = false;
+    $('#content').setAttribute('aria-busy', 'false');
   }
 }
 initOfficialUpdates(document,{research:()=>ready?bundle:null});

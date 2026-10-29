@@ -8,8 +8,8 @@ FinScope now restores the company, information date and five corporate scenario 
 
 ## Use it
 
-1. In **Take your brief**, download the JSON evidence file or copy the research-view link. Markdown also includes a reopening link.
-2. To use a file, expand **Open a saved brief** above the company selector and choose the JSON. The file is read on your device; it is not uploaded.
+1. In **Brief**, download the JSON evidence file or copy the research-view link. Markdown also includes a reopening link.
+2. To use a file, expand **Open a saved brief** below the company/date selection and choose the JSON. The file is read on your device; it is not uploaded.
 3. Inspect the company, date, assumptions and version information. Select **Restore these inputs** when both versions match.
 4. If either version differs or an older export has no version record, explicitly select **Recalculate with current data**, or cancel. This uses current data and formulas and can change the results.
 5. Review the recalculated evidence and export a new brief. The new export records the versions actually used.
@@ -27,6 +27,12 @@ A matching versioned URL opens its selection directly. A changed or unversioned 
 The dataset identifier in an imported file is only a recorded identifier. It does not certify the author's conclusions or the file's financial values. FinScope ignores those values and recomputes from its own bundle. Current-source historical reconstruction retains its existing limitations.
 
 This release does not download or serve archived datasets by hash. If a saved version is unavailable, the original Markdown/JSON remains the record of that earlier analysis. Choosing current data creates a new calculation rather than recovering the old version. Dates outside the current dataset's coverage are rejected, not clamped to a different date.
+
+## Loading and retry
+
+The evidence download has a 45-second limit covering both the response and its JSON body. If the connection fails, times out, or returns an unusable response, research controls remain disabled and **Retry loading evidence** becomes available. No financial result or export is shown until loading completes.
+
+Retry keeps the original shared-link inputs. It still checks dataset/calculation versions before reopening the research; a changed version requires the same explicit choice. Only one attempt runs at a time. A late response from an expired attempt cannot replace the recovered evidence. Retry checks the published snapshot; it does not trigger a new SEC or Treasury collection. A script that cannot load at all still requires a browser reload.
 
 ## Input and failure behavior
 

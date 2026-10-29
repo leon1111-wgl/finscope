@@ -1,5 +1,9 @@
 # FinScope design log
 
+## 2026-10-30 — Recoverable loading feedback
+
+The functional pass adds a retry button within the existing error treatment, instead of adding another dashboard panel. Company/date, view selection and imports are disabled while the evidence is unavailable. The loading region exposes its busy state; retry focuses its status, and successful recovery focuses the research heading or existing saved-version confirmation. Desktop (1280 px) and narrow (390 px) actual-browser checks showed readable wrapping and no page overflow. The 503 failure, real timeout and recovered brief are captured under `.work/load-recovery/`. No CSS, chart, print or financial calculation changed.
+
 ## 2026-10-20 — Readable metric bands and distinct editing surfaces
 
 Reproduced in the actual browser: KPI names and supporting periods/notes were 13 px; at 390 px, the annual period date wrapped between its year and month. Detached tinted KPI cards and rounded reading panels also gave editable controls and explanatory sections similar visual weight. The repository was clean and no release was pending before this pass.
