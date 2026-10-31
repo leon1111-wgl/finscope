@@ -1,18 +1,32 @@
 :root {
-  color-scheme: dark;
-  --bg: #0a1321;
-  --panel: #101e2e;
-  --panel2: #142436;
-  --border: #26394b;
-  --text: #edf3f8;
-  --muted: #a5b7c8;
-  --teal: #58dac2;
-  --blue: #83aaff;
-  --amber: #edbd74;
-  --red: #f5a99d;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Same ledger tokens as the research workspace; the lab keeps its own layout. */
+  color-scheme: light;
+  --bg: #f5f0e3; --raise: #faf6ec; --panel: #fffdf7; --panel2: #efe8d6; --border: #ddd3bb; --rule-strong: #b4a786;
+  --text: #18231d; --muted: #514f42; --teal: #076f7c; --on-aqua: #ffffff; --aqua-soft: rgba(7, 111, 124, .09);
+  --blue: #74561f; --amber: #81600f; --red: #a83c27; --sage: #3b6a2a; --lilac: #664c9e; --stone: #5d5a4d;
+  --danger-bg: #fbe9e3; --danger-border: #d59a8a; --tooltip-shadow: 0 8px 24px rgba(24, 35, 29, .12);
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--sans);
   font-size: 16px;
   line-height: 1.55
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #0e1612; --raise: #131d18; --panel: #17221c; --panel2: #1d2a23; --border: #2a3a31; --rule-strong: #3d5246;
+  --text: #ede4cf; --muted: #b8b19c; --teal: #22c3d6; --on-aqua: #04262b; --aqua-soft: rgba(34, 195, 214, .09);
+  --blue: #e6d7b0; --amber: #d9b45a; --red: #ef8a72; --sage: #9cc58a; --lilac: #b9a0e0; --stone: #b0ad9c;
+  --danger-bg: #3a1f19; --danger-border: #a6553f; --tooltip-shadow: 0 8px 30px rgba(0, 0, 0, .45);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1612; --raise: #131d18; --panel: #17221c; --panel2: #1d2a23; --border: #2a3a31; --rule-strong: #3d5246;
+  --text: #ede4cf; --muted: #b8b19c; --teal: #22c3d6; --on-aqua: #04262b; --aqua-soft: rgba(34, 195, 214, .09);
+  --blue: #e6d7b0; --amber: #d9b45a; --red: #ef8a72; --sage: #9cc58a; --lilac: #b9a0e0; --stone: #b0ad9c;
+  --danger-bg: #3a1f19; --danger-border: #a6553f; --tooltip-shadow: 0 8px 30px rgba(0, 0, 0, .45);
 }
 
 * {
@@ -67,7 +81,7 @@ summary:focus-visible,
   left: 10px;
   z-index: 20;
   background: var(--teal);
-  color: var(--bg);
+  color: var(--on-aqua);
   padding: 12px
 }
 
@@ -80,7 +94,7 @@ summary:focus-visible,
   position: fixed;
   inset: 0 auto 0 0;
   border-right: 1px solid var(--border);
-  background: #0c1726;
+  background: var(--raise);
   display: flex;
   flex-direction: column;
   padding: 29px 21px;
@@ -104,7 +118,7 @@ summary:focus-visible,
   width: 37px;
   height: 42px;
   background: var(--teal);
-  color: #0a1321;
+  color: var(--on-aqua);
   border-radius: 10px 2px 10px 2px;
   font: 700 28px Georgia, serif;
   letter-spacing: 0
@@ -122,7 +136,7 @@ summary:focus-visible,
 .sidebar-caption {
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: #849cb1;
+  color: var(--muted);
   margin: 52px 12px 15px
 }
 
@@ -157,9 +171,9 @@ nav button:hover {
 }
 
 nav button[aria-current=page] {
-  background: #193331;
-  border-color: #30554e;
-  color: #8aefdc
+  background: var(--aqua-soft);
+  border-color: var(--rule-strong);
+  color: var(--text)
 }
 
 .sidebar-note {
@@ -217,11 +231,11 @@ nav button[aria-current=page] {
 
 .badge {
   padding: 5px 10px;
-  border: 1px solid #546044;
+  border: 1px solid var(--rule-strong);
   border-radius: 5px;
   font-size: 12px;
-  color: #ebd69d;
-  background: #292a22
+  color: var(--text);
+  background: var(--panel2)
 }
 
 .badge.muted {
@@ -293,7 +307,7 @@ p {
 }
 
 .button.primary {
-  color: #09201e;
+  color: var(--on-aqua);
   background: var(--teal);
   border-color: var(--teal);
   font-weight: 650
@@ -301,9 +315,9 @@ p {
 
 .origin-note {
   border-left: 2px solid var(--amber);
-  background: #191f28;
+  background: var(--raise);
   padding: 11px 15px;
-  color: #ccd2d9;
+  color: var(--text);
   font-size: 14px;
   margin: 24px 0
 }
@@ -326,9 +340,9 @@ label.field {
 
 input,
 select {
-  background: #111f2f;
+  background: var(--raise);
   color: var(--text);
-  border: 1px solid #365069;
+  border: 1px solid var(--rule-strong);
   border-radius: 5px;
   min-height: 44px;
   padding: 9px 11px;
@@ -348,7 +362,7 @@ input[type=file] {
 }
 
 input[type=file]::file-selector-button {
-  background: #21394b;
+  background: var(--panel2);
   color: var(--text);
   border: 0;
   border-radius: 4px;
@@ -373,8 +387,8 @@ input[type=file]::file-selector-button {
 
 .status.error {
   color: var(--red);
-  border: 1px solid #69433e;
-  background: #301e21;
+  border: 1px solid var(--danger-border);
+  background: var(--danger-bg);
   padding: 16px;
   margin-bottom: 20px
 }
@@ -514,14 +528,14 @@ input[type=file]::file-selector-button {
 .chart-tooltip {
   position: absolute;
   pointer-events: none;
-  border: 1px solid #567183;
-  background: #07101b;
+  border: 1px solid var(--rule-strong);
+  background: var(--panel);
   padding: 9px 12px;
   border-radius: 5px;
   font-size: 12px;
   z-index: 3;
   max-width: 230px;
-  box-shadow: 0 8px 30px #0007
+  box-shadow: var(--tooltip-shadow)
 }
 
 .chart-summary {
@@ -531,7 +545,7 @@ input[type=file]::file-selector-button {
 }
 
 .empty {
-  border: 1px dashed #3b5266;
+  border: 1px dashed var(--rule-strong);
   border-radius: 6px;
   padding: 24px;
   color: var(--muted);
@@ -553,21 +567,21 @@ table {
 
 th {
   text-align: left;
-  color: #a8bccd;
+  color: var(--muted);
   font-weight: 500;
   font-size: 12px;
-  border-bottom: 1px solid #3a4c5d;
+  border-bottom: 1px solid var(--rule-strong);
   padding: 11px 12px
 }
 
 td {
-  border-bottom: 1px solid #243749;
+  border-bottom: 1px solid var(--border);
   padding: 12px;
   font-variant-numeric: tabular-nums
 }
 
 tbody tr:hover {
-  background: #172c3c
+  background: var(--aqua-soft)
 }
 
 td.wrap {
@@ -606,8 +620,8 @@ details p {
 
 .event {
   padding: 17px;
-  background: #0e1a28;
-  border-left: 2px solid #406575;
+  background: var(--raise);
+  border-left: 2px solid var(--rule-strong);
   border-radius: 3px
 }
 
@@ -685,8 +699,8 @@ details p {
 
 .formula {
   font: 14px ui-monospace, SFMono-Regular, monospace;
-  color: #c7dedb;
-  background: #0b1725;
+  color: var(--text);
+  background: var(--panel2);
   padding: 14px;
   border-radius: 5px;
   overflow-wrap: anywhere
@@ -698,7 +712,7 @@ details p {
 }
 
 .audit-step {
-  border-left: 2px solid #3a6570;
+  border-left: 2px solid var(--rule-strong);
   padding: 0 0 20px 18px;
   margin-left: 4px
 }
@@ -1117,3 +1131,31 @@ select {
 }
 
 @media(max-width:520px){.filters label:nth-child(n+3){grid-column:1/-1}}
+
+/* Ledger identity for the synthetic lab: serif headings, ruled sidebar, one ink per section. */
+h1, h2, h3, .brand { font-family: var(--serif); }
+h1 { font-weight: 500; letter-spacing: -.4px }
+.brand { font-weight: 600; letter-spacing: 0 }
+.brand-mark { width: 34px; height: 34px; background: transparent; color: var(--text); border: 1.5px solid var(--text); border-radius: 3px; font: 600 21px/1 var(--serif); text-decoration: underline double var(--teal); text-underline-offset: 3px; text-decoration-thickness: 1px }
+.sidebar { border-right: 4px double var(--border) }
+nav button { border-radius: 0 4px 4px 0; border: 0; border-left: 3px solid transparent }
+nav button span { color: var(--tab, var(--teal)) }
+nav button[aria-current=page] { background: var(--aqua-soft); border-left-color: var(--tab, var(--teal)); color: var(--text); font-weight: 600 }
+nav [data-page=overview] { --tab: var(--teal) }
+nav [data-page=evidence] { --tab: var(--sage) }
+nav [data-page=risk] { --tab: var(--lilac) }
+nav [data-page=strategy] { --tab: var(--blue) }
+nav [data-page=audit] { --tab: var(--stone) }
+nav [data-page=research] { --tab: var(--amber) }
+#data-badge { color: var(--lilac); border: 1px dashed var(--lilac); background: transparent; font-weight: 650; letter-spacing: .04em }
+.theme-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--muted); font-size: 13px }
+.theme-toggle:hover { color: var(--text); border-color: var(--teal) }
+.theme-toggle svg { width: 15px; height: 15px }
+.theme-toggle circle { fill: none; stroke: currentColor; stroke-width: 1.5 }
+.theme-toggle path { fill: currentColor }
+.topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end }
+.kpi { border-radius: 4px }
+.card { border-radius: 4px }
+.kpi-value { font-variant-numeric: tabular-nums }
+@media(max-width:900px) { nav button { border-left: 0; border-bottom: 3px solid transparent; border-radius: 0 } nav button[aria-current=page] { border-bottom-color: var(--tab, var(--teal)) } .sidebar { border-right: 0 } }
+@media(max-width:520px) { .theme-toggle [data-theme-label] { display: none } }

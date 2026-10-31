@@ -115,19 +115,22 @@ export function cashBridgeSVG(period, ticker = '') {
     hi = high + span * .12;
   const y = v => top + (hi - v) / (hi - lo) * (height - top - bottom),
     dx = (width - left - right) / steps.length;
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" class="cash-waterfall" viewBox="0 0 ${width} ${height}" role="img" aria-label="Net income to operating cash flow, with selected disclosed adjustments and a calculated remainder"><title>${e(ticker)} · net income to operating cash flow</title><rect width="920" height="400" fill="#142230"/><g font-family="Arial, sans-serif" fill="#e8f0f7"><text x="24" y="31" font-size="20" font-weight="bold">${e(ticker)} · From profit to operating cash</text><text x="24" y="57" font-size="15">Fiscal YTD ${e(period.period_start)} to ${e(period.period_end)} · USD billions</text>`;
+  // Inline fills keep the downloaded file self-contained (ledger dark); classes let the page re-ink it per theme.
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" class="cash-waterfall" viewBox="0 0 ${width} ${height}" role="img" aria-label="Net income to operating cash flow, with selected disclosed adjustments and a calculated remainder"><title>${e(ticker)} · net income to operating cash flow</title><defs><pattern id="cw-rest" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><rect class="cw-rest-bg" width="6" height="6" fill="#3a4038"/><line class="cw-rest-line" x1="0" y1="0" x2="0" y2="6" stroke="#b0ad9c" stroke-width="2"/></pattern></defs><rect class="cw-bg" width="920" height="400" fill="#0e1612"/><g class="cw-ink" font-family="-apple-system, 'Segoe UI', Arial, sans-serif" fill="#ede4cf"><text x="24" y="31" font-size="20" font-weight="bold">${e(ticker)} · From profit to operating cash</text><text x="24" y="57" font-size="15">Fiscal YTD ${e(period.period_start)} to ${e(period.period_end)} · USD billions</text>`;
   for (let i = 0; i <= 3; i++) {
     const v = low + (high - low) * i / 3;
-    svg += `<line x1="${left}" x2="${width-right}" y1="${y(v)}" y2="${y(v)}" stroke="#35495b"/><text x="${left-10}" y="${y(v)+5}" font-size="14" text-anchor="end">${(v/1e9).toFixed(1)}</text>`;
+    svg += `<line class="cw-rule" x1="${left}" x2="${width-right}" y1="${y(v)}" y2="${y(v)}" stroke="#2a3a31"/><text x="${left-10}" y="${y(v)+5}" font-size="14" text-anchor="end">${(v/1e9).toFixed(1)}</text>`;
   }
   steps.forEach((s, i) => {
     const x = left + dx * i + 10,
       barWidth = dx - 20;
-    const fill = s.total ? '#8bbcff' : s.residual ? '#a5b5c6' : s.value >= 0 ? '#6bdfc1' : '#f2ad79';
-    svg += `<g><title>${e(s.fullLabel || s.label)}: ${money(s.value)}</title><rect x="${x}" y="${Math.min(y(s.from),y(s.to))}" width="${barWidth}" height="${Math.max(2,Math.abs(y(s.from)-y(s.to)))}" fill="${fill}" rx="3"/><text x="${x+barWidth/2}" y="${Math.min(y(s.from),y(s.to))-9}" font-size="14" text-anchor="middle">${s.value > 0 && !s.total ? '+' : ''}${(s.value/1e9).toFixed(2)}</text><text x="${x+barWidth/2}" y="${height-bottom+25}" font-size="14" text-anchor="middle">${e(s.label)}</text></g>`;
-    if (i < steps.length - 2) svg += `<line x1="${x+barWidth}" x2="${x+dx}" y1="${y(s.to)}" y2="${y(s.to)}" stroke="#b3c3d4" stroke-dasharray="3 4"/>`;
+    const kind = s.total ? 'total' : s.residual ? 'rest' : s.value >= 0 ? 'up' : 'down';
+    const fill = {total: '#22c3d6', rest: 'url(#cw-rest)', up: '#9cc58a', down: '#ef8a72'}[kind];
+    svg += `<g><title>${e(s.fullLabel || s.label)}: ${money(s.value)}</title><rect class="cw-${kind}" x="${x}" y="${Math.min(y(s.from),y(s.to))}" width="${barWidth}" height="${Math.max(2,Math.abs(y(s.from)-y(s.to)))}" fill="${fill}" rx="2"/><text x="${x+barWidth/2}" y="${Math.min(y(s.from),y(s.to))-9}" font-size="14" text-anchor="middle">${s.value > 0 && !s.total ? '+' : ''}${(s.value/1e9).toFixed(2)}</text><text x="${x+barWidth/2}" y="${height-bottom+25}" font-size="14" text-anchor="middle">${e(s.label)}</text></g>`;
+    if (i < steps.length - 2) svg += `<line class="cw-link" x1="${x+barWidth}" x2="${x+dx}" y1="${y(s.to)}" y2="${y(s.to)}" stroke="#b0ad9c" stroke-dasharray="3 4"/>`;
   });
-  return svg + `<text x="24" y="349" font-size="14">Blue: reported totals · Teal/orange: signed adjustments · Gray: calculated remainder</text><text x="24" y="373" font-size="13">Partial mapping. Missing lines stay in the remainder. Non-cash add-backs are not cash receipts.</text><text x="24" y="393" font-size="12">FinScope · Leon Wang · SEC filing ${e(period.cash_bridge.accession || '')}</text></g></svg>`;
+  const key = (x, kind, fill, label) => `<rect class="cw-${kind}" x="${x}" y="338" width="14" height="14" rx="2" fill="${fill}"/><text x="${x+20}" y="350" font-size="14">${label}</text>`;
+  return svg + key(24, 'total', '#22c3d6', 'Reported totals') + key(184, 'up', '#9cc58a', 'Adds cash') + key(300, 'down', '#ef8a72', 'Uses cash') + key(412, 'rest', 'url(#cw-rest)', 'Calculated remainder') + `<text x="24" y="373" font-size="13">Partial mapping. Missing lines stay in the remainder. Non-cash add-backs are not cash receipts.</text><text x="24" y="393" font-size="12">FinScope · Leon Wang · SEC filing ${e(period.cash_bridge.accession || '')}</text></g></svg>`;
 }
 
 const link = f => evidenceLink(f) + (f ? ` · filed ${e(f.filed)}` : '');

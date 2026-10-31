@@ -4,7 +4,7 @@ Use this monitor to notice a new disclosure, read the original filing, and decid
 
 ## Use it
 
-1. Open **Latest official updates** above the research workspace.
+1. Open the ledger, then **Current updates** above the company selection.
 2. Choose a company independently of your dated research selection.
 3. Read the filing date, form and acceptance time, then open **Read filing**. **Index** is the official fallback. An 8-K can concern many company events; it is not necessarily an earnings release.
 4. Check the daily Treasury curve's observation date before using it as current context. Missing tenors say **Unavailable**.

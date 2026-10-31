@@ -1,5 +1,9 @@
 # Continuous improvement log
 
+## 2026-11-01 — Ledger redesign of the public front end
+
+Visual and app-flow redesign only; see the design log and guide. Added an intro page with the water-line figure, an explicit entry into the console, divider tabs with section inks, a light/dark/system theme shared with the lab, and token-driven charts. Fixed in passing: `render()` also set `aria-current` on `<body>` because it matched every `[data-page]` element; it now marks only the section tabs. README and the official-updates guide describe the new entry. New DOM tests cover water-line geometry and missing values, trace links, intro/console routing, the clean intro address and theme persistence. Data, calculations, model outputs, exports and refresh workflows are unchanged.
+
 ## 2026-10-30 — Recover from an interrupted evidence download
 
 Resumed the uncommitted load-recovery work from 2026-10-25 before starting anything new. The working changes matched the earlier red/green test artifacts. Fast-forwarded only scheduled official-data updates, preserving the draft implementation.

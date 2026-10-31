@@ -2,16 +2,72 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0a1422"><title>FinScope — Company research · Leon Wang</title>
-<meta name="description" content="Review real company earnings, trace SEC evidence, compare cash flow and test financial stress scenarios. Export a reproducible research brief. Built by Leon Wang.">
-<link rel="stylesheet" href="./research.css?v=20261020-reading"><script type="module" src="./research-app.js?v=20261025-recovery"></script>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f0e3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1612" media="(prefers-color-scheme: dark)">
+<title>FinScope — Does the profit hold water? · Leon Wang</title>
+<meta name="description" content="Set reported profit against operating cash flow for six US companies, match every figure to its SEC filing, test a weaker year and export a reproducible research brief. Built by Leon Wang.">
+<script>/* Theme and intro/console mode before first paint. Keys mirror RESEARCH_KEYS in intro.js. */try{var t=localStorage.getItem('finscope.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}if(/[?&](company|date|view|dataset|calculation|revenuePercent|marginPoints|refinanceBillions|rateBps|collectionDays)=/.test(location.search)||location.hash==='#workspace')document.documentElement.dataset.mode='console';</script>
+<link rel="stylesheet" href="./research.css?v=20261101-ledger"><script type="module" src="./research-app.js?v=20261101-ledger"></script>
 </head>
 <body>
-<a class="skip" href="#workspace">Skip to research workspace</a>
-<header class="masthead"><a class="brand" href="./"><span class="mark">F</span><span>FinScope<small>By Leon Wang</small></span></a><div class="header-links"><a href="./lab.html">Forecasting lab ↗</a><a href="https://github.com/leon1111-wgl/finscope">Source ↗</a></div></header>
+<a class="skip" href="#workspace" data-enter>Skip to research workspace</a>
+<header class="topbar">
+ <a class="brand" href="./" data-home><span class="mark" aria-hidden="true">F</span><span class="brand-name">FinScope<small>By Leon Wang</small></span></a>
+ <span class="crumb" aria-hidden="true">Company ledger</span>
+ <nav class="top-links" aria-label="Project links"><a href="./lab.html">Forecasting lab ↗</a><a href="https://github.com/leon1111-wgl/finscope">Source ↗</a></nav>
+ <button type="button" id="theme-toggle" class="theme-toggle"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z"/></svg><span data-theme-label>System</span></button>
+ <button type="button" class="primary enter-top" data-enter>Open the ledger</button>
+</header>
+<noscript><p class="noscript">This interactive research workspace needs JavaScript. Read the <a href="https://github.com/leon1111-wgl/finscope#readme">project guide</a> or download the <a href="./data/research.json">evidence bundle</a>.</p></noscript>
+
+<div id="intro" class="intro">
+<section class="hero" aria-labelledby="intro-title">
+ <div class="hero-copy">
+  <p class="kicker">Earnings quality · six US companies · SEC filings</p>
+  <h1 id="intro-title" tabindex="-1">Does the profit hold water?</h1>
+  <p class="hero-lead">FinScope sets each company’s reported net income against the cash its operations brought in, matches every figure to its SEC filing and lets you test a weaker year. You leave with a brief that carries its own audit trail.</p>
+  <div class="hero-actions"><button type="button" class="primary big" data-enter>Open the ledger <span aria-hidden="true">→</span></button><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/CASE_STUDY.md">Read the worked case ↗</a></div>
+  <p class="hero-meta" id="intro-freshness">Official SEC and Treasury data · no account, install or API key</p>
+ </div>
+ <figure class="sheet hero-figure" aria-labelledby="intro-figure-title">
+  <div class="sheet-head"><p class="sheet-title" id="intro-figure-title">Profit against operating cash</p><div id="intro-tickers" class="ticker-tabs" role="group" aria-label="Choose a company"></div></div>
+  <div id="intro-waterline" class="waterline"><p class="wl-loading">Loading the SEC evidence snapshot…</p></div>
+  <figcaption class="sheet-note">Annual 10-K figures from the latest snapshot. Hatching marks a year when net income ran ahead of operating cash flow: a question for the filing, not a verdict.</figcaption>
+  <button type="button" class="link-button" id="intro-open-company" data-enter data-enter-view="review" data-enter-ticker="NVDA">Review NVDA’s evidence in the ledger →</button>
+ </figure>
+</section>
+
+<section class="inks" aria-labelledby="inks-title">
+ <div class="section-intro"><h2 id="inks-title">Read it by the ink</h2><p>Every figure in the ledger is written in the ink of its source, so you can tell a reported fact from a model cue or your own assumption at a glance.</p></div>
+ <ul class="ink-list">
+  <li class="ink ink-gold"><span class="ink-sample"><span class="evidence-links"><a>Read 10-K</a></span></span><strong>Gold tick: matched to a filing</strong><p>A reported SEC fact for that period. The link opens the filing document; the XBRL tag names the concept.</p></li>
+  <li class="ink ink-ai"><span class="ink-sample"><span class="ai-sample">Percentile / 100</span></span><strong>Dashed box: AI triage</strong><p>An Isolation Forest percentile against earlier company-years. It points to where to read first. It is not a verdict, a default probability or advice.</p></li>
+  <li class="ink ink-pencil"><span class="ink-sample"><span class="pencil-sample">−10%</span></span><strong>Lilac pencil: your assumption</strong><p>Scenario inputs you type. They are calculated in your browser and kept apart from the reported facts.</p></li>
+  <li class="ink ink-red"><span class="ink-sample"><span class="red-sample">Profit above cash</span></span><strong>Red ink: worth a question</strong><p>Profit running ahead of cash, an overdue snapshot or a failed load. A prompt to read further, never a conclusion.</p></li>
+ </ul>
+</section>
+
+<section class="index" aria-labelledby="index-title">
+ <div class="section-intro"><h2 id="index-title">Inside the ledger</h2><p>Five sections, one company and one information date at a time.</p></div>
+ <ol class="ledger-index">
+  <li class="ix" data-section="review"><button type="button" data-enter data-enter-view="review"><span class="ix-no" aria-hidden="true">01</span><span class="ix-name">Evidence</span><span class="ix-desc">Profit against cash, matched SEC facts, the newer year-to-date checkpoint, the cash-flow bridge and AI triage.</span></button></li>
+  <li class="ix" data-section="compare"><button type="button" data-enter data-enter-view="compare"><span class="ix-no" aria-hidden="true">02</span><span class="ix-name">Comparison</span><span class="ix-desc">Six financial profiles on the same information date, with a full-precision CSV and its evidence JSON.</span></button></li>
+  <li class="ix" data-section="stress"><button type="button" data-enter data-enter-view="stress"><span class="ix-no" aria-hidden="true">03</span><span class="ix-name">Scenarios</span><span class="ix-desc">Revenue, margin, refinancing and collection assumptions, with official Treasury context.</span></button></li>
+  <li class="ix" data-section="brief"><button type="button" data-enter data-enter-view="brief"><span class="ix-no" aria-hidden="true">04</span><span class="ix-name">Brief</span><span class="ix-desc">Markdown, JSON or print, with sources, data and calculation versions and a reopen link.</span></button></li>
+  <li class="ix" data-section="method"><button type="button" data-enter data-enter-view="method"><span class="ix-no" aria-hidden="true">05</span><span class="ix-name">Method &amp; sources</span><span class="ix-desc">What the model can and cannot say, time boundaries, limitations and foundations.</span></button></li>
+ </ol>
+</section>
+
+<section class="intro-notes" aria-label="Scope and limits">
+ <p><strong>Real filings, small universe.</strong> AAPL, MSFT, NVDA, AMZN, GOOGL and META from official SEC CompanyFacts and Submissions, plus daily Treasury yields. Annual accounts with matched year-to-date checkpoints; not a live-price terminal and not investment advice.</p>
+ <p><strong>Separate synthetic track.</strong> The <a href="./lab.html">forecasting lab</a> uses SYNTHETIC companies and events to show information timing and model comparison. None of it describes the real companies above.</p>
+</section>
+</div>
+
+<div id="console" class="console">
 <main>
-<section class="hero"><h1>Company research</h1><p class="lead">Review reported results, trace filing evidence and test downside assumptions.</p></section>
-<div id="freshness" class="freshness" role="status">Loading official financial evidence…</div>
+<div class="console-head"><h1 id="console-title" tabindex="-1">Company ledger</h1><div id="freshness" class="freshness" role="status">Loading official financial evidence…</div></div>
 <details id="official-updates" class="official-updates no-print">
 <summary>Current updates <span>Filings and Treasury yields · independent of research date</span></summary>
 <div class="updates-body">
@@ -22,19 +78,20 @@
 <p id="updates-status" role="status" aria-live="polite">Open this section to check the latest published capture.</p>
 <div id="updates-content"></div>
 </div></details>
-<section id="workspace" class="workspace" aria-label="Company research workspace">
+<section id="workspace" class="workspace" aria-label="Company research workspace" tabindex="-1">
 <div class="workspace-heading"><h2>Select company and date</h2></div>
-
 <form class="filters" id="selection" aria-label="Company and information date"><label>Company<select id="company" disabled><option>Loading…</option></select></label><label>Information date<input id="as-of" type="date" disabled></label><button type="button" id="latest" disabled>Use latest snapshot</button></form>
 <p id="scope" class="scope"></p>
 <details id="saved-brief" class="saved-brief no-print"><summary>Open a saved brief</summary><p>Restore the company, date and assumptions from a downloaded FinScope JSON brief. The file stays on your device. Financial values and conclusions in the file are not imported.</p><label for="brief-file">Choose evidence brief (.json, up to 2 MB)</label><input id="brief-file" type="file" accept=".json,application/json" disabled></details>
 <p id="restore-message" class="note no-print" role="status" aria-live="polite"></p>
 <div id="restore-preview" class="no-print" hidden></div>
-<nav class="steps" aria-label="Research views"><button data-page="review" aria-current="page">Evidence</button><button data-page="compare">Comparison</button><button data-page="stress">Scenarios</button><button data-page="brief">Brief</button><button data-page="method">Method &amp; sources</button></nav>
+<nav class="steps" aria-label="Research views"><button data-page="review" aria-current="page"><span class="tab-no" aria-hidden="true">01</span>Evidence</button><button data-page="compare"><span class="tab-no" aria-hidden="true">02</span>Comparison</button><button data-page="stress"><span class="tab-no" aria-hidden="true">03</span>Scenarios</button><button data-page="brief"><span class="tab-no" aria-hidden="true">04</span>Brief</button><button data-page="method"><span class="tab-no" aria-hidden="true">05</span>Method &amp; sources</button></nav>
+<div class="sheet-body">
 <div id="status" role="status" aria-live="polite"></div>
 <div id="content"><p class="empty">The research workspace is loading. No account or API key is required.</p></div>
+</div>
 </section>
-<footer><strong>FinScope / Leon Wang</strong><span>Evidence → interpretation → assumptions → a portable brief.</span><a href="https://leon1111-wgl.github.io/leon1111-wgl/">Portfolio ↗</a></footer>
 </main>
-<noscript><p>This interactive research workspace needs JavaScript. Read the <a href="https://github.com/leon1111-wgl/finscope#readme">project guide</a> or download the <a href="./data/research.json">evidence bundle</a>.</p></noscript>
+</div>
+<footer class="site-footer"><strong>FinScope / Leon Wang</strong><span>Evidence → interpretation → assumptions → a portable brief.</span><a href="https://leon1111-wgl.github.io/leon1111-wgl/">Portfolio ↗</a></footer>
 </body></html>

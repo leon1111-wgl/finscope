@@ -15,7 +15,8 @@ import {
 import {
   lineChart,
   networkChart
-} from './charts.js';
+} from './charts.js?v=20261101-ledger';
+import {initThemeToggle} from './theme.js?v=20261101-ledger';
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -551,4 +552,5 @@ async function start() {
     showError(error);
   }
 }
+initThemeToggle(document, $('theme-toggle'));
 start();

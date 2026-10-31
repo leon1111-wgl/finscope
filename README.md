@@ -6,7 +6,9 @@
 
 Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked financial review they can share.
 
-**Open the website, choose a company, test an assumption and download a brief. No account, installation or API key is needed to use the public workspace.**
+**Open the website, select Open the ledger, choose a company, test an assumption and download a brief. No account, installation or API key is needed to use the public workspace.**
+
+The intro page asks the question the project is built around (does the profit hold water?) with each company's net income drawn against its operating cash flow; pick a year to see the 10-K lines behind both numbers. The ledger marks provenance consistently: a gold tick for a value matched to an SEC filing, a dashed box for AI triage, lilac for your own assumptions and red for anything worth a closer question. Light, dark and system themes are available.
 
 ## What you can do today
 
@@ -33,7 +35,7 @@ This is an original research workflow built on open-source tools and public data
 
 ## Try a complete case
 
-1. Open the workspace with Microsoft selected.
+1. Select **Open the ledger**; Microsoft is selected.
 2. Compare annual net income and operating cash flow. Open the exact history and filing evidence.
 3. Compare profiles, paying attention to differing fiscal dates. Download the comparison CSV and its evidence JSON to use the six-company table in your own work. [Export units and evidence contract](docs/COMPARISON_EXPORT.md).
 4. Select **Test assumptions → Try a downside case**. The preset assumes revenue −10%, margin −2 percentage points, $10B refinanced at +100 basis points and collections delayed by 15 days. Replace these assumptions with your own.
@@ -46,7 +48,7 @@ Evidence tables include **Read 10-K / Read 10-Q** links to the matched SEC docum
 
 To investigate a newer operating-cash gap, select **NVDA → Review the evidence** and open the fiscal YTD checkpoint. Follow the profit-to-cash waterfall, compare the prior period and expand the source/sign detail. Download the SVG for a presentation or include the full comparison in your research brief. [Cash-flow bridge method and limits](docs/CASH_FLOW_BRIDGE.md).
 
-Open **Latest official updates** above the workspace to monitor recent disclosures and daily rates. An hourly collector publishes a separate feed; the open section checks for updates every five minutes. Scheduling can be delayed. Current monitoring is independent of your historical research date and does not enter its calculations or exports. [Coverage, freshness and failure behavior](docs/OFFICIAL_UPDATES.md).
+Open **Current updates** in the ledger, above the company selection, to monitor recent disclosures and daily rates. An hourly collector publishes a separate feed; the open section checks for updates every five minutes. Scheduling can be delayed. Current monitoring is independent of your historical research date and does not enter its calculations or exports. [Coverage, freshness and failure behavior](docs/OFFICIAL_UPDATES.md).
 
 ## Architecture
 

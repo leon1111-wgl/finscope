@@ -1,7 +1,8 @@
 import {
   escapeHTML as e
 } from './workbench.js';
-const colors = ['#58dac2', '#83aaff', '#edbd74', '#f5a99d'];
+// Theme tokens from styles.css, so every chart follows light / dark / system.
+const colors = ['var(--teal)', 'var(--blue)', 'var(--amber)', 'var(--red)'];
 /** Responsive SVGs retain readable 12px labels even at mobile widths. */
 export function lineChart(container, rows, series, {
   title,
@@ -44,7 +45,7 @@ export function lineChart(container, rows, series, {
     for (let i = 0; i < 4; i++) {
       const v = lo + (hi - lo) * i / 3;
       markup +=
-        `<line x1="${left}" y1="${y(v)}" x2="${width-right}" y2="${y(v)}" stroke="#294053" stroke-dasharray="3 4"/><text x="${left-9}" y="${y(v)+4}" fill="#a5b7c8" font-size="12" text-anchor="end">${format(v)}</text>`;
+        `<line x1="${left}" y1="${y(v)}" x2="${width-right}" y2="${y(v)}" style="stroke:var(--border)" stroke-dasharray="3 4"/><text x="${left-9}" y="${y(v)+4}" style="fill:var(--muted)" font-size="12" text-anchor="end">${format(v)}</text>`;
     }
     if (band) {
       const eligible = rows.map((r, i) => ({
@@ -60,7 +61,7 @@ export function lineChart(container, rows, series, {
         r,
         i
       }) => `${x(i)},${y(r.lower)}`)];
-      markup += `<polygon points="${points.join(' ')}" fill="#58dac2" opacity=".12"/>`;
+      markup += `<polygon points="${points.join(' ')}" style="fill:var(--teal)" opacity=".12"/>`;
     }
     for (const [index, s] of series.entries()) {
       let path = '',
@@ -75,13 +76,13 @@ export function lineChart(container, rows, series, {
         active = true;
       });
       markup +=
-        `<path d="${path}" fill="none" stroke="${s.color||colors[index]}" stroke-width="2" ${s.dashed?'stroke-dasharray="5 4"':''}/>`;
+        `<path d="${path}" fill="none" style="stroke:${s.color||colors[index]}" stroke-width="2" ${s.dashed?'stroke-dasharray="5 4"':''}/>`;
     }
     const ticks = [0, Math.floor((rows.length - 1) / 2), rows.length - 1];
     for (const [idx, i] of [...new Set(ticks)].entries()) markup +=
-      `<text x="${x(i)}" y="${height-20}" fill="#a5b7c8" font-size="12" text-anchor="${idx===0?'start':i===rows.length-1?'end':'middle'}">${e(rows[i].date)}</text>`;
+      `<text x="${x(i)}" y="${height-20}" style="fill:var(--muted)" font-size="12" text-anchor="${idx===0?'start':i===rows.length-1?'end':'middle'}">${e(rows[i].date)}</text>`;
     markup +=
-      `<text x="${left}" y="13" fill="#a5b7c8" font-size="12">${e(axisLabel)}</text><rect class="chart-hit" x="${left}" y="${top}" width="${width-left-right}" height="${height-top-bottom}" fill="transparent"/></svg>`;
+      `<text x="${left}" y="13" style="fill:var(--muted)" font-size="12">${e(axisLabel)}</text><rect class="chart-hit" x="${left}" y="${top}" width="${width-left-right}" height="${height-top-bottom}" fill="transparent"/></svg>`;
     container.innerHTML = markup;
     container.append(tooltip);
     const svg = container.querySelector('svg');
@@ -134,5 +135,5 @@ export function networkChart(container, edges, companies) {
     y: cy + Math.sin(i / nodes.length * Math.PI * 2 - Math.PI / 2) * 80
   }]));
   container.innerHTML =
-    `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Descriptive supplied relationship graph"><title>Descriptive supplied relationships</title><desc>${e(edges.map(r=>`${r.source} supplies or relates to ${r.target}`).join('; '))}. Available by selected event cutoff; no learned graph model.</desc>${edges.map(edge=>{const a=pos.get(edge.source),b=pos.get(edge.target);return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#456974" stroke-width="2"/>`;}).join('')}${nodes.map(name=>{const p=pos.get(name);return `<circle cx="${p.x}" cy="${p.y}" r="25" fill="#193b3d" stroke="#58dac2"/><text x="${p.x}" y="${p.y+5}" class="network-label" text-anchor="middle">${e(name)}</text>`;}).join('')}</svg>`;
+    `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Descriptive supplied relationship graph"><title>Descriptive supplied relationships</title><desc>${e(edges.map(r=>`${r.source} supplies or relates to ${r.target}`).join('; '))}. Available by selected event cutoff; no learned graph model.</desc>${edges.map(edge=>{const a=pos.get(edge.source),b=pos.get(edge.target);return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" style="stroke:var(--rule-strong)" stroke-width="2"/>`;}).join('')}${nodes.map(name=>{const p=pos.get(name);return `<circle cx="${p.x}" cy="${p.y}" r="25" style="fill:var(--panel2);stroke:var(--teal)"/><text x="${p.x}" y="${p.y+5}" class="network-label" text-anchor="middle">${e(name)}</text>`;}).join('')}</svg>`;
 }

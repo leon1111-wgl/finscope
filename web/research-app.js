@@ -6,7 +6,10 @@ import {evidenceLink} from './evidence-links.js';
 import {
   bridgeMarkup,
   cashBridgeSVG
-} from './cash-bridge.js';
+} from './cash-bridge.js?v=20261101-ledger';
+import {renderWaterline} from './waterline.js?v=20261101-ledger';
+import {initShell, renderIntro, introUnavailable} from './intro.js?v=20261101-ledger';
+import {initThemeToggle} from './theme.js?v=20261101-ledger';
 import {
   escapeHTML as e
 } from './workbench.js';
@@ -47,7 +50,7 @@ const names = {
 const ratioFormat = (key, value) => ['current_ratio', 'cash_coverage'].includes(key) ? ratio(value) : pct(value);
 let bundle, snapshot, company, row, selectedDate, page = 'review';
 let pendingRestore = null, restoreSequence = 0, ready = false;
-let loadingEvidence = false, controlsBound = false;
+let loadingEvidence = false, controlsBound = false, traceYear = null, shell, pendingEntry = null;
 let assumptions = {
   revenuePercent: 0,
   marginPoints: 0,
@@ -56,13 +59,14 @@ let assumptions = {
   collectionDays: 0
 };
 const params = new URLSearchParams(location.search);
-const panel = (title, body) => `<section class="panel"><h3>${title}</h3>${body}</section>`;
+const panel = (title, body, kind = '') => `<section class="panel${kind ? ' ' + kind : ''}"><h3>${title}</h3>${body}</section>`;
 const kpi = (label, value, detail) => `<div class="kpi"><span>${label}</span><strong>${value}</strong><small>${detail}</small></div>`;
 const table = (heads, rows) => `<div class="table-wrap" tabindex="0" role="region" aria-label="${e(heads.join(', '))}"><table><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 const factsTable = metrics => table(['Reported metric', 'USD billions', 'Period end', 'Filed', 'Evidence'], Object.entries(metrics).map(([key, f]) => [names[key] || e(key), money(f?.value), f?.end || '—', f?.filed || '—', f ? evidenceLink(f) : 'No matching standard USD fact']));
 
 function updateURL() {
-  if (!ready || pendingRestore) return;
+  // The intro keeps a clean address; the research query is written once the console is open.
+  if (!ready || pendingRestore || shell?.mode() === 'intro') return;
   const query = researchQuery({ticker: company.ticker, date: selectedDate, view: page, assumptions}, bundle.dataset_sha256);
   history.replaceState(null, '', `${location.pathname}?${query}${location.hash}`);
 }
@@ -72,6 +76,7 @@ function setResearchSelection(ticker, day) {
   selectedDate = day;
   snapshot = selectSnapshot(bundle.snapshots, day);
   row = snapshot.companies[ticker].at(-1);
+  traceYear = null;
   $('#company').value = ticker;
   $('#as-of').value = day;
   $('#scope').textContent = `${company.name} · Annual period ended ${row.period_end} · Financial snapshot ${snapshot.as_of} (on or before your selected date) · Latest selected annual filing ${row.known_at}.`;
@@ -176,36 +181,6 @@ function show(next) {
   render();
 }
 
-function trend(rows, width) {
-  const
-    height = 260,
-    left = 64,
-    right = 15,
-    top = 22,
-    bottom = 54;
-  const vals = rows.flatMap(r => ['net_income', 'operating_cash_flow'].map(k => r.metrics[k]?.value / 1e9)).filter(Number.isFinite);
-  if (!vals.length) return '<p>No matched annual history.</p>';
-  const lo = Math.min(0, ...vals),
-    hi = Math.max(1, ...vals) * 1.15,
-    y = v => top + (hi - v) / (hi - lo) * (height - top - bottom),
-    step = (width - left - right) / rows.length;
-  let svg = `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Annual net income and operating cash flow in USD billions. Exact values follow in the history table."><title>Profit and cash by fiscal period</title>`;
-  for (let i = 0; i < 4; i++) {
-    const v = lo + (hi - lo) * i / 3;
-    svg += `<line x1="${left}" y1="${y(v)}" x2="${width-right}" y2="${y(v)}" stroke="#314558"/><text x="${left-10}" y="${y(v)+5}" fill="#b3c3d4" font-size="13" text-anchor="end">${v.toFixed(0)}B</text>`;
-  }
-  rows.forEach((r, i) => {
-    ['net_income', 'operating_cash_flow'].forEach((k, j) => {
-      const value = r.metrics[k]?.value / 1e9;
-      if (!Number.isFinite(value)) return;
-      const x = left + i * step + step * .16 + j * step * .32;
-      svg += `<rect x="${x}" y="${Math.min(y(value),y(0))}" width="${step*.27}" height="${Math.max(1,Math.abs(y(value)-y(0)))}" fill="${j?'#8bb9ff':'#6fe1c5'}" rx="2"><title>${r.period_end}: ${names[k]} ${money(r.metrics[k].value)}</title></rect>`;
-    });
-    svg += `<text x="${left+(i+.5)*step}" y="${height-22}" fill="#b3c3d4" font-size="13" text-anchor="middle">${r.period_end.slice(0,4)}</text>`;
-  });
-  return svg + '</svg><div class="legend"><span>Net income</span><span>Operating cash flow</span></div>';
-}
-
 function interimMarkup(selection, includeSources = true) {
   const c = selection.checkpoint;
   if (!c) return `<p>${e(interimSummary(selection))}</p><p class="note">The annual baseline remains the basis of the AI score and stress scenario. Open the SEC source for other recent disclosures.</p>`;
@@ -227,8 +202,8 @@ function review() {
   return `<p class="eyebrow">01 / UNDERSTAND BEFORE YOU SCORE</p><h2>${e(company.ticker)}: is profit turning into cash?</h2><p class="muted">Start with the reported numbers. Then use the model to decide where a closer reading may help.</p>
   <div class="kpis">${kpi('Annual revenue',money(row.metrics.revenue?.value),`Period ended ${row.period_end}`)}${kpi('Net income',money(row.metrics.net_income?.value),'Profit after reported expenses')}${kpi('Operating cash flow',money(row.metrics.operating_cash_flow?.value),'Cash generated by operations')}${kpi('Current ratio',ratio(r.current_ratio),'Current assets ÷ current liabilities')}</div>
   ${panel('Has the picture changed since the annual report?',interimMarkup(selectInterim(bundle,company.ticker,selectedDate,row)))}
-  <div class="grid">${panel('Profit and cash over time',`<p class="note">A company can book profit before collecting cash. This chart helps you notice the gap; the filing explains its cause.</p><div id="profit-chart"></div><details><summary>Read the exact annual values</summary>${table(['Fiscal period end','Revenue','Net income','Operating cash flow'],historyRows.map(r=>[r.period_end,money(r.metrics.revenue?.value),money(r.metrics.net_income?.value),money(r.metrics.operating_cash_flow?.value)]))}</details>`)}
-  ${panel('AI triage: what looks unusual?',ai?`<p class="score">${ai.percentile}<small> / 100</small></p><p>Historical anomaly percentile</p><meter min="0" max="100" value="${ai.percentile}" aria-label="Historical anomaly percentile"></meter><p class="note">Higher means this financial profile is less typical of the training history. It does not mean the company is worse or more likely to default.</p><h4>Context for your review</h4><ul class="question-list">${ai.context_deviations.map(d=>`<li>${names[d.feature]}: <strong>${ratioFormat(d.feature,d.value)}</strong> · training median ${ratioFormat(d.feature,d.training_median)}</li>`).join('')}</ul><p class="note">These are descriptive deviations, not causal explanations or model feature attributions. ${ai.imputed_features.length?`Missing model inputs filled with training medians: ${ai.imputed_features.map(k=>names[k]).join(', ')}.`:'All six current model inputs are observed.'}</p><details><summary>Inspect the training boundary</summary><p>${train.samples} earlier company-years. Period ends from ${train.first_period_end} to ${train.last_period_end}, strictly before ${train.period_end_before}. Latest eligible training filing: ${train.latest_filed}. Six selected companies; fixed seed 42; 128 trees.</p></details>`:'<p>There is not enough eligible history for a model score. The reported facts and scenarios remain available.</p>')}</div>
+  <div class="grid">${panel('Profit and cash over time',`<p class="note">A company can book profit before collecting cash. Each column is a fiscal year’s operating cash; the mark across it is net income. Hatching shows profit above cash. The chart helps you notice the gap; the filing explains its cause.</p><div id="profit-chart" class="waterline"></div><details><summary>Read the exact annual values</summary>${table(['Fiscal period end','Revenue','Net income','Operating cash flow'],historyRows.map(r=>[r.period_end,money(r.metrics.revenue?.value),money(r.metrics.net_income?.value),money(r.metrics.operating_cash_flow?.value)]))}</details>`)}
+  ${panel('AI triage: what looks unusual?',ai?`<p class="ink-tag ink-tag-ai">AI triage · an investigation cue, not a verified finding</p><p class="score">${ai.percentile}<small> / 100</small></p><p>Historical anomaly percentile</p><meter min="0" max="100" value="${ai.percentile}" aria-label="Historical anomaly percentile"></meter><p class="note">Higher means this financial profile is less typical of the training history. It does not mean the company is worse or more likely to default.</p><h4>Context for your review</h4><ul class="question-list">${ai.context_deviations.map(d=>`<li>${names[d.feature]}: <strong>${ratioFormat(d.feature,d.value)}</strong> · training median ${ratioFormat(d.feature,d.training_median)}</li>`).join('')}</ul><p class="note">These are descriptive deviations, not causal explanations or model feature attributions. ${ai.imputed_features.length?`Missing model inputs filled with training medians: ${ai.imputed_features.map(k=>names[k]).join(', ')}.`:'All six current model inputs are observed.'}</p><details><summary>Inspect the training boundary</summary><p>${train.samples} earlier company-years. Period ends from ${train.first_period_end} to ${train.last_period_end}, strictly before ${train.period_end_before}. Latest eligible training filing: ${train.latest_filed}. Six selected companies; fixed seed 42; 128 trees.</p></details>`:'<p>There is not enough eligible history for a model score. The reported facts and scenarios remain available.</p>','ai-triage')}</div>
   ${panel('Questions to take into the filing',`<ul class="question-list">${reviewQuestions(row).map(q=>`<li>${q}</li>`).join('')}</ul><div class="question"><strong>Keep the conclusion proportional to the evidence.</strong><p>A cash-flow gap is a starting point. It can reflect working-capital timing, non-cash charges or a changing business model. Verify the explanation before drawing a risk conclusion.</p></div>`)}
   ${panel('Trace every reported input',`<p class="note">Annual flow metrics match the same start and end dates. Balance-sheet facts match that annual period end. Missing tags stay unavailable. Values are USD billions. Read the matched filing directly, or open its filing index. The XBRL tag identifies the reported concept; document links do not jump to an exact fact location.</p>${factsTable(row.metrics)}<details><summary>How the ratios are calculated</summary>${table(['Ratio','Value','Formula'],[['Operating margin',pct(r.operating_margin),'Operating income / revenue'],['Operating cash margin',pct(r.cash_margin),'Operating cash flow / revenue'],['Current ratio',ratio(r.current_ratio),'Current assets / current liabilities'],['Liabilities / assets',pct(r.liabilities_assets),'Total liabilities / total assets'],['Accrual ratio',pct(r.accruals),'(Net income − operating cash flow) / average assets'],['Revenue growth',pct(r.revenue_growth),'Revenue / previous annual revenue − 1']])}<p>Denominators must be positive. Accruals need two adjacent annual asset balances. Low or high ratios require business context.</p></details>`)}
   <div class="actions"><button class="primary" data-go="compare">Next: compare companies →</button><button data-go="stress">Test a downside scenario</button></div>`;
@@ -249,7 +224,7 @@ function stress() {
   const rates = bundle.rates.filter(r => r.date <= selectedDate),
     latest = rates.at(-1);
   return `<p class="eyebrow">03 / MAKE THE ASSUMPTIONS EXPLICIT</p><h2>What if the next year is weaker?</h2><p class="muted">Change one assumption at a time. Calculations run here in your browser. Inputs describe your scenario; they are not company guidance.</p>
-  <div class="grid equal">${panel('Operating and funding scenario',`<form id="scenario-form" class="fields">${input('revenuePercent','Revenue change (%)',-100,100,1,'Relative to the reported annual revenue.')}${input('marginPoints','Operating-margin change (percentage points)',-50,50,.5,'−2 moves a 20% margin to 18%.')}${input('refinanceBillions','Assumed refinancing exposure (USD billions)',0,1000,1,'Enter an exposure you want to test; not an extracted debt balance.')}${input('rateBps','Incremental financing rate (basis points)',-500,1000,25,'100 basis points = 1 percentage point.')}${input('collectionDays','Extra collection time (days)',0,180,1,'Approximate extra cash tied up in receivables.')}<div class="full actions"><button type="button" id="downside">Try a downside case</button><button type="button" id="reset-scenario">Reset to reported baseline</button></div></form>`)}${panel('Scenario result',`<div id="scenario-results" aria-live="polite"></div><details><summary>Read the formulas and assumptions</summary><div class="formula">R′ = R × (1 + revenue change / 100)<br>Operating income′ = R′ × (operating margin + margin change / 100)<br>Extra interest = assumed exposure × rate shock / 10,000<br>Profit proxy = operating income′ − extra interest<br>Extra cash tied up = R′ / 365 × extra collection days</div><p class="note">Exposure is converted from billions to USD. The profit proxy omits existing interest, taxes and other income. The cash proxy subtracts only delayed collections from reported cash. It is not a full cash-flow forecast or a solvency test. No interactions, financing actions or tax offsets are modeled.</p></details>`)}</div>
+  <div class="grid equal">${panel('Operating and funding scenario',`<p class="ink-tag ink-tag-pencil">Your assumptions · written in pencil, never mixed with reported facts</p><form id="scenario-form" class="fields">${input('revenuePercent','Revenue change (%)',-100,100,1,'Relative to the reported annual revenue.')}${input('marginPoints','Operating-margin change (percentage points)',-50,50,.5,'−2 moves a 20% margin to 18%.')}${input('refinanceBillions','Assumed refinancing exposure (USD billions)',0,1000,1,'Enter an exposure you want to test; not an extracted debt balance.')}${input('rateBps','Incremental financing rate (basis points)',-500,1000,25,'100 basis points = 1 percentage point.')}${input('collectionDays','Extra collection time (days)',0,180,1,'Approximate extra cash tied up in receivables.')}<div class="full actions"><button type="button" id="downside">Try a downside case</button><button type="button" id="reset-scenario">Reset to reported baseline</button></div></form>`)}${panel('Scenario result',`<div id="scenario-results" aria-live="polite"></div><details><summary>Read the formulas and assumptions</summary><div class="formula">R′ = R × (1 + revenue change / 100)<br>Operating income′ = R′ × (operating margin + margin change / 100)<br>Extra interest = assumed exposure × rate shock / 10,000<br>Profit proxy = operating income′ − extra interest<br>Extra cash tied up = R′ / 365 × extra collection days</div><p class="note">Exposure is converted from billions to USD. The profit proxy omits existing interest, taxes and other income. The cash proxy subtracts only delayed collections from reported cash. It is not a full cash-flow forecast or a solvency test. No interactions, financing actions or tax offsets are modeled.</p></details>`)}</div>
   ${panel('A rate shock needs context',latest?`<p>Official Treasury curve observed <strong>${latest.date}</strong>. Rates are percentages per year. This is the latest observation at or before your information date, separate from the annual filing snapshot.</p><div class="kpis">${kpi('3-month Treasury',Number.isFinite(latest['3m'])?latest['3m'].toFixed(2)+'%':'Unavailable','Short-term reference')}${kpi('2-year Treasury',Number.isFinite(latest['2y'])?latest['2y'].toFixed(2)+'%':'Unavailable','Rate expectations context')}${kpi('10-year Treasury',Number.isFinite(latest['10y'])?latest['10y'].toFixed(2)+'%':'Unavailable','Longer-term reference')}${kpi('10-year minus 2-year',Number.isFinite(latest['10y'])&&Number.isFinite(latest['2y'])?((latest['10y']-latest['2y'])*100).toFixed(0)+' bp':'Unavailable','Curve slope')}</div><p class="note">Treasury rates are reference yields, not company borrowing rates. Credit spreads, maturity and hedges matter. <a href="https://home.treasury.gov/treasury-daily-interest-rate-xml-feed" target="_blank" rel="noopener noreferrer">Official source ↗</a></p>`:'<p>No Treasury observation is available for this date.</p>')}
   ${panel('Optional: price a hypothetical bond',`<p class="note">An additional rate-sensitivity check. A fixed-rate bond pays semiannual coupons; this simplified model uses a flat yield, no accrued interest and no credit or option effects.</p><form id="bond-form" class="fields"><label>Coupon (% annually)<input name="couponPercent" type="number" min="0" max="30" step=".25" value="4" required></label><label>Maturity (years)<input name="years" type="number" min=".5" max="50" step=".5" value="10" required></label><label>Starting annual yield (%)<input name="yieldPercent" type="number" min="0" max="30" step=".01" value="${latest?.['10y']??4}" required><span class="field-help">Defaults to the selected 10-year Treasury observation when available.</span></label><label>Yield shock (basis points)<input name="shockBps" type="number" min="-500" max="1000" step="25" value="100" required></label></form><div id="bond-results" aria-live="polite"></div><div class="formula">Price = Σ coupon / (1 + yield / 2)ᵗ + face value / (1 + yield / 2)ᴺ<br>N = 2 × years; face value = $100; coupon per period = face × annual coupon rate / 2.</div><p class="note">This separate bond exercise is not included in the company brief. The exported brief contains the corporate scenario and observed Treasury context.</p>`)}
   <div class="actions"><button data-go="compare">← Back to comparison</button><button class="primary" data-go="brief">Next: export your brief →</button></div>`;
@@ -333,10 +308,12 @@ function download(text, type, extension, comparison = false) {
 
 function render() {
   document.body.dataset.page = page;
-  document.querySelectorAll('[data-page]').forEach(b => {
+  document.querySelectorAll('.steps [data-page]').forEach(b => {
     if (b.dataset.page === page) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   });
+  const tabs = $('.steps'), current = tabs?.querySelector('[aria-current]');
+  if (tabs && current && tabs.scrollWidth > tabs.clientWidth) tabs.scrollLeft = Math.max(0, current.offsetLeft - 24);
   $('#content').innerHTML = ({
     review,
     compare,
@@ -403,10 +380,21 @@ function render() {
 function drawTrend() {
   const target = $('#profit-chart');
   if (!target || !snapshot || !company) return;
-  const width = Math.max(260, Math.round(target.clientWidth));
-  if (target.dataset.width === String(width)) return;
-  target.innerHTML = trend(snapshot.companies[company.ticker], width);
-  target.dataset.width = String(width);
+  if (target.dataset.width && target.dataset.width === String(target.clientWidth || 640)) return;
+  const rows = snapshot.companies[company.ticker];
+  renderWaterline(target, rows, {ticker: company.ticker, selected: traceYear ?? rows.length - 1, id: 'evidence-wl', onSelect: i => { traceYear = i; }});
+}
+
+function enterConsole({view, ticker} = {}) {
+  if (!ready) { pendingEntry = {view, ticker}; return; }
+  if (pendingRestore) return;
+  if (ticker && ticker !== company.ticker && bundle.companies.some(c => c.ticker === ticker)) {
+    if (!validScenarioDraft()) return;
+    if (view) page = view;
+    $('#company').value = ticker;
+    useSelection();
+  } else if (view && view !== page) show(view);
+  updateURL();
 }
 async function init() {
   if (loadingEvidence || ready) return;
@@ -426,6 +414,7 @@ async function init() {
     dateInput.min = bundle.snapshots[0].as_of;
     dateInput.max = bundle.as_of;
     setResearchSelection('MSFT', bundle.as_of);
+    renderIntro(document, bundle);
     const age = Math.floor((Date.now() - Date.parse(bundle.generated_at)) / 86400000),
       lastRate = bundle.rates.at(-1).date;
     $('#freshness').innerHTML = `<strong>Official-source snapshot</strong> · Built ${e(bundle.generated_at.slice(0,10))} UTC · Treasury observations through ${lastRate} · Six companies · Annual + interim evidence${age>4?` · Refresh overdue: build is ${age} days old.`:''}`;
@@ -441,7 +430,12 @@ async function init() {
         dateInput.value = bundle.as_of;
         useSelection();
       });
-      document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => show(b.dataset.page)));
+      document.querySelectorAll('.steps [data-page]').forEach(b => b.addEventListener('click', () => {
+        show(b.dataset.page);
+        // With the tabs stuck to the top, start the new section at its first line, not mid-page.
+        const sheet = $('.sheet-body'), top = sheet ? sheet.getBoundingClientRect().top + window.scrollY - $('.steps').offsetHeight : 0;
+        if (window.scrollY > top + 1) window.scrollTo(0, top);
+      }));
       $('#brief-file').addEventListener('change', openSavedBrief);
       controlsBound = true;
     }
@@ -455,7 +449,10 @@ async function init() {
     else if (saved) {
       applySavedSelection(saved);
       $('#restore-message').textContent = 'Saved link restored with a matching data and calculation versions. Results are recomputed from this site’s evidence.';
-    } else render();
+    } else {
+      render();
+      if (pendingEntry) { const entry = pendingEntry; pendingEntry = null; enterConsole(entry); }
+    }
     new ResizeObserver(drawTrend).observe($('#content'));
     document.dispatchEvent(new window.Event('finscope-research-ready'));
     if (retrying && !pendingRestore) {
@@ -475,10 +472,13 @@ async function init() {
     $('#content').innerHTML = '<div class="error"><h3>The evidence snapshot could not be loaded</h3><p>Your link has been kept. Retry to load the published evidence before reviewing the company, date and assumptions. No financial results are available yet.</p><div class="actions"><button type="button" id="retry-evidence">Retry loading evidence</button><a href="https://github.com/leon1111-wgl/finscope">Read the project guide ↗</a></div></div>';
     $('#retry-evidence').addEventListener('click', init);
     $('#freshness').textContent = 'Evidence snapshot unavailable.';
+    introUnavailable(document);
   } finally {
     loadingEvidence = false;
     $('#content').setAttribute('aria-busy', 'false');
   }
 }
+shell = initShell(document, {onEnter: enterConsole});
+initThemeToggle(document, $('#theme-toggle'));
 initOfficialUpdates(document,{research:()=>ready?bundle:null});
 init();

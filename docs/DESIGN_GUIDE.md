@@ -1,6 +1,32 @@
 # FinScope design guide
 
-## Purpose and approved direction
+## Current direction (2026-11-01): the ledger
+
+The user asked for every portfolio project to be an app you open (an intro page, an obvious way in, then a working console with clear sections), while each keeps its own character. FinScope's identity is a ledger built around one question: **does the profit hold water?** It must not resemble the learning hub or LoopDesk (blue-black, blue→violet gradient, pill navigation) or EstateGuard (graphite with amber/teal blueprint).
+
+- **Shape.** `index.html` holds both the intro and the console. A bare address shows the intro; any research query (`company`, `date`, `view`, `dataset`, `calculation` or an assumption) or `#workspace` opens the console directly, so every saved reopen link still works. An inline head script picks the mode before first paint; `web/intro.js` keeps the list of keys in sync and handles Open the ledger, Back and the brand link. The intro never writes a research query to the address bar.
+- **Signature: the water line.** Each fiscal year is a column of operating cash flow (the water level, aqua) with reported net income marked across it. Where net income sits above the cash, the gap is hatched in red ink. Choosing a year shows the filing lines behind both figures (amount, 10-K link, XBRL tag, filing date) and the plain difference. The same component (`web/waterline.js`) draws the intro figure and the Evidence chart. It only displays sourced annual facts; it adds no score.
+- **Ink system.** Gold tick: a value matched to an SEC filing (`.evidence-links`). Dashed box: AI triage, an investigation cue and not a verified finding. Lilac pencil: the reader's scenario assumptions. Red ink: worth a question (profit above cash, an overdue snapshot, a failed load). Never use red ink to rank companies or to restyle the anomaly percentile as a warning.
+- **Navigation.** Ledger divider tabs with a numbered label and one ink per section: Evidence aqua, Comparison sage, Scenarios lilac, Brief parchment, Method stone. Tabs stay sticky while reading; on a narrow screen they scroll sideways with an edge fade.
+- **Type and figures.** Serif headings (system Iowan Old Style / Palatino / Georgia), system sans body, monospace for tags and accessions, tabular figures everywhere. Totals use a double rule. The console sheet and brief have a red double margin rule.
+- **Themes.** Light (ledger paper), dark (green-black) and system, stored as `finscope.theme` and shared with the lab. All tokens live in `research.css` / `styles.css`; charts read them through classes or `var()`, so no chart keeps a fixed palette on the page. The downloaded cash-flow SVG keeps self-contained dark-ledger fills.
+
+| Token | Light | Dark | Use |
+| --- | --- | --- | --- |
+| Background | `#f5f0e3` | `#0e1612` | Page |
+| Surface | `#fffdf7` | `#17221c` | Sheet, inputs, tables |
+| Text | `#18231d` | `#ede4cf` | Body and figures |
+| Secondary text | `#514f42` | `#b8b19c` | Supporting context |
+| Aqua (primary, cash) | `#076f7c` | `#22c3d6` | Actions, links, water line, Evidence |
+| Gold | `#81600f` | `#d9b45a` | Matched-to-filing tick only |
+| Red ink | `#a83c27` | `#ef8a72` | Flags and errors |
+| Lilac | `#664c9e` | `#b9a0e0` | Assumptions, Scenarios |
+| Sage | `#3b6a2a` | `#9cc58a` | Comparison, cash-adding steps |
+
+Every text/background pair above meets WCAG AA (4.5:1) on all four surfaces of its theme.
+
+## Earlier direction (2026-10-15)
+
 
 The user requested a dedicated page designer because the interface felt too much like an AI-generated template. On 2026-10-15, they selected **a financial research workbench: restrained, clear, with little decoration**. Preserve the English interface and Leon Wang identity.
 
@@ -20,7 +46,7 @@ The entry/navigation portion (items 1–3 and 6) was implemented on 2026-10-16 i
 
 This pass must not change calculations, source selection, model outputs, data refresh schedules, saved-state formats or export semantics.
 
-## Visual system
+## Visual system (superseded by the ledger direction above)
 
 The initial design recommendation is a light neutral workbench with restrained green and blue accents. It is not yet implemented; the bounded entry pass retained the tested dark chart palette and removed the decorative body gradient. Validate the complete theme, including charts and states, before release.
 
