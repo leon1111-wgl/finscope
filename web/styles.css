@@ -1147,7 +1147,8 @@ nav [data-page=risk] { --tab: var(--lilac) }
 nav [data-page=strategy] { --tab: var(--blue) }
 nav [data-page=audit] { --tab: var(--stone) }
 nav [data-page=research] { --tab: var(--amber) }
-#data-badge { color: var(--lilac); border: 1px dashed var(--lilac); background: transparent; font-weight: 650; letter-spacing: .04em }
+#data-badge { color: var(--lilac); border: 1px solid var(--lilac); background: transparent; font-weight: 650; letter-spacing: .04em }
+.built-by { display: block; margin-top: 18px }
 .theme-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--muted); font-size: 13px }
 .theme-toggle:hover { color: var(--text); border-color: var(--teal) }
 .theme-toggle svg { width: 15px; height: 15px }

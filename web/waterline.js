@@ -5,7 +5,7 @@ import {evidenceLink} from './evidence-links.js';
 import {escapeHTML as e} from './workbench.js';
 
 const money = v => Number.isFinite(v) ? `${v < 0 ? '−' : ''}$${(Math.abs(v) / 1e9).toFixed(2)}B` : 'Unavailable';
-const short = v => v === 0 ? '$0' : `${v < 0 ? '−' : ''}$${Math.abs(v).toFixed(Math.abs(v) >= 10 ? 0 : 1)}B`;
+const short = (v, digits = Math.abs(v) >= 10 ? 0 : Math.abs(v) >= 1 ? 1 : 2) => v === 0 ? '$0' : `${v < 0 ? '−' : ''}$${Math.abs(v).toFixed(digits)}B`;
 const value = (row, key) => row?.metrics?.[key]?.value;
 
 export function waterlineYears(rows) {
@@ -15,9 +15,12 @@ export function waterlineYears(rows) {
   });
 }
 
+// A 1 / 2 / 2.5 / 5 step, with just enough decimals for its tick labels to stay distinct.
 function niceStep(span) {
-  const raw = span / 4, power = 10 ** Math.floor(Math.log10(raw)), unit = raw / power;
-  return (unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 2.5 ? 2.5 : unit <= 5 ? 5 : 10) * power;
+  const raw = span / 4, exponent = Math.floor(Math.log10(raw)), unit = raw / 10 ** exponent;
+  const nice = unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 2.5 ? 2.5 : unit <= 5 ? 5 : 10;
+  const p = nice === 10 ? exponent + 1 : exponent;
+  return {step: nice * 10 ** exponent, digits: Math.max(0, -p + (nice === 2.5 ? 1 : 0))};
 }
 
 export function waterlineSVG(rows, {width = 640, height = 280, selected = rows.length - 1, id = 'wl', ticker = ''} = {}) {
@@ -27,7 +30,7 @@ export function waterlineSVG(rows, {width = 640, height = 280, selected = rows.l
   const W = Math.max(280, Math.round(width)), H = height, m = {l: 54, r: 14, t: 26, b: 38};
   let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
   if (hi === lo) hi = lo + 1;
-  const step = niceStep(hi - lo);
+  const {step, digits} = niceStep(hi - lo);
   hi = Math.ceil(hi * 1.08 / step) * step;
   lo = Math.floor(lo / step) * step;
   const col = (W - m.l - m.r) / years.length;
@@ -36,9 +39,9 @@ export function waterlineSVG(rows, {width = 640, height = 280, selected = rows.l
   const label = `${e(ticker)} net income and operating cash flow by fiscal year, USD billions. ${flagged ? `Net income exceeded operating cash flow in ${flagged} of ${years.length} years (hatched).` : 'Operating cash flow covered net income in every year shown.'} Exact values and filing links follow.`;
   let svg = `<svg class="wl-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}"><title>Profit against operating cash</title>`;
   svg += `<defs><pattern id="${id}-hatch" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><rect class="wl-hatch-bg" width="7" height="7"/><line class="wl-hatch-line" x1="0" y1="0" x2="0" y2="7"/></pattern></defs>`;
-  for (let v = lo; v <= hi + step / 2; v += step) {
+  for (let k = 0, v = lo; v <= hi + step / 2; v = lo + ++k * step) {
     const at = y(v), zero = Math.abs(v) < step / 1e6;
-    svg += `<line class="${zero ? 'wl-zero' : 'wl-rule'}" x1="${m.l}" x2="${W - m.r}" y1="${at}" y2="${at}"/><text class="wl-axis" x="${m.l - 8}" y="${at + 4}" text-anchor="end">${short(zero ? 0 : v)}</text>`;
+    svg += `<line class="${zero ? 'wl-zero' : 'wl-rule'}" x1="${m.l}" x2="${W - m.r}" y1="${at}" y2="${at}"/><text class="wl-axis" x="${m.l - 8}" y="${at + 4}" text-anchor="end">${short(zero ? 0 : v, digits)}</text>`;
   }
   years.forEach((yr, i) => {
     const x0 = m.l + i * col, inner = col * .7, xs = x0 + (col - inner) / 2, mid = x0 + col / 2;
@@ -71,22 +74,27 @@ export function traceMarkup(row, ticker = '') {
   return `<p class="wl-trace-head">The filing lines behind ${e(ticker)} · fiscal year ended ${e(row.period_end)}</p><div class="wl-lines">${line('Net income', ni)}${line('Operating cash flow', ocf)}${gap === null ? '' : `<div class="wl-line wl-total${gap < 0 ? ' is-flag' : ''}"><span class="wl-line-name">Cash minus profit</span><strong class="wl-fig">${gap < 0 ? '−' : '+'}${money(Math.abs(gap))}</strong><span class="wl-line-source">${gap < 0 ? 'Net income ran ahead of operating cash flow. That is a reason to read the cash-flow statement, not a verdict.' : 'Operating cash flow covered net income this year.'}</span></div>`}</div>`;
 }
 
+// Year buttons and the trace live region persist across selections, so focus stays on the
+// pressed year and screen readers announce the new filing lines.
 export function renderWaterline(target, rows, {ticker = '', selected = rows.length - 1, height = 280, id = 'wl', onSelect} = {}) {
   if (!target) return;
   const years = waterlineYears(rows);
-  const index = Math.max(0, Math.min(rows.length - 1, selected));
+  let index = Math.max(0, Math.min(rows.length - 1, selected));
   const width = target.clientWidth || 640;
   target.innerHTML = `<div class="wl-chart">${waterlineSVG(rows, {width, height, selected: index, id, ticker})}</div>
     <div class="wl-legend" aria-hidden="true"><span><i class="wl-key wl-key-water"></i>Operating cash flow (the water line)</span><span><i class="wl-key wl-key-profit"></i>Net income</span><span><i class="wl-key wl-key-gap"></i>Profit above cash</span></div>
     <div class="wl-years" role="group" aria-label="Trace a fiscal year to its filing">${years.map((yr, i) => `<button type="button" class="wl-year" data-wl-year="${i}" aria-pressed="${i === index}">${e(String(yr.period_end).slice(0, 4))}${yr.above ? '<span class="wl-flag" aria-hidden="true"></span><span class="sr-only"> (profit above cash)</span>' : ''}</button>`).join('')}</div>
     <div class="wl-trace" aria-live="polite">${traceMarkup(rows[index], ticker)}</div>`;
   target.dataset.width = String(width);
+  const chart = target.querySelector('.wl-chart'), trace = target.querySelector('.wl-trace');
   target.onclick = event => {
     const hit = event.target.closest?.('[data-wl-year]');
     if (!hit) return;
-    const next = Number(hit.dataset.wlYear);
-    renderWaterline(target, rows, {ticker, selected: next, height, id, onSelect});
-    onSelect?.(next);
-    if (hit.tagName === 'BUTTON') target.querySelector(`button[data-wl-year="${next}"]`)?.focus();
+    index = Number(hit.dataset.wlYear);
+    chart.innerHTML = waterlineSVG(rows, {width, height, selected: index, id, ticker});
+    for (const b of target.querySelectorAll('button[data-wl-year]')) b.setAttribute('aria-pressed', String(Number(b.dataset.wlYear) === index));
+    trace.innerHTML = traceMarkup(rows[index], ticker);
+    if (hit.tagName === 'BUTTON') hit.focus();
+    onSelect?.(index);
   };
 }

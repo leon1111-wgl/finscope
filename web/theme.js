@@ -13,6 +13,11 @@ function saved(storage) {
 export function applyTheme(doc, choice) {
   if (choice === 'light' || choice === 'dark') doc.documentElement.dataset.theme = choice;
   else delete doc.documentElement.dataset.theme;
+  // Each theme-color meta answers one system scheme; a manual choice paints both with that theme.
+  for (const meta of doc.querySelectorAll('meta[name="theme-color"][data-light]')) {
+    const scheme = (meta.getAttribute('media') || '').includes('dark') ? 'dark' : 'light';
+    meta.content = meta.dataset[choice === 'system' ? scheme : choice];
+  }
 }
 
 export function initThemeToggle(doc, button, storage = globalThis.localStorage) {

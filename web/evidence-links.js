@@ -11,7 +11,7 @@ const label = f => f.link_kind === 'primary_document' ? `Read ${f.form || 'filin
 export function evidenceLink(f, showTag = true) {
   const url = officialURL(f?.url), index = officialURL(f?.filing_index_url);
   if (!url) return 'Source unavailable';
-  return `<span class="evidence-links"><a href="${e(url)}" target="_blank" rel="noopener noreferrer">${e(label(f))} ↗</a>${index && index !== url ? ` <span aria-hidden="true">·</span> <a href="${e(index)}" target="_blank" rel="noopener noreferrer">Filing index ↗</a>` : ''}${showTag ? `<small>${e(f.tag)}</small>` : ''}</span>`;
+  return `<span class="evidence-links"><a href="${e(url)}" target="_blank" rel="noopener noreferrer">${e(label(f))} ↗</a>${index && index !== url ? ` <span aria-hidden="true">·</span> <a href="${e(index)}" target="_blank" rel="noopener noreferrer">Filing index ↗</a>` : ''}${showTag ? `<small>${e(f.tag).replace(/([a-z])([A-Z])/g, '$1<wbr>$2')}</small>` : ''}</span>`;
 }
 
 export function evidenceMarkdown(f) {

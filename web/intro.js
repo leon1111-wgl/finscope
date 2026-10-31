@@ -6,6 +6,7 @@ import {escapeHTML as e} from './workbench.js';
 // Keep in sync with the inline head script in index.html, which picks the mode before first paint.
 export const RESEARCH_KEYS = ['company', 'date', 'view', 'dataset', 'calculation', 'revenuePercent', 'marginPoints', 'refinanceBillions', 'rateBps', 'collectionDays'];
 const INTRO_TICKER = 'NVDA';
+let redrawIntro = null, introObserver = null;
 
 export function wantsConsole(loc) {
   const params = new URLSearchParams(loc.search);
@@ -15,10 +16,12 @@ export function wantsConsole(loc) {
 export function initShell(doc, {onEnter} = {}) {
   const win = doc.defaultView, root = doc.documentElement;
   const set = mode => { root.dataset.mode = mode; };
+  // The research query of a console left for the intro, e.g. a shared link still awaiting a decision.
+  let consoleSearch = '';
   set(wantsConsole(win.location) ? 'console' : 'intro');
   const enter = ({view, ticker, focus = 'console-title'} = {}) => {
     if (root.dataset.mode !== 'console') {
-      win.history.pushState(null, '', `${win.location.pathname}${win.location.search}#workspace`);
+      win.history.pushState(null, '', `${win.location.pathname}${win.location.search || consoleSearch}#workspace`);
       set('console');
       win.scrollTo?.(0, 0);
     }
@@ -31,6 +34,7 @@ export function initShell(doc, {onEnter} = {}) {
   };
   const leave = () => {
     if (root.dataset.mode === 'intro') return;
+    consoleSearch = win.location.search;
     win.history.pushState(null, '', win.location.pathname);
     set('intro');
     win.scrollTo?.(0, 0);
@@ -45,7 +49,11 @@ export function initShell(doc, {onEnter} = {}) {
     const href = trigger.getAttribute('href');
     enter({view: trigger.dataset.enterView, ticker: trigger.dataset.enterTicker, focus: href?.startsWith('#') ? href.slice(1) : 'console-title'});
   });
-  const sync = () => set(wantsConsole(win.location) ? 'console' : 'intro');
+  const sync = () => {
+    const before = root.dataset.mode;
+    set(wantsConsole(win.location) ? 'console' : 'intro');
+    if (root.dataset.mode !== before) doc.getElementById(root.dataset.mode === 'console' ? 'console-title' : 'intro-title')?.focus();
+  };
   win.addEventListener('popstate', sync);
   win.addEventListener('hashchange', sync);
   return {mode: () => root.dataset.mode, enter};
@@ -77,10 +85,12 @@ export function renderIntro(doc, bundle) {
   };
   if (fresh) fresh.textContent = `Snapshot built ${bundle.generated_at.slice(0, 10)} UTC from official SEC filings · Treasury yields through ${bundle.rates.at(-1)?.date ?? 'unavailable'} · no account, install or API key`;
   draw();
-  if (typeof globalThis.ResizeObserver === 'function') {
-    new globalThis.ResizeObserver(() => {
-      if (chart.isConnected && chart.clientWidth && String(chart.clientWidth) !== chart.dataset.width) draw();
-    }).observe(chart);
+  redrawIntro = () => {
+    if (chart.isConnected && chart.clientWidth && String(chart.clientWidth) !== chart.dataset.width) draw();
+  };
+  if (!introObserver && typeof globalThis.ResizeObserver === 'function') {
+    introObserver = new globalThis.ResizeObserver(() => redrawIntro?.());
+    introObserver.observe(chart);
   }
 }
 

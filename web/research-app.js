@@ -406,6 +406,7 @@ async function init() {
   $('#freshness').textContent = 'Loading official financial evidence…';
   $('#freshness').classList.remove('stale');
   $('#status').textContent = 'Loading evidence…';
+  $('#status').classList.remove('sr-only');
   if (retrying) { $('#status').tabIndex = -1; $('#status').focus(); }
   try {
     bundle = await loadResearchEvidence();
@@ -468,8 +469,10 @@ async function init() {
     $('#restore-preview').hidden = true;
     $('#scope').textContent = '';
     $('#restore-message').textContent = '';
+    // Announced through the status region; shown once, inside the error panel.
     $('#status').textContent = error.message;
-    $('#content').innerHTML = '<div class="error"><h3>The evidence snapshot could not be loaded</h3><p>Your link has been kept. Retry to load the published evidence before reviewing the company, date and assumptions. No financial results are available yet.</p><div class="actions"><button type="button" id="retry-evidence">Retry loading evidence</button><a href="https://github.com/leon1111-wgl/finscope">Read the project guide ↗</a></div></div>';
+    $('#status').classList.add('sr-only');
+    $('#content').innerHTML = `<div class="error"><h3>The evidence snapshot could not be loaded</h3><p>Your link has been kept. Retry to load the published evidence before reviewing the company, date and assumptions. No financial results are available yet.</p><p class="error-detail">Details: ${e(error.message)}</p><div class="actions"><button type="button" id="retry-evidence">Retry loading evidence</button><a href="https://github.com/leon1111-wgl/finscope">Read the project guide ↗</a></div></div>`;
     $('#retry-evidence').addEventListener('click', init);
     $('#freshness').textContent = 'Evidence snapshot unavailable.';
     introUnavailable(document);

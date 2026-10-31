@@ -4,7 +4,7 @@ import {evidenceLink,evidenceMarkdown} from '../web/evidence-links.js';
 
 const f={url:'https://www.sec.gov/Archives/edgar/data/123/000000012326000001/company.htm',filing_index_url:'https://www.sec.gov/Archives/edgar/data/123/000000012326000001/0000000123-26-000001-index.html',link_kind:'primary_document',form:'10-Q',tag:'RevenueTag',filed:'2026-08-01',accession:'0000000123-26-000001'};
 test('reader gets a named primary document, index fallback and exact tag',()=>{
- const html=evidenceLink(f);assert.match(html,/Read 10-Q/);assert.match(html,/Filing index/);assert.match(html,/RevenueTag/);
+ const html=evidenceLink(f);assert.match(html,/Read 10-Q/);assert.match(html,/Filing index/);assert.match(html.replace(/<wbr>/g,''),/RevenueTag/,'break hints never change the exact tag text');
  assert.ok(html.includes(f.url));assert.ok(html.includes(f.filing_index_url));
 });
 test('fallback labels never imply a verified primary document',()=>{

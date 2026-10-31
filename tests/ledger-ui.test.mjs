@@ -28,7 +28,7 @@ test('water line hatches only the years where net income exceeds operating cash 
 
 test('trace lines keep official SEC links, mark missing facts and state the gap without a verdict',()=>{
  const flagged=traceMarkup(rows[1],'EX');
- assert.match(flagged,/Read 10-K/);assert.match(flagged,/NetIncomeLoss/);
+ assert.match(flagged,/Read 10-K/);assert.match(flagged,/Net<wbr>Income<wbr>Loss/);
  assert.match(flagged,/−\$3\.00B/);assert.match(flagged,/is-flag/);assert.match(flagged,/not a verdict/);
  const unsafe=traceMarkup({...rows[0],metrics:{net_income:{...fact(1,'X'),url:'https://evil.test/a.htm'},operating_cash_flow:null}},'EX');
  assert.match(unsafe,/Source unavailable/);assert.doesNotMatch(unsafe,/evil\.test/);
@@ -119,5 +119,61 @@ test('theme cycles system, light and dark and remembers the choice',()=>{
  button.click();assert.equal(doc.documentElement.dataset.theme,undefined);
  initThemeToggle(doc,button,{getItem(){throw new Error('blocked');},setItem(){throw new Error('blocked');}});
  assert.equal(button.dataset.choice,'system');
+ dom.window.close();
+});
+
+test('a new year updates the same live trace region and keeps focus on the pressed year',()=>{
+ const dom=new JSDOM('<div id="w"></div>');const target=dom.window.document.getElementById('w');
+ renderWaterline(target,rows,{ticker:'EX'});
+ const trace=target.querySelector('.wl-trace'),button=target.querySelector('button[data-wl-year="0"]');
+ button.focus();button.click();
+ assert.equal(target.querySelector('.wl-trace'),trace,'screen readers announce changes inside an existing live region');
+ assert.equal(target.querySelector('button[data-wl-year="0"]'),button);
+ assert.equal(dom.window.document.activeElement,button);
+ assert.match(trace.textContent,/2023-12-31/);
+ dom.window.close();
+});
+
+test('axis labels stay distinct for small companies',()=>{
+ const svg=waterlineSVG([year('2024-12-31',2e7,3e7),year('2025-12-31',4e7,-1e7)],{width:600});
+ const labels=[...svg.matchAll(/class="wl-axis"[^>]*>([^<]+)</g)].map(m=>m[1]);
+ assert.equal(new Set(labels).size,labels.length,labels.join(' '));
+ assert.ok(labels.includes('$0'));
+});
+
+test('the head script picks the same mode as the shell before first paint',()=>{
+ for(const [query,mode] of [['','intro'],['?company','console'],['?company=NVDA','console'],['?view=brief&x=1','console'],['?companyX=1','intro'],['#workspace','console']]){
+  const dom=new JSDOM(html,{url:'https://example.test/finscope/'+query,runScripts:'dangerously'});
+  assert.equal(dom.window.document.documentElement.dataset.mode??'intro',mode,query);
+  assert.equal(wantsConsole(new URL('https://example.test/finscope/'+query))?'console':'intro',mode,query);
+  dom.window.close();
+ }
+});
+
+test('Back to the intro moves focus to its heading',async t=>{
+ const ui=await boot(t);
+ ui.$('.hero-actions [data-enter]').click();
+ ui.dom.window.history.replaceState(null,'','/finscope/');
+ ui.dom.window.dispatchEvent(new ui.dom.window.PopStateEvent('popstate'));
+ assert.equal(ui.mode(),'intro');
+ assert.equal(ui.dom.window.document.activeElement,ui.$('#intro-title'));
+});
+
+test('leaving and reopening the ledger keeps a shared link that still awaits a decision',async t=>{
+ const ui=await boot(t,`?company=NVDA&date=${data.as_of}&view=brief&dataset=${'0'.repeat(64)}&calculation=1#workspace`);
+ assert.ok(ui.$('#restore-apply'));
+ ui.$('[data-home]').click();assert.equal(ui.mode(),'intro');
+ ui.$('.hero-actions [data-enter]').click();
+ assert.equal(new URL(ui.dom.window.location.href).searchParams.get('company'),'NVDA');
+ assert.ok(ui.$('#restore-apply'),'the saved-input decision is still offered');
+});
+
+test('a manual theme also paints the browser chrome colour',()=>{
+ const dom=new JSDOM(html,{url:'https://example.test/finscope/'});
+ const doc=dom.window.document,metas=[...doc.querySelectorAll('meta[name="theme-color"]')];
+ initThemeToggle(doc,doc.getElementById('theme-toggle'),dom.window.localStorage);
+ assert.deepEqual(metas.map(m=>m.content),['#f5f0e3','#0e1612']);
+ doc.getElementById('theme-toggle').click();assert.deepEqual(metas.map(m=>m.content),['#f5f0e3','#f5f0e3']);
+ doc.getElementById('theme-toggle').click();assert.deepEqual(metas.map(m=>m.content),['#0e1612','#0e1612']);
  dom.window.close();
 });
