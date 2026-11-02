@@ -2,7 +2,13 @@
 
 **Earnings Quality & Financial Resilience · Leon Wang**
 
-[Use it online](https://leon1111-wgl.github.io/finscope/) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
+[Use it online](https://leon1111-wgl.github.io/finscope/) · [Code](https://github.com/leon1111-wgl/finscope) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
+
+读美股公司的财报（SEC 10-K / 10-Q），看利润有没有现金流支撑。
+
+**Keywords / 关键词**: earnings quality · SEC EDGAR / XBRL · net income vs operating cash flow · Isolation Forest anomaly triage · stress scenarios · research brief export · 财报分析 · 利润质量
+
+Official SEC filings and Treasury data with source dates; not a live-price terminal. The anomaly score is an investigation cue, not investment advice. The forecasting lab uses fictional data.
 
 Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked financial review they can share.
 
