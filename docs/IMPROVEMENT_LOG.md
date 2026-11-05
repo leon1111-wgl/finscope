@@ -1,5 +1,9 @@
 # Continuous improvement log
 
+## 2026-11-05 — Visible current section on narrow screens
+
+Reproduced and fixed a ledger navigation issue: resizing a desktop Brief view to mobile hid the active tab. The shared visibility helper now responds to window resizing without changing research state or moving a fully visible selection. All 115 JavaScript tests pass, including the failing-before-fix regression. Native Chrome checks covered desktop and 390 × 844, retained historical inputs, real downloads and unchanged export contents (except timestamp/host). Before/after captures and the 34-field historical filing-date audit are retained locally. [Design details](DESIGN_LOG.md). Publication pending.
+
 ## 2026-11-01 — Ledger redesign of the public front end
 
 Visual and app-flow redesign only; see the design log and guide. Added an intro page with the water-line figure, an explicit entry into the console, divider tabs with section inks, a light/dark/system theme shared with the lab, and token-driven charts. Fixed in passing: `render()` also set `aria-current` on `<body>` because it matched every `[data-page]` element; it now marks only the section tabs. README and the official-updates guide describe the new entry. New DOM tests cover water-line geometry and missing values, trace links, intro/console routing, the clean intro address and theme persistence. Data, calculations, model outputs, exports and refresh workflows are unchanged.

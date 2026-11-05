@@ -306,14 +306,23 @@ function download(text, type, extension, comparison = false) {
   $('#status').textContent = comparison ? 'All-company comparison prepared for the selected information date. Save the CSV and evidence JSON together.' : 'Download prepared with this company, date and scenario.';
 }
 
+function revealCurrentStep() {
+  const tabs = $('.steps'), current = tabs?.querySelector('[aria-current="page"]');
+  if (!tabs?.clientWidth || !current || tabs.scrollWidth <= tabs.clientWidth) return;
+  const left = current.offsetLeft - tabs.scrollLeft;
+  // Leave room for the narrow-screen edge fade, without moving an already visible tab.
+  if (left < 24 || left + current.offsetWidth > tabs.clientWidth - 28) {
+    tabs.scrollLeft = Math.max(0, current.offsetLeft - 24);
+  }
+}
+
 function render() {
   document.body.dataset.page = page;
   document.querySelectorAll('.steps [data-page]').forEach(b => {
     if (b.dataset.page === page) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   });
-  const tabs = $('.steps'), current = tabs?.querySelector('[aria-current]');
-  if (tabs && current && tabs.scrollWidth > tabs.clientWidth) tabs.scrollLeft = Math.max(0, current.offsetLeft - 24);
+  revealCurrentStep();
   $('#content').innerHTML = ({
     review,
     compare,
@@ -438,6 +447,7 @@ async function init() {
         if (window.scrollY > top + 1) window.scrollTo(0, top);
       }));
       $('#brief-file').addEventListener('change', openSavedBrief);
+      window.addEventListener('resize', revealCurrentStep);
       controlsBound = true;
     }
     ready = true;

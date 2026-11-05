@@ -1,5 +1,15 @@
 # FinScope design log
 
+## 2026-11-05 — Keep the current section visible after resizing
+
+First synchronized the already published ledger design and scheduled official-data commits through `dbc0eb5`; the checkout had no pending edits or releases. In the actual live browser, opened a historical NVDA brief on desktop, then narrowed to 390 × 844. The tab strip remained at its left edge, hiding the selected Brief tab while Brief content was visible. This made the current section unclear.
+
+Added a small visibility check on window resize and reused it when rendering a section. It reveals an obscured current tab with space for the edge fade, leaves an already visible tab alone, and ignores hidden/non-overflowing navigation. It does not rerender research or modify selection, assumptions, formulas, sources, themes or exports. The resize listener binds once with the existing controls.
+
+Verification: the regression failed before the fix, then all 115 JavaScript tests passed. Actual Chrome inspection reproduced the live failure and verified the local desktop-to-390 px fix. Before/after screenshots are in `.work/ledger-live-20261105/`. A live historical JSON download preserved NVDA, 2021-10-15 and rateBps=125; all 34 filing-date fields were on/before that information date (latest 2021-08-20). A second native download after the local resize matched all content except export time and reopen host. Browser-extension commands were intermittent; native Chrome accessibility controls completed the interactions. This is not a new check of the earlier 45-second failure/retry path or native print. Temporary responsive mode was switched off after checking. Release verification follows in the improvement log.
+
+Next candidate: check whether the navigation edge fade obscures the last tab when manually scrolling to the end; reproduce before changing its treatment.
+
 ## 2026-11-01 — The ledger: an app you open, with its own identity
 
 The user asked for each portfolio project to open like an app (intro, a clear way in, a console with sections) without looking like the others. FinScope became a ledger around the question "Does the profit hold water?". The intro draws each company's operating cash as a water level with net income across it and hatches the years when profit ran ahead of cash; picking a year shows the 10-K lines behind both numbers. Open the ledger enters the console; saved links and `#workspace` open it directly, and the intro keeps a clean address. The console uses ledger divider tabs with one ink per section, a sticky tab row, serif headings, tabular figures, double-rule totals and a red margin rule. Provenance has a consistent ink: gold tick for a value matched to an SEC filing, dashed box for AI triage, lilac for the reader's assumptions, red for questions. Light, dark and system themes cover the workspace, the lab and every chart; the in-page cash-flow waterfall re-inks per theme while its download stays self-contained.

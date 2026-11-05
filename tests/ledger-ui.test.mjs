@@ -177,3 +177,23 @@ test('a manual theme also paints the browser chrome colour',()=>{
  doc.getElementById('theme-toggle').click();assert.deepEqual(metas.map(m=>m.content),['#0e1612','#0e1612']);
  dom.window.close();
 });
+
+test('narrowing the workspace reveals the active tab without changing the research',async t=>{
+ const ui=await boot(t,`?company=NVDA&date=${data.as_of}&view=brief&dataset=${data.dataset_sha256}&calculation=1&rateBps=125`);
+ const tabs=ui.$('.steps'), current=tabs.querySelector('[aria-current="page"]');
+ const content=ui.$('#content').innerHTML, url=ui.dom.window.location.href;
+ Object.defineProperties(tabs,{clientWidth:{value:360,configurable:true},scrollWidth:{value:1000}});
+ Object.defineProperties(current,{offsetLeft:{value:700},offsetWidth:{value:120}});
+ tabs.scrollLeft=0;
+ ui.dom.window.dispatchEvent(new ui.dom.window.Event('resize'));
+ assert.ok(tabs.scrollLeft<=700 && tabs.scrollLeft+360>=820,'active tab is fully visible after narrowing');
+ assert.equal(ui.$('#content').innerHTML,content,'resize does not recalculate or replace the research');
+ assert.equal(ui.dom.window.location.href,url);
+ tabs.scrollLeft=600;
+ ui.dom.window.dispatchEvent(new ui.dom.window.Event('resize'));
+ assert.equal(tabs.scrollLeft,600,'a fully visible selection does not jump');
+ Object.defineProperty(tabs,'clientWidth',{value:0,configurable:true});
+ tabs.scrollLeft=0;
+ ui.dom.window.dispatchEvent(new ui.dom.window.Event('resize'));
+ assert.equal(tabs.scrollLeft,0,'hidden navigation does not move');
+});
