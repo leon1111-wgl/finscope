@@ -108,6 +108,7 @@ html[data-mode="console"] .theme-toggle { margin-left: 0; }
 .hero-copy { padding-top: clamp(0px, 4vw, 48px); }
 .hero h1 { margin: 0 0 20px; font: 500 clamp(40px, 5.4vw, 66px)/1.03 var(--serif); letter-spacing: -.015em; }
 .hero h1:focus { outline: none; }
+.hero-stack { margin: -6px 0 22px; font: 16px/1.5 var(--mono); letter-spacing: .02em; color: var(--section, var(--text-2)); }
 .hero-lead { font-size: 18px; line-height: 1.6; color: var(--text-2); max-width: 36em; margin-bottom: 28px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
 .big { min-height: 50px; padding: 12px 22px; font-size: 17px; }

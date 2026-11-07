@@ -5,7 +5,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f5f0e3" media="(prefers-color-scheme: light)" data-light="#f5f0e3" data-dark="#0e1612">
 <meta name="theme-color" content="#0e1612" media="(prefers-color-scheme: dark)" data-light="#f5f0e3" data-dark="#0e1612">
-<title>FinScope — Does the profit hold water? · Leon Wang</title>
+<title>FinScope · Leon Wang</title>
 <meta name="description" content="Set reported profit against operating cash flow for six US companies, match every figure to its SEC filing, test a weaker year and export a reproducible research brief. Built by Leon Wang.">
 <script>/* Theme and intro/console mode before first paint. Keys mirror RESEARCH_KEYS in intro.js. */try{var t=localStorage.getItem('finscope.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}if(/[?&](company|date|view|dataset|calculation|revenuePercent|marginPoints|refinanceBillions|rateBps|collectionDays)(=|&|$)/.test(location.search)||location.hash==='#workspace')document.documentElement.dataset.mode='console';</script>
 <link rel="stylesheet" href="./research.css?v=20261101-ledger"><script type="module" src="./research-app.js?v=20261105-tabs"></script>
@@ -25,7 +25,8 @@
 <section class="hero" aria-labelledby="intro-title">
  <div class="hero-copy">
   <p class="kicker">Earnings quality · six US companies · SEC filings</p>
-  <h1 id="intro-title" tabindex="-1">Does the profit hold water?</h1>
+  <h1 id="intro-title" tabindex="-1">FinScope</h1>
+  <p class="hero-stack">SEC EDGAR / XBRL · Isolation Forest · Python · JavaScript</p>
   <p class="hero-lead">FinScope sets each company’s reported net income against the cash its operations brought in, matches every figure to its SEC filing and lets you test a weaker year. You leave with a brief that carries its own audit trail.</p>
   <div class="hero-actions"><button type="button" class="primary big" data-enter>Open the ledger <span aria-hidden="true">→</span></button><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/CASE_STUDY.md">Read the worked case ↗</a></div>
   <p class="hero-meta" id="intro-freshness">Official SEC and Treasury data · no account, install or API key</p>
