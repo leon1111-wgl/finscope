@@ -1,18 +1,18 @@
 # FinScope — From profit to proof
 
-**Earnings Quality & Financial Resilience · Leon Wang**
+**Earnings Quality & Financial Resilience** · By [Leon Wang](https://leon1111-wgl.github.io/)
 
-[Use it online](https://leon1111-wgl.github.io/finscope/) · [Code](https://github.com/leon1111-wgl/finscope) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
+[Use it online](https://leon1111-wgl.github.io/finscope/) · [Code](https://github.com/leon1111-wgl/finscope) · [Ask the ledger](docs/ASK.md) · [Changelog](CHANGELOG.md) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
 
 读美股公司的财报（SEC 10-K / 10-Q），看利润有没有现金流支撑。
 
-**Keywords / 关键词**: earnings quality · SEC EDGAR / XBRL · net income vs operating cash flow · Isolation Forest anomaly triage · stress scenarios · research brief export · 财报分析 · 利润质量
+**Keywords / 关键词**: earnings quality · SEC EDGAR / XBRL · net income vs operating cash flow · grounded numeric QA with cited sources · Isolation Forest anomaly triage · stress scenarios · research brief export · 财报分析 · 利润质量
 
 Official SEC filings and Treasury data with source dates; not a live-price terminal. The anomaly score is an investigation cue, not investment advice. The forecasting lab uses fictional data.
 
 Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked financial review they can share.
 
-**Open the website, select Open the ledger, choose a company, test an assumption and download a brief. No account, installation or API key is needed to use the public workspace.**
+**Open the website, select Open the ledger, choose a company, test an assumption and download a brief. Or type your own question, in Chinese or English, into Ask the ledger. No account, installation or API key is needed to use the public workspace.**
 
 The intro page asks the question the project is built around (does the profit hold water?) with each company's net income drawn against its operating cash flow; pick a year to see the 10-K lines behind both numbers. The ledger marks provenance consistently: a gold tick for a value matched to an SEC filing, a dashed box for AI triage, lilac for your own assumptions and red for anything worth a closer question. Light, dark and system themes are available.
 
@@ -20,6 +20,7 @@ The intro page asks the question the project is built around (does the profit ho
 
 | Step | Practical output |
 | --- | --- |
+| Ask your own question | An instant answer in Chinese or English from fixed rules over the evidence, with every figure's 10-K/10-Q line, or an honest refusal (no advice, forecasts or substitute figures) |
 | Watch official updates | Recent SEC announcements and daily Treasury yields, with collection times and original source links |
 | Review the evidence | Annual profit/cash trends, liquidity ratios, exact SEC facts and filing links |
 | Check what changed | Newer fiscal YTD revenue, profit and operating cash flow versus the same period last year |
@@ -30,6 +31,12 @@ The intro page asks the question the project is built around (does the profit ho
 | Take your brief | Editable Markdown, source-rich JSON, print/PDF and a shareable research view |
 
 The public universe is **AAPL, MSFT, NVDA, AMZN, GOOGL and META**. Official Treasury observations provide rate context, with a separate hypothetical bond sensitivity calculator. The workspace uses real annual disclosures plus matched interim checkpoints; it is not a live-price terminal.
+
+## Ask your own question
+
+Type a question on the intro page or open the **Ask** tab: "NVDA 的利润有现金流支撑吗", "MSFT 2024 年经营现金流是多少", "compare AMZN and META cash conversion", "哪家公司利润和现金差距最大". Fixed rules read the question (no language model, nothing leaves the page) and the program states each number with its filing, XBRL tag and period, the formula for any ratio, and which engine answered. Buy/sell questions, forecasts, share prices, companies outside the six and figures the bundle does not hold (EPS, gross margin, debt…) are refused by name rather than answered with a different number.
+
+The same engine runs from the command line: `node scripts/ask.mjs questions.json` prints each answer, its engine and its sources as JSON. On a blind set of 145 SYNTHETIC questions written by another model before the rules existed, the first run answered 127 correctly, 7 wrongly and abstained on 8 (3 partial); 47 of 48 questions that must not be answered were refused. [How it works and how it was tested](docs/ASK.md) · [Frontier review](docs/FRONTIER_REVIEW.md).
 
 ## The project story
 
@@ -69,6 +76,8 @@ flowchart LR
   L --> B
   M --> B
   B --> U[Browser research workspace]
+  Q[Visitor's own question] --> K[Ask: tier-1 rules, cited facts]
+  B --> K
   A[User scenario assumptions] --> U
   U --> R[Markdown / JSON / printable brief]
   D --> C[Hourly official monitor capture]
@@ -108,7 +117,7 @@ For a fork, configure the repository variable `SEC_USER_AGENT` and enable GitHub
 
 ## AI role and evidence limits
 
-The Isolation Forest detects unusual combinations of six financial ratios. It trains on eligible earlier company-years, with current target periods excluded. A score is an investigation cue, not a probability of default, fraud detector or investment recommendation. The transparent ratios are always available as a baseline.
+The Ask box is fixed rules, not a model: it reads the question and the program states facts from the bundle. The Isolation Forest detects unusual combinations of six financial ratios. It trains on eligible earlier company-years, with current target periods excluded. A score is an investigation cue, not a probability of default, fraud detector or investment recommendation. The transparent ratios are always available as a baseline.
 
 Historical views reconstruct filing-day eligibility from currently retrieved SEC data. They are not a certified historical raw archive. The selected companies are survivors, fiscal calendars differ, business regimes change and some standard tags are missing. The separate YTD checkpoint adds newer standard-tag revenue, profit and cash flow. It does not provide complete quarterly coverage or trailing-twelve-month values. Read the filing notes for explanations. [Interim matching method](docs/INTERIM_CHECKPOINT.md). [Full model card](docs/RESEARCH_MODEL.md).
 

@@ -1,0 +1,29 @@
+name: SEC CORS probe
+# Records whether a page on another origin may read SEC's JSON endpoints (docs/FRONTIER_REVIEW.md).
+# Runs on the iteration branch and by hand; it changes nothing and never fails the build.
+on:
+  push:
+    branches: [ask-ledger-2026-11]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request with a browser Origin header and a CORS preflight
+        env:
+          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+        run: |
+          for u in https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json https://data.sec.gov/submissions/CIK0000320193.json https://www.sec.gov/files/company_tickers.json; do
+            {
+              echo "### $u"; echo '```'
+              echo '-- GET with Origin: https://leon1111-wgl.github.io'
+              curl -s -o /dev/null -D - -H 'Origin: https://leon1111-wgl.github.io' -A "$SEC_USER_AGENT" "$u" | grep -iE '^(HTTP|access-control|content-type|vary)' || true
+              echo '-- OPTIONS preflight'
+              curl -s -o /dev/null -D - -X OPTIONS -H 'Origin: https://leon1111-wgl.github.io' -H 'Access-Control-Request-Method: GET' -A "$SEC_USER_AGENT" "$u" | grep -iE '^(HTTP|access-control)' || true
+              echo '```'
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+            sleep 1
+          done

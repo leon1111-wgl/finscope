@@ -8,7 +8,7 @@
 <title>FinScope · Leon Wang</title>
 <meta name="description" content="Set reported profit against operating cash flow for six US companies, match every figure to its SEC filing, test a weaker year and export a reproducible research brief. Built by Leon Wang.">
 <script>/* Theme and intro/console mode before first paint. Keys mirror RESEARCH_KEYS in intro.js. */try{var t=localStorage.getItem('finscope.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}if(/[?&](company|date|view|dataset|calculation|revenuePercent|marginPoints|refinanceBillions|rateBps|collectionDays)(=|&|$)/.test(location.search)||location.hash==='#workspace')document.documentElement.dataset.mode='console';</script>
-<link rel="stylesheet" href="./research.css?v=20261101-ledger"><script type="module" src="./research-app.js?v=20261105-tabs"></script>
+<link rel="stylesheet" href="./research.css?v=20261109-profit"><script type="module" src="./research-app.js?v=20261109-profit"></script>
 </head>
 <body>
 <a class="skip" href="#workspace" data-enter>Skip to research workspace</a>
@@ -29,6 +29,7 @@
   <p class="hero-stack">SEC EDGAR / XBRL · Isolation Forest · Python · JavaScript</p>
   <p class="hero-lead">FinScope sets each company’s reported net income against the cash its operations brought in, matches every figure to its SEC filing and lets you test a weaker year. You leave with a brief that carries its own audit trail.</p>
   <div class="hero-actions"><button type="button" class="primary big" data-enter>Open the ledger <span aria-hidden="true">→</span></button><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/CASE_STUDY.md">Read the worked case ↗</a></div>
+  <form class="ask-intro" id="intro-ask" role="search" aria-labelledby="intro-ask-label"><label id="intro-ask-label" for="intro-ask-input">Ask the ledger <span>Your own question, in Chinese or English. Fixed rules read the saved SEC evidence in your browser and cite every number. No model, no key.</span></label><div class="ask-row"><input id="intro-ask-input" name="q" type="search" maxlength="300" autocomplete="off" enterkeyhint="search" placeholder="NVDA 的利润有现金流支撑吗？" required><button class="primary" type="submit">Ask</button></div></form>
   <p class="hero-meta" id="intro-freshness">Official SEC and Treasury data · no account, install or API key</p>
  </div>
  <figure class="sheet hero-figure" aria-labelledby="intro-figure-title">
@@ -50,8 +51,9 @@
 </section>
 
 <section class="index" aria-labelledby="index-title">
- <div class="section-intro"><h2 id="index-title">Inside the ledger</h2><p>Five sections, one company and one information date at a time.</p></div>
+ <div class="section-intro"><h2 id="index-title">Inside the ledger</h2><p>Five sections, one company and one information date at a time, and a box for your own questions.</p></div>
  <ol class="ledger-index">
+  <li class="ix" data-section="ask"><button type="button" data-enter data-enter-view="ask"><span class="ix-no" aria-hidden="true">Q</span><span class="ix-name">Ask</span><span class="ix-desc">Your own question in Chinese or English, answered by fixed rules with every number traced to its filing line. No advice, no forecasts.</span></button></li>
   <li class="ix" data-section="review"><button type="button" data-enter data-enter-view="review"><span class="ix-no" aria-hidden="true">01</span><span class="ix-name">Evidence</span><span class="ix-desc">Profit against cash, matched SEC facts, the newer year-to-date checkpoint, the cash-flow bridge and AI triage.</span></button></li>
   <li class="ix" data-section="compare"><button type="button" data-enter data-enter-view="compare"><span class="ix-no" aria-hidden="true">02</span><span class="ix-name">Comparison</span><span class="ix-desc">Six financial profiles on the same information date, with a full-precision CSV and its evidence JSON.</span></button></li>
   <li class="ix" data-section="stress"><button type="button" data-enter data-enter-view="stress"><span class="ix-no" aria-hidden="true">03</span><span class="ix-name">Scenarios</span><span class="ix-desc">Revenue, margin, refinancing and collection assumptions, with official Treasury context.</span></button></li>
@@ -86,7 +88,7 @@
 <details id="saved-brief" class="saved-brief no-print"><summary>Open a saved brief</summary><p>Restore the company, date and assumptions from a downloaded FinScope JSON brief. The file stays on your device. Financial values and conclusions in the file are not imported.</p><label for="brief-file">Choose evidence brief (.json, up to 2 MB)</label><input id="brief-file" type="file" accept=".json,application/json" disabled></details>
 <p id="restore-message" class="note no-print" role="status" aria-live="polite"></p>
 <div id="restore-preview" class="no-print" hidden></div>
-<nav class="steps" aria-label="Research views"><button data-page="review" aria-current="page"><span class="tab-no" aria-hidden="true">01</span>Evidence</button><button data-page="compare"><span class="tab-no" aria-hidden="true">02</span>Comparison</button><button data-page="stress"><span class="tab-no" aria-hidden="true">03</span>Scenarios</button><button data-page="brief"><span class="tab-no" aria-hidden="true">04</span>Brief</button><button data-page="method"><span class="tab-no" aria-hidden="true">05</span>Method &amp; sources</button></nav>
+<nav class="steps" aria-label="Research views"><button data-page="ask"><span class="tab-no" aria-hidden="true">Q</span>Ask</button><button data-page="review" aria-current="page"><span class="tab-no" aria-hidden="true">01</span>Evidence</button><button data-page="compare"><span class="tab-no" aria-hidden="true">02</span>Comparison</button><button data-page="stress"><span class="tab-no" aria-hidden="true">03</span>Scenarios</button><button data-page="brief"><span class="tab-no" aria-hidden="true">04</span>Brief</button><button data-page="method"><span class="tab-no" aria-hidden="true">05</span>Method &amp; sources</button></nav>
 <div class="sheet-body">
 <div id="status" role="status" aria-live="polite"></div>
 <div id="content"><p class="empty">The research workspace is loading. No account or API key is required.</p></div>
