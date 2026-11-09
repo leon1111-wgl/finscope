@@ -3,7 +3,7 @@ import {initOfficialUpdates} from './official-updates.js?v=20261020-facts2';
 import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';
-import {answerQuestion, MAX_QUESTION} from './ask-engine.js?v=20261109-ask';
+import {answerQuestion, MAX_QUESTION} from './ask-engine.js?v=20261109-review';
 import {
   bridgeMarkup,
   cashBridgeSVG
