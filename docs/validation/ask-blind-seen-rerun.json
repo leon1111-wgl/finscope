@@ -1,6 +1,6 @@
 {
   "label": "seen rerun (after reading the set; not blind)",
-  "engine_commit": "9655db1",
+  "engine_commit": "10d50df",
   "set_commit": "f43486b",
   "dataset_sha256": "2d3abdf26ce3e391689d9b00d6ce26a10928c3ce28b2af1ac0b4782b6457cf7c",
   "bundle_as_of": "2026-11-07",
