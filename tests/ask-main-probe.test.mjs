@@ -132,3 +132,30 @@ test('round 3: named companies with 谁…更 are compared, never replaced by a 
   // Rankings stay rankings when no company is named or all six are asked.
   for (const q of ['哪家公司利润和现金差距最大', '六家公司谁的现金转化率最高', 'which company has the best earnings quality', '现金转化率最高的是哪家']) assert.equal(ask(q).topic, 'rank', q);
 });
+
+// Round 4: a closed rule for 利润/profit. Size or amount predicates keep the level figure; any other
+// predicate (or an evaluative frame) goes to cash support / cash conversion. Never the bare level.
+test('round 4: evaluative words beside profit, known or not, never return the bare net-income level', () => {
+  const evaluative = [
+    ['谷歌和亚马逊谁的利润更扎实', 'compare', 'cash_conversion'], ['苹果的利润健康吗', 'cash_support', null], ['微软利润稳不稳', 'cash_support', null],
+    ['哪家公司的利润最干净', 'rank', 'cash_conversion'], ['英伟达利润成色怎么样', 'cash_support', null], ['苹果的利润怎么样', 'cash_support', null],
+    ['META 的利润是不是很稳', 'cash_support', null], ['谷歌和亚马逊谁的利润更健康', 'compare', 'cash_conversion'],
+    ['Whose profit is more solid, Google or Amazon?', 'compare', 'cash_conversion'], ["Is Apple's profit healthy?", 'cash_support', null], ['how is microsoft net income', 'cash_support', null]
+  ];
+  for (const [q, topic, metric] of evaluative) {
+    const a = ask(q);
+    assert.equal(a.topic, topic, `${q} → ${a.status}/${a.topic}/${a.plan.metric}`);
+    if (metric) assert.equal(a.plan.metric, metric, q);
+    assert.notEqual(a.plan.metric, 'net_income', q);
+  }
+  const level = [
+    ['谷歌和亚马逊谁的利润更高', 'compare'], ['苹果和微软谁的利润更多', 'compare'], ['哪家公司利润最高', 'rank'], ['Which company has the highest profit?', 'rank'],
+    ['苹果利润是多少', 'metric'], ['苹果净利润多不多', 'metric'], ['苹果的利润金额', 'metric'], ['Apple net income 2024', 'metric'], ['苹果去年净利润', 'metric'],
+    ['苹果净利润增长了多少', 'change'], ['Has NVDA net income grown?', 'change'], ['what was AAPL net income in FY2025', 'metric'], ['哪家公司最赚钱', 'rank'], ['苹果净利润是微软的几倍', 'compare']
+  ];
+  for (const [q, topic] of level) {
+    const a = ask(q);
+    assert.equal(a.topic, topic, `${q} → ${a.status}/${a.topic}/${a.plan.metric}`);
+    assert.equal(a.plan.metric, 'net_income', q);
+  }
+});

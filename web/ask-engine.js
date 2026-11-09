@@ -573,6 +573,10 @@ export function answerQuestion(question, bundle, {date} = {}) {
   if (!metric && c.change) metric = 'revenue';
   if (!metric && c.gap && /现金|cash/.test(p.low)) metric = 'profit_cash_gap';
   if (c.definition && !p.companies.length && metric) return definitionAnswer(r, {...p, metrics: [metric]});
+  if (metric === 'net_income' && profitEvaluative(p)) {
+    if (p.companies.length === 1 || (!p.companies.length && !rankLike)) return withCompanies(r, p, 'cash_support', ts => cashSupportAnswer(r, p, bundle, index, ts[0], asOf));
+    metric = 'cash_conversion';
+  }
   if (!metric) {
     if (p.companies.length && /\bratio\b|turnover|coverage|multiple|\bmargin|周转|倍数|比率|利润率/.test(p.masked)) return finish(r, {status: 'not_in_bundle', topic: 'unsupported_metric', summary: ask(lang,
       `That ratio is not in this bundle. FinScope computes only its defined indicators: ${RATIOS.concat(DERIVED).map(k => label(k, 'en').toLowerCase()).join(', ')}.`,
@@ -652,6 +656,28 @@ function selectFigures(p) {
     if (/\bmargins?\b|\bratio\b|% of|percent(age)? of|as a share of|\bper (share|employee|user|unit|head)\b|占比|比例|比率|人均/.test(p.masked)) return {decline: 'combination'};
   }
   return {metric: ids[0] || null};
+}
+
+// A closed rule for 利润 / profit (net income). The words below are the only ones that keep the level
+// figure: size and amount predicates, plus the filler of an ordinary lookup or comparison. Any other word
+// beside it (扎实, 健康, 稳, 干净, 成色 …) or an evaluative frame (怎么样, 是不是, how is …) asks about the
+// quality of the profit, which FinScope answers with cash support or cash conversion — never the bare level.
+const PROFIT_LEVEL = ['多少钱', '有多少', '是多少', '多少', '多不多', '高不高', '大不大', '少不少', '低不低', '几倍', '几', '金额', '数额', '规模', '总额', '总量', '数值', '数字', '数据', '增长', '增加', '减少', '下降', '上升', '提高', '降低', '变化', '变动', '涨', '跌', '翻倍', '倍', '同比', '环比', '走势', '趋势', '历年', '历史', '逐年', '多年', '几年', '以来', '最快', '更快', '最慢', '更慢', '增速', '速度', '快', '慢', '创新高', '新高', '新低', '创纪录', '暴增', '大增', '激增', '猛增', '暴跌', '大跌', '下滑', '亏损', '盈亏', '亏', '正', '负', '排第几', '第几', '排名', '排行', '排序', '名次', '排', '亿美元', '亿', '万', '美元', '元', '高', '多', '大', '少', '低',
+  'how much', 'how many', 'amount', 'total', 'size', 'level', 'value', 'number', 'numbers', 'figure', 'figures', 'higher', 'highest', 'high', 'more', 'most', 'much', 'larger', 'largest', 'large', 'bigger', 'biggest', 'big', 'lower', 'lowest', 'low', 'less', 'least', 'smaller', 'smallest', 'small', 'grow', 'grew', 'growth', 'growing', 'grown', 'change', 'changed', 'changes', 'increase', 'increased', 'decrease', 'decreased', 'rise', 'rose', 'fall', 'fell', 'up', 'down', 'trend', 'history', 'over time', 'over the years', 'fastest', 'faster', 'slowest', 'slower', 'fast', 'slow', 'pace', 'rate', 'record', 'loss', 'losses', 'negative', 'positive', 'surge', 'surged', 'jump', 'jumped', 'plunge', 'plunged', 'drop', 'dropped', 'soar', 'soared', 'rank', 'ranking', 'ranked', 'position', 'billion', 'million', 'dollars', 'usd', 'times'];
+const PROFIT_FILLER = ['请问', '请', '帮我', '告诉我', '给我', '看看', '看下', '看一下', '查一下', '查询', '查', '一下', '列出', '显示', '的', '了', '吗', '呢', '啊', '吧', '呀', '么', '嘛', '是', '有', '在', '里', '中', '个', '和', '与', '跟', '及', '以及', '还是', '或者', '或', '对比', '比较', '相比', '比一比', '比', '谁的', '谁', '哪家公司', '哪家', '哪个公司', '哪个', '哪一家', '公司', '六家', '所有', '全部', '更', '最', '很', '非常', '特别', '太', '挺', '相当', '财报', '报告的', '报告', '最新', '最近', '目前', '当前', '现在', '去年同期', '同期', '去年', '今年', '前年', '上一年', '前一年', '上年', '这一年', '一年', '赚得', '赚', '得', '财年', '年度', '年', '这几年', '近几年', '过去', '近', '这些年', '每年', '截至', '到', '从', '之间', 'pk',
+  "what's", 'whats', 'what', 'is', 'are', 'was', 'were', 'be', 'been', 'does', 'do', 'did', 'go', 'went', 'gone', 'has', 'have', 'had', 'the', 'a', 'an', 'of', 'in', 'for', 'on', 'at', 'to', 'its', 'their', 's', 'me', 'please', 'show', 'tell', 'give', 'list', 'reported', 'report', 'fiscal', 'year', 'years', 'fy', 'latest', 'recent', 'current', 'now', 'last', 'this', 'previous', 'prior', 'compare', 'compared', 'comparison', 'and', 'or', 'vs', 'versus', 'against', 'between', 'which', 'who', 'whose', 'how', 'over', 'yrs', 'yr', 'each', 'every', 'per', 'since', 'until', 'through', 'ago', 'two', 'three', 'four', 'five', 'six', 'company', 'companies', 'one', 'than', 'with', 'by', 'from', 'so', 'far', 'many', 'very'];
+const PROFIT_WORDS = [...PROFIT_LEVEL, ...PROFIT_FILLER].sort((a, b) => b.length - a.length).map(w => latin(w) ? new RegExp(`(?<![a-z])${esc(w)}(?![a-z])`, 'g') : new RegExp(esc(w), 'g'));
+const PROFIT_EVALUATIVE = /怎么样|如何|咋样|怎样|好不好|行不行|好吗|是不是|是否|算不算|how('s| is| are| good| solid| healthy| strong| reliable| clean)|is it (good|bad|solid|healthy|ok)/;
+function profitEvaluative(p) {
+  if (PROFIT_EVALUATIVE.test(p.low)) return true;
+  let rest = p.low;
+  const blankSpan = (a, b) => { rest = rest.slice(0, a) + ' '.repeat(b - a) + rest.slice(b); };
+  for (const h of findSpans(p.low, COMPANY_TABLE)) blankSpan(h.start, h.end);
+  for (const sp of p.spans) blankSpan(sp.start, sp.end);
+  rest = rest.replace(/[\d.,，。、;；:：!！?？'"“”‘’()（）\[\]\-–—/%$·~\s]+/g, ' ');
+  for (const re of PROFIT_WORDS) rest = rest.replace(re, ' ');
+  rest = rest.replace(/[一二两三四五六七八九十百千]+/g, ' ');
+  return /[a-z㐀-鿿]/.test(rest);
 }
 
 function oneAtATime(r, p, topic) {

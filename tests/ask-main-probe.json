@@ -1,5 +1,5 @@
 {
- "_about": "The main session's probe questions on PR #2 (54 at 63aaf77, 5 from its held-out batch at d484511, 3 from its browser walk at 11c1f89 plus 5 sweep variants), with the outcome expected after the fixes, read by hand. Not blind; a regression check, not a measurement.",
+ "_about": "The main session's probe questions on PR #2 (54 at 63aaf77, 5 from its held-out batch at d484511, 3 from its browser walk at 11c1f89 and 1 at 77c82f7) plus look-alike variants written for each class, with the outcome expected after the fixes, read by hand. Not blind; a regression check, not a measurement.",
  "cases": [
   {
    "q": "英伟达去年赚的钱是真金白银吗",
@@ -402,6 +402,120 @@
    "status": "answered",
    "topic": "compare",
    "metric": "net_income"
+  },
+  {
+   "q": "谷歌和亚马逊谁的利润更扎实",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "cash_conversion"
+  },
+  {
+   "q": "苹果利润稳吗",
+   "status": "answered",
+   "topic": "cash_support",
+   "metric": null
+  },
+  {
+   "q": "apple earnings solid?",
+   "status": "answered",
+   "topic": "cash_support",
+   "metric": null
+  },
+  {
+   "q": "苹果的利润成色",
+   "status": "answered",
+   "topic": "cash_support",
+   "metric": null
+  },
+  {
+   "q": "微软利润干净吗",
+   "status": "answered",
+   "topic": "cash_support",
+   "metric": null
+  },
+  {
+   "q": "苹果利润有多高",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "微软利润有多少",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "亚马逊净利润 2024 年",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "NVDA net income FY2025 vs FY2024",
+   "status": "answered",
+   "topic": "change",
+   "metric": "net_income"
+  },
+  {
+   "q": "Apple net income since 2020",
+   "status": "answered",
+   "topic": "trend",
+   "metric": "net_income"
+  },
+  {
+   "q": "苹果近五年净利润",
+   "status": "answered",
+   "topic": "trend",
+   "metric": "net_income"
+  },
+  {
+   "q": "苹果净利润排第几",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "苹果净利润在六家里排名",
+   "status": "answered",
+   "topic": "rank",
+   "metric": "net_income"
+  },
+  {
+   "q": "Microsoft profit last year",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "谷歌净利润同比",
+   "status": "answered",
+   "topic": "change",
+   "metric": "net_income"
+  },
+  {
+   "q": "亚马逊净利润创新高了吗",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "Meta 净利润亏损了吗",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "英伟达利润暴增",
+   "status": "answered",
+   "topic": "metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "苹果利润的可持续性",
+   "status": "answered",
+   "topic": "cash_support",
+   "metric": null
   }
  ]
 }
