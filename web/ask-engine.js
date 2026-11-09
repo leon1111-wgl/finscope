@@ -62,12 +62,12 @@ const NOT_TICKERS = new Set(['SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', '
 
 // Figures, indicators, look-alikes the bundle does not hold, and bridge lines.
 const METRIC_ALIASES = {
-  revenue: ['营收', '营业收入', '营业总收入', '总营收', '收入', '销售额', '销售收入', '营业额', '总收入', '主营收入', 'revenue', 'revenues', 'net sales', 'sales', 'total revenue', 'top line', 'topline'],
+  revenue: ['营收', '营业收入', '营业总收入', '总营收', '收入', '销售额', '销售收入', '营业额', '总收入', '主营收入', 'revenue', 'revenues', 'net sales', 'sales', 'total revenue', 'top line', 'topline', 'rev', 'revs'],
   net_income: ['净利润', '净利', '纯利', '净收益', '净收入', '税后利润', '归母净利润', '利润', '盈利', '赚了多少钱', '赚多少钱', '赚了多少', '赚多少', '赚钱', '赚了', 'net income', 'net profit', 'net earnings', 'profit', 'profits', 'earnings', 'bottom line'],
-  operating_income: ['营业利润', '经营利润', '营运利润', '经营性利润', '营业利益', 'operating income', 'operating profit', 'income from operations', 'operating earnings'],
+  operating_income: ['营业利润', '经营利润', '营运利润', '经营性利润', '营业利益', 'operating income', 'operating profit', 'income from operations', 'operating earnings', 'op income', 'op inc'],
   operating_cash_flow: ['经营活动现金流量净额', '经营活动产生的现金流量净额', '经营活动产生的现金流', '经营活动现金流量', '经营活动现金流', '经营活动的现金流', '经营现金流量', '经营现金流', '经营性现金流', '营运现金流', '经营现金', '现金流量', '现金流', 'operating cash flow', 'operating cash flows', 'cash flow from operations', 'cash flows from operations', 'cash from operations', 'cash from operating activities', 'net cash provided by operating activities', 'operating cash', 'ocf', 'cfo', 'cash flow', 'cash flows', 'cashflow'],
   assets: ['总资产', '资产总额', '资产总计', '资产规模', '资产', 'total assets', 'assets'],
-  liabilities: ['总负债', '负债总额', '负债合计', '负债', 'total liabilities', 'liabilities'],
+  liabilities: ['总负债', '负债总额', '负债合计', '负债', 'total liabilities', 'liabilities', 'total liabs', 'liabs'],
   current_assets: ['流动资产', 'current assets'],
   current_liabilities: ['流动负债', 'current liabilities'],
   cash: ['现金及现金等价物', '现金和现金等价物', '现金及等价物', '现金等价物', '现金储备', '账上现金', '账面现金', '手上现金', '手头现金', '持有现金', '现金余额', '现金', 'cash and cash equivalents', 'cash & cash equivalents', 'cash and equivalents', 'cash & equivalents', 'cash on hand', 'cash balance', 'cash pile', 'cash reserves', 'cash position', 'cash'],
@@ -75,7 +75,7 @@ const METRIC_ALIASES = {
   operating_margin: ['营业利润率', '经营利润率', '营运利润率', '营业利益率', 'operating margin', 'operating profit margin', 'op margin', 'operating margins'],
   net_margin: ['净利率', '净利润率', '销售净利率', '纯利率', '利润率', 'net margin', 'net profit margin', 'profit margin', 'net income margin', 'profit margins'],
   cash_margin: ['经营现金流利润率', '经营现金利润率', '现金流利润率', '现金利润率', '经营现金流率', '经营现金率', '现金流率', 'cash margin', 'operating cash margin', 'cash flow margin', 'ocf margin', 'operating cash flow margin'],
-  current_ratio: ['流动比率', '流动比', 'current ratio'],
+  current_ratio: ['流动比率', '流动比', 'current ratio', 'curr ratio', 'cur ratio'],
   liabilities_assets: ['资产负债率', '负债率', '负债比率', '负债资产比', '负债占资产', 'liabilities to assets', 'liabilities/assets', 'liabilities-to-assets', 'liabilities / assets', 'debt ratio', 'debt to assets', 'debt-to-assets', 'debt-to-asset', 'liabilities ratio', 'liability ratio'],
   cash_coverage: ['现金覆盖率', '现金比率', '现金覆盖', 'cash coverage', 'cash ratio', 'cash to current liabilities'],
   accruals: ['应计比率', '应计利润率', '应计项目', '应计利润', '应计', 'accrual ratio', 'accruals ratio', 'sloan accruals', 'accruals', 'accrual'],
@@ -118,7 +118,7 @@ const BRIDGE_ALIASES = {
   inventory: ['存货', '库存', 'inventory', 'inventories'],
   payables: ['应付账款', '应付款', '应付', 'accounts payable', 'payables', 'payable']
 };
-const PRICE_ALIASES = ['股价', '股票价格', '价格', '市值', '市盈率', '市净率', '市销率', '估值', '股息率', '收盘价', '涨跌幅', '涨了多少', '跌了多少', '波动率', 'p/e', 'pe ratio', 'pe', 'price to earnings', 'p/b', 'share price', 'stock price', 'price', 'market cap', 'market capitalization', 'market value', 'valuation', 'dividend yield', 'beta', 'volatility', 'ev/ebitda', 'enterprise value', 'trading at', 'stock return', 'returns on the stock'];
+const PRICE_ALIASES = ['股价', '股票价格', '价格', '市值', '市盈率', '市净率', '市销率', '估值', '股息率', '收盘价', '波动率', 'p/e', 'pe ratio', 'pe', 'price to earnings', 'p/b', 'share price', 'stock price', 'price', 'market cap', 'market capitalization', 'market value', 'valuation', 'dividend yield', 'beta', 'volatility', 'ev/ebitda', 'enterprise value', 'trading at', 'stock return', 'returns on the stock'];
 
 const METRIC_TABLE = [
   ...Object.entries(METRIC_ALIASES).flatMap(([id, list]) => list.map(a => [a, 'metric', id])),
@@ -193,13 +193,14 @@ const DEFINITION = {
 // Topic and refusal cues, matched on the normalised lower-case question.
 const CUE = {
   offTopic: /天气|笑话|写代码|写一首|写首|写诗|翻译|讲个故事|讲故事|你是谁|你叫什么|你是什么模型|chatgpt|gpt-?\d|ignore (all |any |the )?(previous |prior |above |your )?(instructions|rules|prompts?)|system prompt|忽略.{0,8}(规则|指令|提示)|越狱|jailbreak|weather|tell (me )?a joke|\bjoke\b|write (me )?(a |an |some )?(code|poem|story|essay|song|email|script)|recipe|食谱|菜谱|足球|篮球|电影|movie|lottery|彩票|比特币|bitcoin|crypto|加密货币|星座|horoscope/,
+  pastMove: /涨跌幅|涨了多少|跌了多少|涨了多|跌了多/,
   stockMove: /会涨|会跌|能涨|涨吗|跌吗|还能涨|涨不涨|跌不跌|go(ing)? up\b|go(ing)? down\b|moon/,
   advice: /买入|买进|卖出|卖掉|抛售|抛了|抛掉|持有|加仓|减仓|建仓|清仓|抄底|仓位|值得买|值不值得|值得投资|能买吗|能买么|可以买|能不能买|该不该买|要不要买|买吗|买么|买不买|卖吗|卖么|卖不卖|推荐.{0,6}股|荐股|目标价|上车|梭哈|all in|投资建议|该买|该卖|入手|低估|高估|便宜吗|贵吗|划算|投资价值|长期持有|买哪|投哪|选哪只|哪只股票|哪个股票|哪支股票|牛股|跑赢|赚钱机会|能投吗|可以投吗|投不投|要不要投|值得入|能不能投|\bbuy\b|\bbuying\b|\bsell\b|\bselling\b|(should|do|would|can) (i|you|we) (keep )?hold|hold (the |this |my |its )?(stock|shares|position)|buy,? (or )?hold|hold or sell|keep holding|\bhold (nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|it|them)\b|\bholding it\b|should i (invest|buy|sell|hold|get|own|add|trim|short|long)|worth (investing|buying|it)|(good|best|better|safest|top) (investment|buy|stock|pick)s?|最值得投资|最值得买|哪个最值得|invest in|investment advice|price target|target price|undervalued|overvalued|bullish|bearish|to the moon|recommend(ation)? (a |any )?stock|which stock|stock pick|long or short|go long|go short|portfolio|allocat|outperform|is it a buy|cheap stock|expensive stock/,
   fraud: /造假|做假账|假账|财务造假|财务舞弊|舞弊|欺诈|粉饰|操纵利润|利润操纵|操纵财报|调节利润|做账|虚增|暴雷|爆雷|骗局|fraud|cook(ing|ed|s)? (the|its|their)? ?books|manipulat|accounting scandal|beneish|m-score|cheat|lying about|fake (numbers|earnings|profit)|ponzi/,
-  forecast: /预测|预计|预期|明年|后年|下一年|下个财年|下一个财年|下一财年|未来|将来|以后会|接下来|会不会|会增长|会下降|会怎样|会怎么样|会如何|能达到|能不能达到|前景|展望|业绩指引|指引|guidance|forecast|predict|projection|projected|outlook|next year|next fiscal|next quarter|下个季度|下季度|in the future|going forward|will (it|they|its|their|the|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|revenue|profit|earnings|cash)?.{0,30}\b(grow|increase|decrease|rise|fall|be|reach|beat|miss|keep|continue|stay|go)\b|expected to|estimates? for|consensus|分析师预期/,
-  scope: /能问啥|问啥|能干啥|能做啥|能回答啥|可以问啥|你能回答什么|你能做什么|你会什么|能问什么|可以问什么|可以回答什么|能回答什么|能回答哪些|支持哪些|支持什么|怎么用|如何使用|使用说明|有什么功能|帮助|help\b|what can (you|i) (ask|do|answer)|what (questions|kinds? of questions|can this)|how (do|does|can) (i use|this work|it work)|哪些公司|有哪些公司|包括哪些公司|覆盖(哪些|什么)|which companies|what companies|companies (are )?(covered|included|available)|list (of )?(the )?companies|^(你好|您好|hello|hi|hey)[!！.。 ]*$/,
+  forecast: /gonna|going to be|next yr|下一年度|预测|预计|预期|明年|后年|下一年|下个财年|下一个财年|下一财年|未来|将来|以后会|接下来|会不会|会增长|会下降|会怎样|会怎么样|会如何|能达到|能不能达到|前景|展望|业绩指引|指引|guidance|forecast|predict|projection|projected|outlook|next year|next fiscal|next quarter|下个季度|下季度|in the future|going forward|will (it|they|its|their|the|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|revenue|profit|earnings|cash)?.{0,30}\b(grow|increase|decrease|rise|fall|be|reach|beat|miss|keep|continue|stay|go)\b|expected to|estimates? for|consensus|分析师预期/,
+  scope: /what can (you|u) do|what do (you|u) do|哪几家|几家公司|哪些家|能问啥|问啥|能干啥|能做啥|能回答啥|可以问啥|你能回答什么|你能做什么|你会什么|能问什么|可以问什么|可以回答什么|能回答什么|能回答哪些|支持哪些|支持什么|怎么用|如何使用|使用说明|有什么功能|帮助|help\b|what can (you|i) (ask|do|answer)|what (questions|kinds? of questions|can this)|how (do|does|can) (i use|this work|it work)|哪些公司|有哪些公司|包括哪些公司|覆盖(哪些|什么)|which companies|what companies|companies (are )?(covered|included|available)|list (of )?(the )?companies|^(你好|您好|hello|hi|hey)[!！.。 ]*$/,
   freshness: /数据(的)?(更新|截至|截止|最新|日期|时间|多新|多久|有多新|是哪天|什么时候)|更新到|截至什么时候|截止到什么时候|截止什么时候|最新数据是|数据是最新的吗|多久更新|什么时候更新|data (as of|date|freshness|updated|current|from when)|how (recent|fresh|current|up to date|old) is|last updated|up to date|when (was|is|were) (the )?(data|bundle|snapshot|evidence)|as of when|data cutoff|cut-?off date/,
-  definition: /什么是|是什么意思|什么意思|啥意思|是啥|是什么|的含义|含义|定义|怎么算|如何计算|怎么计算|计算公式|公式|怎么理解|解释一下|^what (is|are|does) |what does .* mean|\bmeans?\b\??$|\bdefine\b|definition|meaning of|how (is|are|do you|does finscope) .{0,40}(calculated|computed|measured|defined|work)|\bformula\b|explain (what|the term)/,
+  definition: /是个啥|啥是|什么是|是什么意思|什么意思|啥意思|是啥|是什么|的含义|含义|定义|怎么算|如何计算|怎么计算|计算公式|公式|怎么理解|解释一下|^what (is|are|does) |what does .* mean|\bmeans?\b\??$|\bdefine\b|definition|meaning of|how (is|are|do you|does finscope) .{0,40}(calculated|computed|measured|defined|work)|\bformula\b|explain (what|the term)/,
   rates: /国债|美债|treasury|treasuries|t-bill|t-note|yield curve|收益率曲线|无风险利率|risk-free|bond yield|利率环境|美国利率/,
   rateWords: /收益率|利率|yield|yields|\brates?\b/,
   tenor: /(个月|月期|年期|-?month|-?year|\b\d{1,2}\s*[ym]\b)/,
@@ -207,16 +208,16 @@ const CUE = {
   filingLink: /链接|link|url|在哪(里)?(看|读|找|下载|查)|哪里(看|读|找|下载|查)|where (can|do|could) i (read|find|get|see|download)|下载|download|原文|primary document|source document|open the (10-?k|10-?q|filing)|read the (10-?k|10-?q|filing|report)|edgar/,
   filingDoc: /10-?k|10-?q|年报|季报|财报|filing|annual report|quarterly report|sec 文件|sec filing|报告/,
   ytd: /季度|季报|本季|上季|一季|最新季|q[1-4]\b|第[一二三四1-4]季|今年以来|年初至今|年初到现在|截至目前|截止目前|迄今|year[- ]to[- ]date|\bytd\b|so far this year|this year so far|latest quarter|last quarter|recent quarter|most recent quarter|quarterly|interim|10-?q|nine months|six months|前三季度|上半年|前九个月|前六个月|三个季度|六个月|九个月/,
-  bridge: /为什么|为何|为啥|咋|怎么会|原因|什么导致|导致|怎么回事|拆解|分解|调节|现金流桥|桥|bridge|reconcil|\bwhy\b|what explains|explain the gap|what drives|drivers?|breakdown|working capital|营运资本|营运资金|运营资本|营运资金变动/,
-  cashSupport: /(profits?|earnings|net income)\b.{0,25}\b(backed|supported|covered|matched|converted|turns?|turned|turning|translat\w*)\b.{0,20}\bcash|\bcash\b.{0,20}\b(backs?|supports?|covers?|keeps? up with|matches)\b.{0,15}\b(profits?|earnings|net income)|(利润|盈利|净利|赚的钱|赚的|profit|earnings).{0,10}(现金|cash).{0,8}(撑|支撑|支持|覆盖|跟上|跟得上|对得上|匹配|兑现)|(现金|现金流).{0,6}(撑得住|撑住|跟得上|对得上|覆盖得了).{0,6}(利润|盈利|净利)|现金撑|现金流支撑|现金支撑|现金流支持|现金支持|有现金流|现金流覆盖|现金流撑|利润质量|盈利质量|收益质量|含金量|真金白银|真的赚钱|真赚钱|真金|真钱|纸面利润|账面利润|利润能变成现金|利润转化为现金|利润变现|变成现金|转成现金|变现能力|兑现|hold water|backed by (real )?cash|cash[- ]backed|cash support|supported by (operating )?cash|earnings quality|quality of (its |their )?earnings|profit quality|real cash|turn(ing|s|ed)? (its |their )?(profits?|earnings|income) into cash|convert(ing|s|ed)? (its |their )?(profits?|earnings|income) (in)?to cash|paper profits?|actually (making|earning|generating) cash|backing (its |their )?(profits?|earnings)|back(ed)? up by cash/,
-  trend: /走势|趋势|历年|近几年|最近几年|过去几年|这几年|历史|每年|多年|逐年|变化趋势|一路|\btrend|over time|history|historical|past (few|several) years|last (few|several) years|each year|every year|over the years|year by year|annual history/,
-  change: /变化|变动|增长|增加|减少|下降|上升|提高|降低|同比|比去年|较去年|相比去年|和去年比|跟去年比|较上年|比上年|增速|涨了|跌了|多了|少了|\byoy\b|y\/y|year over year|year-over-year|\bchange[sd]?\b|\bgrow(th|n|s)?\b|\bgrew\b|increase[sd]?|decrease[sd]?|declin(e|ed|ing)|\brise\b|\brose\b|\bfell\b|\bfall\b|vs\.? (last|prior|previous) year|versus (last|prior|previous) year|compared (to|with) (the )?(prior|previous|last) year|up or down|went up|went down/,
+  bridge: /为什么|为何|为啥|咋回事|咋会|咋就|怎么会|差在哪|主要差在|差异来自|差距来自|来自哪|从哪来|原因|什么导致|导致|怎么回事|拆解|分解|调节|现金流桥|桥|bridge|reconcil|\bwhy\b|what explains|explain the gap|what drives|drivers?|breakdown|working capital|营运资本|营运资金|运营资本|营运资金变动/,
+  cashSupport: /cash[- ]?wise|legit.{0,12}cash|cash.{0,12}legit|纸面|账面富贵|(profits?|earnings|net income)\b.{0,25}\b(backed|supported|covered|matched|converted|turns?|turned|turning|translat\w*)\b.{0,20}\bcash|\bcash\b.{0,20}\b(backs?|supports?|covers?|keeps? up with|matches)\b.{0,15}\b(profits?|earnings|net income)|(利润|盈利|净利|赚的钱|赚的|profit|earnings).{0,10}(现金|cash).{0,8}(撑|支撑|支持|覆盖|跟上|跟得上|对得上|匹配|兑现)|(现金|现金流).{0,6}(撑得住|撑住|跟得上|对得上|覆盖得了).{0,6}(利润|盈利|净利)|现金撑|现金流支撑|现金支撑|现金流支持|现金支持|有现金流|现金流覆盖|现金流撑|利润质量|盈利质量|收益质量|含金量|真金白银|真的赚钱|真赚钱|真金|真钱|纸面利润|账面利润|利润能变成现金|利润转化为现金|利润变现|变成现金|转成现金|变现能力|兑现|hold water|backed by (real )?cash|cash[- ]backed|cash support|supported by (operating )?cash|earnings quality|quality of (its |their )?earnings|profit quality|real cash|turn(ing|s|ed)? (its |their )?(profits?|earnings|income) into cash|convert(ing|s|ed)? (its |their )?(profits?|earnings|income) (in)?to cash|paper profits?|actually (making|earning|generating) cash|backing (its |their )?(profits?|earnings)|back(ed)? up by cash/,
+  trend: /over (the )?(yrs|years)|这些年|历年来|多年来|走势|趋势|历年|近几年|最近几年|过去几年|这几年|历史|每年|多年|逐年|变化趋势|一路|\btrend|over time|history|historical|past (few|several) years|last (few|several) years|each year|every year|over the years|year by year|annual history/,
+  change: /比前一年|较前一年|比上一年|变化|变动|增长|增加|减少|下降|上升|提高|降低|同比|比去年|较去年|相比去年|和去年比|跟去年比|较上年|比上年|增速|涨了|跌了|多了|少了|\byoy\b|y\/y|year over year|year-over-year|\bchange[sd]?\b|\bgrow(th|n|s)?\b|\bgrew\b|increase[sd]?|decrease[sd]?|declin(e|ed|ing)|\brise\b|\brose\b|\bfell\b|\bfall\b|vs\.? (last|prior|previous) year|versus (last|prior|previous) year|compared (to|with) (the )?(prior|previous|last) year|up or down|went up|went down/,
   compare: /对比|比较|相比|比一比|pk|\bvs\.?\b|v\.s\.|versus|compare|comparison|side by side|against|谁更|哪个更|哪家更|和.{1,12}比|跟.{1,12}比|与.{1,12}相比/,
   rank: /哪家|哪个公司|哪一家|哪间|谁的|谁最|谁家|最高|最低|最大|最小|最多|最少|最强|最弱|最好|最差|排名|排行|排序|which (company|one|firm|of (the|these|them|those))|who has|highest|lowest|largest|biggest|smallest|\bmost\b|\bleast\b|\brank|\btop\b|best|worst|六家|all six|the six|these six|six companies/,
   low: /最低|最小|最少|最弱|最差|lowest|smallest|\bleast\b|worst|weakest/,
-  gap: /差距|差额|缺口|差别|差多少|相差|差值|背离|\bgap\b|difference|diverge|mismatch/,
+  gap: /(利润|盈利|净利).{0,6}比.{0,4}现金.{0,4}(多|高|少|低)|现金.{0,4}比.{0,4}(利润|盈利|净利).{0,4}(多|高|少|低)|差距|差额|缺口|差别|差多少|相差|差值|背离|\bgap\b|difference|diverge|mismatch/,
   latest: /最新|最近|目前|当前|现在|如今|latest|most recent|current(ly)?|\bnow\b|recent|today/,
-  why: /为什么|为何|为啥|咋|怎么会|原因|why\b|what explains|what drives/
+  why: /为什么|为何|为啥|咋回事|咋会|咋就|怎么会|差在哪|主要差在|差异来自|差距来自|来自哪|从哪来|什么原因|原因|why\b|what explains|what drives/
 };
 const CN_NUM = {一: 1, 两: 2, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10};
 const EN_NUM = {two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10};
@@ -348,6 +349,7 @@ export function parseQuestion(question, bundle) {
   rest = rest.replace(/(?:fy|财年|fiscal\s*(?:year)?)\s*'?(\d{2})(?!\d)|(?<!\d)(\d{2})\s*财年/g, ' ');
   for (const m of rest.matchAll(/(?<![\d.近去前几这最])(1[2-9]|2\d)\s*年(?!期|内|来|以来|后|前|间|的时间)/g)) years.add(2000 + Number(m[1]));
   for (const m of rest.matchAll(/(?<!\d)(20\d\d|19\d\d)(?!\d)(?!\s*(?:亿|万|千|百|b\b|bn|billion|million|m\b|%|美元|元|usd|dollars|个|家|人|股))/g)) years.add(Number(m[1]));
+  if (!years.size && !range && companies.length && metrics.length) for (const m of rest.matchAll(/(?<=^|[\s,，。?？!！(（'])(1[2-9]|2\d)(?=$|[\s,，。?？!！)）])/g)) years.add(2000 + Number(m[1]));
   const year = Number((bundle?.as_of || '2026').slice(0, 4));
   let relative = null;
   if (/前年|year before last/.test(low)) years.add(year - 2);
@@ -355,10 +357,11 @@ export function parseQuestion(question, bundle) {
   if (/今年(?!以来)|本年度|this year(?! so far)|this fiscal year|本财年/.test(low)) relative = 'this_year';
   if (/上一财年|上个财年|上财年|最近一个财年|最新财年|最近财年|last fiscal year|most recent fiscal year|latest fiscal year|latest annual/.test(low)) relative = 'latest';
   let lastN = null;
-  const n1 = low.match(/(?:近|最近|过去|前)\s*(\d{1,2}|[一两二三四五六七八九十])\s*(?:个)?(?:财年|年)/);
+  const n1 = low.match(/(?<![比较和跟与对])(?:近|最近|过去|前)\s*(\d{1,2}|[一两二三四五六七八九十])\s*(?:个)?(?:财年|年)/);
   const n2 = low.match(/(?:past|last|previous)\s+(\d{1,2}|two|three|four|five|six|seven|eight|nine|ten)\s+(?:fiscal\s+)?years/);
   if (n1) lastN = /\d/.test(n1[1]) ? Number(n1[1]) : CN_NUM[n1[1]];
   else if (n2) lastN = /\d/.test(n2[1]) ? Number(n2[1]) : EN_NUM[n2[1]];
+  if (lastN !== null && lastN < 2) lastN = null;
   const has = re => re.test(low);
   let masked = low;
   for (const s of spans) masked = masked.slice(0, s.start) + ' '.repeat(s.end - s.start) + masked.slice(s.end);
@@ -399,7 +402,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
   const lang = p.lang, c = p.cues;
   r.plan.tickers = [...p.companies];
   if (!snapshot) return finish(r, {status: 'clarify', topic: 'out_of_range', summary: ask(lang, `The information date ${asOf} is before the first saved snapshot (${bundle.snapshots[0].as_of}).`, `信息日期 ${asOf} 早于第一个已保存快照（${bundle.snapshots[0].as_of}）。`)});
-  const meaningful = p.companies.length || p.others.length || p.metrics.length || p.unsupported.length || p.bridge.length || p.price || p.dates.length || p.years.length || Object.entries(c).some(([k, v]) => v && !['latest', 'low', 'gap', 'why', 'rateWords', 'tenor', 'filingDoc', 'change', 'compare', 'rank', 'trend', 'definition'].includes(k));
+  const meaningful = (c.rateWords && c.tenor) || p.companies.length || p.others.length || p.metrics.length || p.unsupported.length || p.bridge.length || p.price || p.dates.length || p.years.length || Object.entries(c).some(([k, v]) => v && !['latest', 'low', 'gap', 'why', 'rateWords', 'tenor', 'filingDoc', 'change', 'compare', 'rank', 'trend', 'definition'].includes(k));
   const letters = p.text.replace(/[\s\p{P}\p{S}\d]/gu, '');
   if (!letters.length || !meaningful) {
     return finish(r, {status: 'clarify', topic: 'gibberish', summary: ask(lang,
@@ -416,6 +419,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
       'FinScope 不提供投资建议：不做买入、卖出或持有判断，不给目标价，也不荐股。它可以告诉你财报里报告了什么，方便你自己判断。'),
       offers: lang === 'zh' ? [`${ZH_NAME[t]}的利润有现金流支撑吗`, `${ZH_NAME[t]}近几年的营收走势`, `${ZH_NAME[t]}的异常分数是多少`] : [`Is ${t}'s profit backed by operating cash?`, `${t} revenue trend`, `${t} anomaly percentile`]});
   }
+  if (c.fraud && c.anomaly && c.definition && !p.companies.length) return definitionAnswer(r, p);
   if (c.fraud) {
     const t = p.companies[0] || 'NVDA';
     return finish(r, {status: 'refused', topic: 'fraud_verdict', summary: ask(lang,
@@ -432,7 +436,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
   }
   if (c.scope && !p.companies.length && !p.metrics.length) return scopeAnswer(r, lang, bundle);
   if (c.freshness && !p.metrics.length) return freshnessAnswer(r, lang, bundle, asOf, snapshot);
-  if (p.price || (c.rateWords && p.companies.length && !c.rates && !p.metrics.length && !p.unsupported.length && !p.bridge.length)) {
+  if (p.price || (c.pastMove && !p.metrics.length && !p.unsupported.length) || (c.rateWords && p.companies.length && !c.rates && !p.metrics.length && !p.unsupported.length && !p.bridge.length)) {
     return finish(r, {status: 'not_in_bundle', topic: 'price', summary: ask(lang,
       'Share prices, market value and valuation multiples (P/E and similar) are not in this bundle. FinScope holds reported financial statements and Treasury yields only; it is not a live-price terminal.',
       '股价、市值和估值倍数（市盈率等）不在这个证据包里。FinScope 只有财报数据和美国国债收益率，不是实时行情终端。'), offers: defaultOffers(lang, p.companies[0] || 'NVDA')});
@@ -462,7 +466,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
   const index = annualIndex(bundle, asOf);
   const wanted = p.range ? null : p.years;
   const tickers = p.companies.length ? p.companies : TICKERS;
-  if (wanted?.length && !c.rates && !p.dates.length) {
+  if (wanted?.length && !c.rates && !(c.rateWords && c.tenor) && !p.dates.length) {
     for (const t of tickers) {
       const ends = index[t].map(e => Number(e.row.period_end.slice(0, 4)));
       const late = wanted.find(y => y > Math.max(...ends));
@@ -478,7 +482,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
   }
 
   // Topics.
-  if (c.rates && !p.companies.length) return ratesAnswer(r, p, bundle, asOf);
+  if ((c.rates || (c.rateWords && c.tenor)) && !p.companies.length) return ratesAnswer(r, p, bundle, asOf);
   if (c.definition && !p.companies.length && (p.metrics.length || p.bridge.length || c.anomaly)) return definitionAnswer(r, p);
   if (c.anomaly) return withCompanies(r, p, 'anomaly', ts => anomalyAnswer(r, p, bundle, snapshot, ts, asOf), true);
   if (c.filingLink && !p.metrics.length || (c.filingDoc && !p.metrics.length && !c.ytd && !c.bridge && !c.cashSupport && !c.change && p.companies.length && !c.trend)) return withCompanies(r, p, 'filing', ts => filingAnswer(r, p, bundle, index, ts, asOf));
