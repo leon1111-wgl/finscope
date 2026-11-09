@@ -1,6 +1,6 @@
 {
   "label": "seen rerun (after reading the set; not blind)",
-  "engine_commit": "09a54fd",
+  "engine_commit": "189fcd2",
   "set_commit": "f43486b",
   "dataset_sha256": "2d3abdf26ce3e391689d9b00d6ce26a10928c3ce28b2af1ac0b4782b6457cf7c",
   "bundle_as_of": "2026-11-07",
@@ -298,7 +298,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "In FY2026 (2025-07-01 → 2026-06-30), Microsoft (MSFT) reported net income of $133.75B and operating cash flow of $182.94B: operating cash covered profit 1.37×. Net income exceeded operating cash flow in 0 of the 6 fiscal years shown. In the newer fiscal year-to-date (2026-07-01 → 2026-09-30, 10-Q), operating cash flow was $58.00B against net income of $36.63B (1.58×)."
+      "summary": "In FY2026 (2025-07-01 → 2026-06-30), Microsoft (MSFT) reported net income of $133.75B and operating cash flow of $182.94B: operating cash covered profit 1.37×. Net income did not exceed operating cash flow in any of the 6 fiscal years shown. In the newer fiscal year-to-date (2026-07-01 → 2026-09-30, 10-Q), operating cash flow was $58.00B against net income of $36.63B (1.58×)."
     },
     {
       "id": "b004",
@@ -328,7 +328,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "In FY2026 (2025-07-01 → 2026-06-30), Microsoft (MSFT) reported net income of $133.75B and operating cash flow of $182.94B: operating cash covered profit 1.37×. Net income exceeded operating cash flow in 0 of the 6 fiscal years shown. In the newer fiscal year-to-date (2026-07-01 → 2026-09-30, 10-Q), operating cash flow was $58.00B against net income of $36.63B (1.58×)."
+      "summary": "In FY2026 (2025-07-01 → 2026-06-30), Microsoft (MSFT) reported net income of $133.75B and operating cash flow of $182.94B: operating cash covered profit 1.37×. Net income did not exceed operating cash flow in any of the 6 fiscal years shown. In the newer fiscal year-to-date (2026-07-01 → 2026-09-30, 10-Q), operating cash flow was $58.00B against net income of $36.63B (1.58×)."
     },
     {
       "id": "b005",
@@ -1594,7 +1594,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "Cash conversion: AMZN 1.80× · META 1.92×."
+      "summary": "Cash conversion: AMZN 1.80× (FY2025, ended 2025-12-31) · META 1.92× (FY2025, ended 2025-12-31)."
     },
     {
       "id": "b047",
@@ -1626,7 +1626,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "现金转化率：AMZN 1.80× · META 1.92×。"
+      "summary": "现金转化率：AMZN 1.80×（2025 财年，截至 2025-12-31） · META 1.92×（2025 财年，截至 2025-12-31）。"
     },
     {
       "id": "b048",
@@ -1658,7 +1658,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "净利率：AAPL 24.0% · MSFT 36.0%。"
+      "summary": "净利率：AAPL 24.0%（2024 财年，截至 2024-09-28） · MSFT 36.0%（2024 财年，截至 2024-06-30）。各公司财年截止日期不同，不是同一段十二个月。"
     },
     {
       "id": "b049",
@@ -1690,7 +1690,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "净利率：AAPL 24.0% · MSFT 36.0%。"
+      "summary": "净利率：AAPL 24.0%（2024 财年，截至 2024-09-28） · MSFT 36.0%（2024 财年，截至 2024-06-30）。各公司财年截止日期不同，不是同一段十二个月。"
     },
     {
       "id": "b050",
@@ -1722,7 +1722,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "Revenue: NVDA $130.50B · GOOGL $402.84B."
+      "summary": "Revenue: NVDA $130.50B (FY2025, ended 2025-01-26) · GOOGL $402.84B (FY2025, ended 2025-12-31). These fiscal years end on different dates, so they are not the same twelve months."
     },
     {
       "id": "b051",
@@ -1754,7 +1754,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "营收：NVDA 1304.97 亿美元 · GOOGL 4028.36 亿美元。"
+      "summary": "营收：NVDA 1304.97 亿美元（2025 财年，截至 2025-01-26） · GOOGL 4028.36 亿美元（2025 财年，截至 2025-12-31）。各公司财年截止日期不同，不是同一段十二个月。"
     },
     {
       "id": "b052",
@@ -1940,7 +1940,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "微软（MSFT）年初至今 2026-07-01 至 2026-09-30（10-Q，2026-10-28 提交）：经营活动现金流 580.00 亿美元（较上年同期 28.7%）。"
+      "summary": "证据包里没有单季度数据；下面是最新 10-Q 的财年初至今累计数（3 个月）。微软（MSFT）年初至今 2026-07-01 至 2026-09-30（3 个月，10-Q，2026-10-28 提交）：经营活动现金流 580.00 亿美元（较上年同期增长 28.7%）。"
     },
     {
       "id": "b059",
@@ -1970,7 +1970,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "微软（MSFT）年初至今 2026-07-01 至 2026-09-30（10-Q，2026-10-28 提交）：经营活动现金流 580.00 亿美元（较上年同期 28.7%）。"
+      "summary": "证据包里没有单季度数据；下面是最新 10-Q 的财年初至今累计数（3 个月）。微软（MSFT）年初至今 2026-07-01 至 2026-09-30（3 个月，10-Q，2026-10-28 提交）：经营活动现金流 580.00 亿美元（较上年同期增长 28.7%）。"
     },
     {
       "id": "b060",
@@ -2000,7 +2000,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "Alphabet (GOOGL) fiscal year-to-date 2026-01-01 → 2026-09-30 (10-Q filed 2026-10-29): Revenue $357.27B (23.6% vs the same period last year)."
+      "summary": "Alphabet (GOOGL) fiscal year-to-date 2026-01-01 → 2026-09-30 (9 months, 10-Q filed 2026-10-29): Revenue $357.27B (up 23.6% on the same period last year)."
     },
     {
       "id": "b061",
@@ -2030,7 +2030,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "Alphabet (GOOGL) fiscal year-to-date 2026-01-01 → 2026-09-30 (10-Q filed 2026-10-29): Revenue $357.27B (23.6% vs the same period last year)."
+      "summary": "Alphabet (GOOGL) fiscal year-to-date 2026-01-01 → 2026-09-30 (9 months, 10-Q filed 2026-10-29): Revenue $357.27B (up 23.6% on the same period last year)."
     },
     {
       "id": "b062",
