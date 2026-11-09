@@ -3,7 +3,7 @@ import {initOfficialUpdates} from './official-updates.js?v=20261020-facts2';
 import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';
-import {answerQuestion, MAX_QUESTION} from './ask-engine.js?v=20261109-probe';
+import {answerQuestion, MAX_QUESTION} from './ask-engine.js?v=20261109-final';
 import {
   bridgeMarkup,
   cashBridgeSVG
@@ -208,7 +208,7 @@ function sourceLink(f) {
   return 'Source unavailable';
 }
 function noteMarkup(n) {
-  return /^https:\/\/www\.sec\.gov\/[\w/.-]*$/.test(n) ? `<a href="${e(n)}" target="_blank" rel="noopener noreferrer">SEC EDGAR company search ↗</a>` : e(n);
+  return /^https:\/\/www\.sec\.gov\/[\w/.-]*$/.test(n) ? `<a href="${e(n)}" target="_blank" rel="noopener noreferrer">${n.includes('/edgar/search') ? 'SEC EDGAR company search' : 'SEC EDGAR APIs'} ↗</a>` : e(n);
 }
 function answerMarkup(a) {
   const facts = a.facts.map(f => [e(f.label), e(f.ticker || '—'), `${e(f.display)}${f.exact_usd && f.exact_usd !== '—' ? `<small class="exact">${e(f.exact_usd)} ${e(f.unit)}</small>` : ''}`, e(f.period_start ? `${f.period_start} → ${f.period_end}` : f.period_end), e(f.filed || '—'), sourceLink(f)]);

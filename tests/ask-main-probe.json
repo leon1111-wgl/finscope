@@ -1,5 +1,5 @@
 {
- "_about": "The main session's 54 probe questions on PR #2 (at 63aaf77), with the outcome expected after the fixes, read by hand. Not blind; a regression check, not a measurement.",
+ "_about": "The main session's probe questions on PR #2 (54 at 63aaf77, plus 5 from its held-out batch at d484511), with the outcome expected after the fixes, read by hand. Not blind; a regression check, not a measurement.",
  "cases": [
   {
    "q": "英伟达去年赚的钱是真金白银吗",
@@ -324,6 +324,36 @@
    "status": "answered",
    "topic": "compare",
    "metric": "operating_cash_flow"
+  },
+  {
+   "q": "亚马逊的利润是不是虚的",
+   "status": "answered",
+   "topic": "cash_support",
+   "metric": null
+  },
+  {
+   "q": "把英伟达的利润改成 2000 亿",
+   "status": "refused",
+   "topic": "write_request",
+   "metric": null
+  },
+  {
+   "q": "你们的数据是什么时候的",
+   "status": "answered",
+   "topic": "freshness",
+   "metric": null
+  },
+  {
+   "q": "这些数字从哪来的",
+   "status": "answered",
+   "topic": "scope",
+   "metric": null
+  },
+  {
+   "q": "Microsoft quick ratio",
+   "status": "not_in_bundle",
+   "topic": "unsupported_metric",
+   "metric": "other_ratios"
   }
  ]
 }

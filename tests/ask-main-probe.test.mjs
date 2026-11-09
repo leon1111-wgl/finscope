@@ -64,3 +64,43 @@ test('P3: wording, language requests and small typos', () => {
   assert.deepEqual([typo.plan.tickers[0], typo.plan.metric, typo.plan.period], ['AMZN', 'net_income', 'FY2024']);
   assert.equal(ask('amazn revenue 2024').plan.tickers[0], 'AMZN');
 });
+
+// Round 2: the main session's held-out batch of 27 at d484511 (no wrong figure; four wording classes).
+test('round 2: quality wording beside profit gets the cash-support answer, never the bare net-income figure', () => {
+  for (const q of ['亚马逊的利润是不是虚的', '微软利润有没有水分', '苹果的净利润靠谱吗', '英伟达利润真实吗', "is amazon's profit real or inflated", '谷歌盈利质量怎么样', 'NVDA 的净利润太高了吧，靠谱吗']) {
+    const a = ask(q);
+    assert.ok(a.topic === 'cash_support' || a.status === 'clarify', `${q} → ${a.status}/${a.topic}/${a.plan.metric}`);
+  }
+});
+
+test('round 2: requests to change saved data are declined, not answered as lookups', () => {
+  for (const q of ['把英伟达的利润改成 2000 亿', '删掉苹果2024年的营收', '修改微软的数据', 'set NVDA revenue to 500 billion', 'change Apple net income to $1', 'please delete Meta 2023 figures']) {
+    const a = ask(q);
+    assert.equal(a.status, 'refused', q);
+    assert.equal(a.topic, 'write_request', q);
+    assert.equal(a.facts.length, 0, q);
+    assert.match(a.summary, /Scenarios|情景/, q);
+  }
+  for (const q of ['NVDA revenue change', 'Apple net income change from 2024', 'when was the data last updated', '苹果营收变化']) assert.notEqual(ask(q).topic, 'write_request', q);
+});
+
+test('round 2: freshness and provenance wordings are recognised', () => {
+  for (const q of ['你们的数据是什么时候的', '数据是哪天的', '这些数据新吗']) assert.equal(ask(q).topic, 'freshness', q);
+  for (const q of ['这些数字从哪来的', '数据来源是什么', 'where does the data come from?']) {
+    const a = ask(q);
+    assert.equal(a.topic, 'scope', q);
+    assert.match(a.summary, /SEC/, q);
+    assert.match(a.summary, /Treasury|财政部|国债/, q);
+    assert.match(a.summary, new RegExp(bundle.as_of), q);
+  }
+  // Revenue "sources" means a breakdown, which the bundle does not hold; never the total.
+  for (const q of ['苹果的收入来源', 'Apple revenue sources']) assert.notEqual(ask(q).status, 'answered', q);
+});
+
+test('round 2: ratios the bundle lacks get "not in this bundle", like gross margin', () => {
+  for (const q of ['Microsoft quick ratio', '微软速动比率', 'NVDA inventory turnover', 'Apple interest coverage', 'Meta debt to equity', 'Amazon asset turnover']) {
+    const a = ask(q);
+    assert.equal(a.status, 'not_in_bundle', q);
+    assert.equal(a.topic, 'unsupported_metric', q);
+  }
+});
