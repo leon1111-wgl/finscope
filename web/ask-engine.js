@@ -46,11 +46,11 @@ function findSpans(low, table) {
 
 // ---------------------------------------------------------------- vocabulary
 const COMPANY_ALIASES = {
-  AAPL: ['aapl', 'apple', 'apple inc', '苹果公司', '苹果'],
-  MSFT: ['msft', 'microsoft', '微软'],
-  NVDA: ['nvda', 'nvidia', '英伟达', '辉达', '英伟'],
-  AMZN: ['amzn', 'amazon', 'amazon.com', '亚马逊'],
-  GOOGL: ['googl', 'goog', 'google', 'alphabet', '谷歌'],
+  AAPL: ['aapl', 'apple', 'apple inc', 'aple', 'appel', '苹果公司', '苹果'],
+  MSFT: ['msft', 'microsoft', 'microsft', 'mircosoft', 'microsfot', '微软'],
+  NVDA: ['nvda', 'nvidia', 'nvida', 'nvdia', 'nivdia', '英伟达', '辉达', '英伟'],
+  AMZN: ['amzn', 'amazon', 'amazon.com', 'amazn', 'amzon', 'amazom', '亚马逊'],
+  GOOGL: ['googl', 'goog', 'google', 'alphabet', 'gogle', 'googel', '谷歌'],
   META: ['meta platforms', 'meta', 'facebook', 'fb', '脸书', '脸谱']
 };
 const COMPANY_TABLE = Object.entries(COMPANY_ALIASES).flatMap(([t, list]) => list.map(a => [a, 'company', t]));
@@ -62,12 +62,12 @@ const NOT_TICKERS = new Set(['SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', '
 
 // Figures, indicators, look-alikes the bundle does not hold, and bridge lines.
 const METRIC_ALIASES = {
-  revenue: ['营收', '营业收入', '营业总收入', '总营收', '收入', '销售额', '销售收入', '营业额', '总收入', '主营收入', 'revenue', 'revenues', 'net sales', 'sales', 'total revenue', 'top line', 'topline', 'rev', 'revs'],
-  net_income: ['净利润', '净利', '纯利', '净收益', '净收入', '税后利润', '归母净利润', '利润', '盈利', '赚了多少钱', '赚多少钱', '赚了多少', '赚多少', '赚钱', '赚了', 'net income', 'net profit', 'net earnings', 'profit', 'profits', 'earnings', 'bottom line'],
+  revenue: ['营收', '营业收入', '营业总收入', '总营收', '收入', '销售额', '销售收入', '营业额', '总收入', '主营收入', 'revenue', 'revenues', 'net sales', 'sales', 'total revenue', 'top line', 'topline', 'rev', 'revs', 'revnue', 'revenu', 'reveune'],
+  net_income: ['净利润', '净利', '纯利', '净收益', '净收入', '税后利润', '归母净利润', '利润', '盈利', '赚了多少钱', '赚多少钱', '赚了多少', '赚多少', '赚钱', '赚了', 'net income', 'net profit', 'net earnings', 'profit', 'profits', 'earnings', 'bottom line', 'net incom', 'net imcome', 'net icome'],
   operating_income: ['营业利润', '经营利润', '营运利润', '经营性利润', '营业利益', 'operating income', 'operating profit', 'income from operations', 'operating earnings', 'op income', 'op inc'],
   operating_cash_flow: ['经营活动现金流量净额', '经营活动产生的现金流量净额', '经营活动产生的现金流', '经营活动现金流量', '经营活动现金流', '经营活动的现金流', '经营现金流量', '经营现金流', '经营性现金流', '营运现金流', '经营现金', '现金流量', '现金流', 'operating cash flow', 'operating cash flows', 'cash flow from operations', 'cash flows from operations', 'cash from operations', 'cash from operating activities', 'net cash provided by operating activities', 'operating cash', 'ocf', 'cash flow', 'cash flows', 'cashflow'],
   assets: ['总资产', '资产总额', '资产总计', '资产规模', '资产', 'total assets', 'assets'],
-  liabilities: ['总负债', '负债总额', '负债合计', '负债', 'total liabilities', 'liabilities', 'total liabs', 'liabs'],
+  liabilities: ['总负债', '负债总额', '负债合计', '负债', 'total liabilities', 'liabilities', 'total liabs', 'liabs', 'liabilites', 'liabilties'],
   current_assets: ['流动资产', 'current assets'],
   current_liabilities: ['流动负债', 'current liabilities'],
   cash: ['现金及现金等价物', '现金和现金等价物', '现金及等价物', '现金等价物', '现金储备', '账上现金', '账面现金', '手上现金', '手头现金', '持有现金', '现金余额', '现金', 'cash and cash equivalents', 'cash & cash equivalents', 'cash and equivalents', 'cash & equivalents', 'cash on hand', 'cash balance', 'cash pile', 'cash reserves', 'cash position', 'cash'],
@@ -80,7 +80,7 @@ const METRIC_ALIASES = {
   cash_coverage: ['现金覆盖率', '现金比率', '现金覆盖', 'cash coverage', 'cash ratio', 'cash to current liabilities'],
   accruals: ['应计比率', '应计利润率', '应计项目', '应计利润', '应计', 'accrual ratio', 'accruals ratio', 'sloan accruals', 'accruals', 'accrual'],
   revenue_growth: ['营收增长率', '营收增速', '收入增长率', '收入增速', '营业收入增长率', '营业收入增速', '销售增长率', 'revenue growth rate', 'revenue growth', 'sales growth', 'top-line growth', 'topline growth'],
-  cash_conversion: ['现金转化率', '现金转换率', '利润现金含量', '盈利现金含量', '净利润现金含量', '净现比', '现金含量', '利润含金量', 'cash conversion ratio', 'cash conversion rate', 'cash conversion', 'ocf to net income', 'ocf/net income', 'ocf / net income', 'ocf/ni', 'operating cash flow to net income', 'cash-to-profit', 'cash to profit'],
+  cash_conversion: ['现金转化率', '现金转化', '现金转换', '利润转化为现金', '利润转化成现金', '现金转换率', '利润现金含量', '盈利现金含量', '净利润现金含量', '净现比', '现金含量', '利润含金量', 'cash conversion ratio', 'cash conversion rate', 'cash conversion', 'ocf to net income', 'ocf/net income', 'ocf / net income', 'ocf/ni', 'operating cash flow to net income', 'cash-to-profit', 'cash to profit'],
   free_cash_flow: ['自由现金流量', '自由现金流', 'free cash flow', 'free cash flows', 'fcf'],
   profit_cash_gap: ['利润与现金差距', '利润和现金差距', '利润和现金流差距', '利润与现金流差距', '利润现金差距', '利润现金差', 'profit-to-cash gap', 'profit to cash gap', 'profit cash gap']
 };
@@ -206,7 +206,7 @@ const CUE = {
   advice: /买入|买进|卖出|卖掉|抛售|抛了|抛掉|继续持有|该持有|要不要持有|值得持有|持有还是|还能持有|持有吗|加仓|减仓|建仓|清仓|抄底|仓位|值得买|值不值得|值得投资|能买吗|能买么|可以买|能不能买|该不该买|要不要买|买吗|买么|买不买|卖吗|卖么|卖不卖|推荐.{0,6}股|荐股|目标价|上车|梭哈|all in|投资建议|该买|该卖|入手|低估|高估|便宜吗|贵吗|划算|投资价值|长期持有|买哪|投哪|选哪只|哪只股票|哪个股票|哪支股票|牛股|跑赢|赚钱机会|能投吗|可以投吗|投不投|要不要投|值得入|能不能投|\bbuy\b(?! ?backs?)|\bbuying\b(?! ?backs?)|(should|time to|when to|do|would|can|must) (i |we |you )?(still )?sell\b|\bsell (it|them|my|the stock|the shares|shares|stock|now|before|after|or|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet)\b|buy or sell|\bsell signal|\bselling (it|now|my)\b|(should|do|would|can) (i|you|we) (keep )?hold|hold (the |this |my |its )?(stock|shares|position)|buy,? (or )?hold|hold or sell|keep holding|\bhold (nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|it|them)\b|\bholding it\b|should i (invest|buy|sell|hold|get|own|add|trim|short|long)|worth (investing|buying|it)|(good|best|better|safest|top) (investment|buy|stock|pick)s?|最值得投资|最值得买|哪个最值得|invest in|investment advice|price target|target price|undervalued|overvalued|bullish|bearish|to the moon|recommend(ation)? (a |any )?stock|which stock|stock pick|long or short|go long|go short|portfolio|allocat|outperform|is it a buy|cheap stock|expensive stock/,
   fraud: /造假|做假账|假账|财务造假|财务舞弊|舞弊|欺诈|粉饰|操纵利润|利润操纵|操纵财报|调节利润|做账|虚增|暴雷|爆雷|骗局|fraud|cook(ing|ed|s)? (the|its|their)? ?books|manipulat|accounting scandal|beneish|m-score|cheat|lying about|fake (numbers|earnings|profit)|ponzi/,
   forecast: /gonna|going to be|next yr|下一年度|预测|预计|预期|明年|后年|下一年|下个财年|下一个财年|下一财年|未来|将来|以后会|接下来|会不会|会增长|会下降|会怎样|会怎么样|会如何|能达到|能不能达到|前景|展望|业绩指引|指引|guidance|forecast|predict|projection|projected|outlook|next year|next fiscal|next quarter|下个季度|下季度|in the future|going forward|will (it|they|its|their|the|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|revenue|profit|earnings|cash)?.{0,30}\b(grow|increase|decrease|rise|fall|be|reach|beat|miss|keep|continue|stay|go)\b|expected to|estimates? for|consensus|分析师预期/,
-  scope: /what can (you|u) do|what do (you|u) do|哪几家|几家公司|哪些家|能问啥|问啥|能干啥|能做啥|能回答啥|可以问啥|你能回答什么|你能做什么|你会什么|能问什么|可以问什么|可以回答什么|能回答什么|能回答哪些|支持哪些|支持什么|怎么用|如何使用|使用说明|有什么功能|帮助|help\b|what can (you|i) (ask|do|answer)|what (questions|kinds? of questions|can this)|how (do|does|can) (i use|this work|it work)|哪些公司|有哪些公司|包括哪些公司|覆盖(哪些|什么)|which companies|what companies|companies (are )?(covered|included|available)|list (of )?(the )?companies|^(你好|您好|hello|hi|hey)[!！.。 ]*$/,
+  scope: /能干嘛|干嘛的|干嘛用|是干什么的|干什么用|有什么用|能做啥|what (can|does) (this|it) do|what('s| is) this (tool |box |thing )?for|what is this (tool|box|thing)|what can (you|u) do|what do (you|u) do|哪几家|几家公司|哪些家|能问啥|问啥|能干啥|能做啥|能回答啥|可以问啥|你能回答什么|你能做什么|你会什么|能问什么|可以问什么|可以回答什么|能回答什么|能回答哪些|支持哪些|支持什么|怎么用|如何使用|使用说明|有什么功能|帮助|help\b|what can (you|i) (ask|do|answer)|what (questions|kinds? of questions|can this)|how (do|does|can) (i use|this work|it work)|哪些公司|有哪些公司|包括哪些公司|覆盖(哪些|什么)|which companies|what companies|companies (are )?(covered|included|available)|list (of )?(the )?companies|^(你好|您好|hello|hi|hey)[!！.。 ]*$/,
   freshness: /数据(的)?(更新|截至|截止|最新|日期|时间|多新|多久|有多新|是哪天|什么时候)|更新到|截至什么时候|截止到什么时候|截止什么时候|最新数据是|数据是最新的吗|多久更新|什么时候更新|data (as of|date|freshness|updated|current|from when)|how (recent|fresh|current|up to date|old) is|last updated|up to date|when (was|is|were) (the )?(data|bundle|snapshot|evidence)|as of when|data cutoff|cut-?off date/,
   definition: /是个啥|啥是|什么是|是什么意思|什么意思|啥意思|是啥|是什么|的含义|含义|定义|怎么算|如何计算|怎么计算|计算公式|公式|怎么理解|解释一下|^what (is|are|does) |what does .* mean|\bmeans?\b\??$|\bdefine\b|definition|meaning of|how (is|are|do you|does finscope) .{0,40}(calculated|computed|measured|defined|work)|\bformula\b|explain (what|the term)/,
   rates: /国债|美债|treasury|treasuries|t-bill|t-note|yield curve|收益率曲线|无风险利率|risk-free|bond yield|利率环境|美国利率/,
@@ -223,7 +223,7 @@ const CUE = {
   compare: /对比|比较|相比|比一比|pk|\bvs\.?\b|v\.s\.|versus|compare|comparison|side by side|against|谁更|哪个更|哪家更|和.{1,12}比|跟.{1,12}比|与.{1,12}相比/,
   rank: /哪家|哪个公司|哪一家|哪间|谁的|谁最|谁家|最高|最低|最大|最小|最多|最少|最强|最弱|最好|最差|排名|排行|排序|which (company|one|firm|of (the|these|them|those))|who has|highest|lowest|largest|biggest|smallest|\bmost\b|\bleast\b|\brank|\btop\b|best|worst|六家|all six|the six|these six|six companies/,
   low: /最低|最小|最少|最弱|最差|lowest|smallest|\bleast\b|worst|weakest/,
-  gap: /(利润|盈利|净利).{0,6}比.{0,4}现金.{0,4}(多|高|少|低)|现金.{0,4}比.{0,4}(利润|盈利|净利).{0,4}(多|高|少|低)|差距|差额|缺口|差别|差多少|相差|差值|背离|\bgap\b|difference|diverge|mismatch/,
+  gap: /差得|差很多|差了|差太多|差不差|差几|差多|哪个多|谁多|(利润|盈利|净利).{0,6}比.{0,4}现金.{0,4}(多|高|少|低)|现金.{0,4}比.{0,4}(利润|盈利|净利).{0,4}(多|高|少|低)|差距|差额|缺口|差别|差多少|相差|差值|背离|\bgap\b|difference|diverge|mismatch/,
   latest: /最新|最近|目前|当前|现在|如今|latest|most recent|current(ly)?|\bnow\b|recent|today/,
   why: /为什么|为何|为啥|咋回事|咋会|咋就|怎么会|差在哪|主要差在|差异来自|差距来自|来自哪|从哪来|什么原因|原因|why\b|what explains|what drives/
 };
@@ -316,7 +316,9 @@ function indicator(bundle, ticker, entry, key, asOf, lang) {
 export function parseQuestion(question, bundle, asOf = bundle?.as_of) {
   const text = normalize(question).slice(0, MAX_QUESTION);
   const low = text.toLowerCase();
-  const lang = /[㐀-鿿]/.test(text) ? 'zh' : 'en';
+  let lang = /[㐀-鿿]/.test(text) ? 'zh' : 'en';
+  if (/用英文|英文回答|英语回答|in english/.test(low)) lang = 'en';
+  else if (/用中文|中文回答|in chinese/.test(low)) lang = 'zh';
   const companies = [];
   for (const h of findSpans(low, COMPANY_TABLE)) if (!companies.includes(h.id)) companies.push(h.id);
   const others = findSpans(low, OTHER_TABLE).map(h => text.slice(h.start, h.end));
@@ -544,6 +546,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
   }
   // Metric questions: one figure, a defined combination, several figures for one company, or decline.
   const sel = selectFigures(p);
+  if (sel.route === 'cash_support') return withCompanies(r, p, 'cash_support', ts => cashSupportAnswer(r, p, bundle, index, ts[0], asOf));
   if (sel.decline) return finish(r, {status: 'not_in_bundle', topic: 'unsupported_metric', summary: sel.decline === 'narrower'
     ? ask(lang, 'A narrower version of this figure (with part of it excluded) is not in this bundle. FinScope states reported totals and its defined indicators only, and will not present the total as the narrower figure.', '证据包里没有扣除某部分之后的口径。FinScope 只陈述报告的总数和已定义的指标，不会把总数当作较窄的口径给出。')
     : ask(lang, `FinScope does not compute that combination. It states each figure on its own, or one of its defined indicators: ${RATIOS.concat(DERIVED).map(k => label(k, 'en').toLowerCase()).join(', ')}.`, `FinScope 不计算这个组合。它可以分别给出每个数字，或给出已定义的指标：${RATIOS.concat(DERIVED).map(k => label(k, 'zh')).join('、')}。`),
@@ -599,6 +602,15 @@ function selectFigures(p) {
   const ids = figSpans.map(s => s.id);
   if (c.gap && ids.includes('net_income') && (ids.includes('operating_cash_flow') || ids.includes('cash'))) return {metric: 'profit_cash_gap'};
   if (c.cashSupport && (p.companies.length >= 2 || c.rank)) return {metric: 'cash_conversion'};
+  // The bare word 现金 / cash next to profit, conversion or support wording means operating cash against
+  // profit, never the cash balance: cash support for one company, cash conversion across companies.
+  const bareCash = figSpans.some(f => f.id === 'cash' && ['现金', 'cash'].includes(f.alias));
+  const profitish = ids.some(k => ['net_income', 'operating_income'].includes(k)) || /利润|盈利|净利|赚|profit|earnings|net income/.test(p.low);
+  const convish = /转化|转换|含金量|支撑|撑|兑现|对得上|跟得上|into cash|convert|conversion|back(ed|ing)?\b|support/.test(p.low);
+  if (bareCash && (profitish || convish)) {
+    if (c.gap) return {metric: 'profit_cash_gap'};
+    return p.companies.length >= 2 || c.rank ? {metric: 'cash_conversion'} : {route: 'cash_support'};
+  }
   if (ids.length >= 2) {
     const [a, b] = figSpans;
     const between = p.low.slice(a.end, b.start), window = p.low.slice(Math.max(0, a.start - 8), b.end);
@@ -606,6 +618,7 @@ function selectFigures(p) {
     if (/minus|减去|减掉|after (deducting|subtracting)/.test(between)) { const m = {'net_income>operating_cash_flow': 'profit_cash_gap', 'operating_cash_flow>capex': 'free_cash_flow'}[key]; return m ? {metric: m} : {decline: 'combination'}; }
     if (EXCLUDE.test(window)) return set === 'capex|operating_cash_flow' ? {metric: 'free_cash_flow'} : {decline: 'combination'};
     if (/divided by|÷|\/|as an? (%|percent|percentage|share|proportion) of|% of|percent of|percentage of|share of|占|除以|之比|比率|ratio of|relative to/.test(between) || /占.{0,4}比|比例/.test(window)) return RATIO_PAIRS[key] ? {metric: RATIO_PAIRS[key]} : {decline: 'combination'};
+    if (ids.length === 2 && set === 'net_income|operating_cash_flow') return p.companies.length >= 2 || c.rank ? {metric: 'cash_conversion'} : {route: 'cash_support'};
     return {figures: ids};
   }
   if (ids.length === 1 && REPORTED.includes(ids[0])) {
@@ -761,16 +774,18 @@ function compareAnswer(r, p, bundle, index, metric, tickers, asOf) {
     const res = indicator(bundle, t, entry, metric, asOf, lang);
     facts.push(...res.facts);
     if (res.calc) calcs.push(res.calc);
-    rows.push([t, `${fy(entry.row)} · ${span(entry.row, lang)}`, display(metric, res.value, lang), res.value]);
+    rows.push([t, `${fy(entry.row)} · ${span(entry.row, lang)}`, display(metric, res.value, lang), res.value, entry]);
   }
   const shown = rows.filter(x => Number.isFinite(x[3]));
+  const ends = new Set(shown.map(x => x[4].row.period_end));
+  const each = x => L(lang, `${x[0]} ${x[2]} (${fy(x[4].row)}, ended ${x[4].row.period_end})`, `${x[0]} ${x[2]}（${x[4].row.period_end.slice(0, 4)} 财年，截至 ${x[4].row.period_end}）`);
   if (!shown.length) return missingAnswer(r, p, tickers[0], metric, resolvePeriod(p, index, tickers[0]), [metric]);
   const missing = rows.filter(x => !Number.isFinite(x[3])).map(x => x[0]);
   return finish(r, {topic: 'compare', plan: {tickers: [...tickers], metric, period: perCompany ? p.yearOrder.map(y => `FY${y}`).join(',') : p.years.length ? `FY${p.years.at(-1)}` : 'latest'}, facts, calculations: calcs,
     table: {columns: [L(lang, 'Company', '公司'), L(lang, 'Fiscal period', '财年期间'), label(metric, lang)], rows: rows.map(x => x.slice(0, 3))},
     summary: ask(lang,
-      `${label(metric, 'en')}: ${shown.map(x => `${x[0]} ${x[2]}`).join(' · ')}.${missing.length ? ` Not available for ${missing.join(', ')} (no standard-tag fact).` : ''}`,
-      `${label(metric, 'zh')}：${shown.map(x => `${x[0]} ${x[2]}`).join(' · ')}。${missing.length ? `${missing.join('、')} 没有标准标签事实，无法给出。` : ''}`),
+      `${label(metric, 'en')}: ${shown.map(each).join(' · ')}.${ends.size > 1 ? ' These fiscal years end on different dates, so they are not the same twelve months.' : ''}${missing.length ? ` Not available for ${missing.join(', ')} (no standard-tag fact).` : ''}`,
+      `${label(metric, 'zh')}：${shown.map(each).join(' · ')}。${ends.size > 1 ? '各公司财年截止日期不同，不是同一段十二个月。' : ''}${missing.length ? `${missing.join('、')} 没有标准标签事实，无法给出。` : ''}`),
     notes: [ask(lang, 'Fiscal calendars differ: each company’s own latest or named fiscal year is shown with its dates. Side by side only; this is not a ranking of investment merit.', '各公司财年不同：每家显示自己的最新或指定财年及其日期。仅并列展示，不是投资优劣排名。')],
     offers: lang === 'zh' ? ['哪家公司利润和现金差距最大'] : ['Which company has the largest profit-to-cash gap?']});
 }
@@ -841,8 +856,8 @@ function cashSupportAnswer(r, p, bundle, index, t, asOf) {
   return finish(r, {topic: 'cash_support', plan: {tickers: [t], metric: null, period: periodPlan(p, entry)}, facts, calculations: calcs,
     table: {columns: [L(lang, 'Fiscal year', '财年'), label('net_income', lang), label('operating_cash_flow', lang), L(lang, 'Cash conversion', '现金转化率')], rows: tableRows},
     summary: ask(lang,
-      `In ${periodText(entry.row, 'en')}, ${company(t, 'en')} reported net income of ${money(ni, 'en')} and operating cash flow of ${money(ocf, 'en')}: ${covered ? `operating cash covered profit${conv !== null ? ` ${times(conv)}` : ''}` : `profit ran ahead of operating cash (cash conversion ${times(conv)})`}. Net income exceeded operating cash flow in ${above.length} of the ${recent.length} fiscal years shown.${ytd}`,
-      `${company(t, 'zh')}在 ${periodText(entry.row, 'zh')}报告净利润 ${money(ni, 'zh')}、经营活动现金流 ${money(ocf, 'zh')}：${covered ? `经营现金覆盖了利润${conv !== null ? `（${times(conv)}）` : ''}` : `利润跑在经营现金前面（现金转化率 ${times(conv)}）`}。下表 ${recent.length} 个财年中，有 ${above.length} 年净利润高于经营现金流。${ytd}`),
+      `In ${periodText(entry.row, 'en')}, ${company(t, 'en')} reported net income of ${money(ni, 'en')} and operating cash flow of ${money(ocf, 'en')}: ${covered ? `operating cash covered profit${conv !== null ? ` ${times(conv)}` : ''}` : `profit ran ahead of operating cash (cash conversion ${times(conv)})`}. ${above.length ? `Net income exceeded operating cash flow in ${above.length} of the ${recent.length} fiscal years shown.` : `Net income did not exceed operating cash flow in any of the ${recent.length} fiscal years shown.`}${ytd}`,
+      `${company(t, 'zh')}在 ${periodText(entry.row, 'zh')}报告净利润 ${money(ni, 'zh')}、经营活动现金流 ${money(ocf, 'zh')}：${covered ? `经营现金覆盖了利润${conv !== null ? `（${times(conv)}）` : ''}` : `利润跑在经营现金前面（现金转化率 ${times(conv)}）`}。${above.length ? `下表 ${recent.length} 个财年中，有 ${above.length} 年净利润高于经营现金流。` : `下表 ${recent.length} 个财年中，没有一年净利润高于经营现金流。`}${ytd}`),
     notes: [covered
       ? ask(lang, 'Cash above profit usually comes from non-cash charges (depreciation, share-based pay) and working-capital timing; check how much is recurring before calling it strong.', '现金高于利润通常来自非现金费用（折旧、股权激励）和营运资本时间差；先看有多少是经常性的，再下判断。')
       : ask(lang, 'Profit above cash is a prompt to read receivables, inventory and other working-capital lines in the cash-flow statement, not a verdict.', '利润高于现金是去读现金流量表里应收、存货等营运资本项目的提示，不是结论。'),
@@ -875,12 +890,16 @@ function ytdAnswer(r, p, bundle, index, tickers, asOf) {
   calcs.push({label: L(lang, 'Growth', '增长率'), formula: L(lang, 'current YTD ÷ prior YTD − 1', '本期年初至今 ÷ 上年同期 − 1'), result: rows.map(x => `${x[0]} ${x[4]}`).join(' · ')});
   const annualEnd = index[t].at(-1)?.row.period_end;
   const superseded = annualEnd && check.current.period_end <= annualEnd;
-  const head = keys.map(k => `${label(k, lang)} ${money(check.current.metrics[k]?.value, lang)}${Number.isFinite(check.changes?.[k]?.growth) ? L(lang, ` (${pct(check.changes[k].growth)} vs the same period last year)`, `（较上年同期 ${pct(check.changes[k].growth)}）`) : ''}`).join(L(lang, '; ', '；'));
+  const dir = g => L(lang, g >= 0 ? `up ${pct(g)}` : `down ${pct(-g)}`, g >= 0 ? `增长 ${pct(g)}` : `下降 ${pct(-g)}`);
+  const head = keys.map(k => `${label(k, lang)} ${money(check.current.metrics[k]?.value, lang)}${Number.isFinite(check.changes?.[k]?.growth) ? L(lang, ` (${dir(check.changes[k].growth)} on the same period last year)`, `（较上年同期${dir(check.changes[k].growth)}）`) : ''}`).join(L(lang, '; ', '；'));
+  const months = Math.round(days(check.current.period_start, check.current.period_end) / 30.44);
+  const quarterAsked = /季度|季报|quarter|\bq[1-4]\b/.test(p.low);
+  const lead = quarterAsked ? L(lang, `Single quarters are not in this bundle; this is the fiscal year-to-date total from the latest 10-Q (${months} months). `, `证据包里没有单季度数据；下面是最新 10-Q 的财年初至今累计数（${months} 个月）。`) : '';
   return finish(r, {topic: 'ytd', plan: {tickers: [t], metric: metrics[0] || null, period: 'ytd'}, facts, calculations: calcs,
     table: {columns: [L(lang, 'Metric', '指标'), `${L(lang, 'Current YTD', '本期')} ${span(check.current, lang)}`, `${L(lang, 'Prior YTD', '上年同期')}${check.prior ? ` ${span(check.prior, lang)}` : ''}`, L(lang, 'Change', '变化'), L(lang, 'Growth', '增长率')], rows},
     summary: ask(lang,
-      `${company(t, 'en')} fiscal year-to-date ${span(check.current, 'en')} (10-Q filed ${check.current.known_at}): ${head}.`,
-      `${company(t, 'zh')}年初至今 ${span(check.current, 'zh')}（10-Q，${check.current.known_at} 提交）：${head}。`),
+      `${lead}${company(t, 'en')} fiscal year-to-date ${span(check.current, 'en')} (${months} months, 10-Q filed ${check.current.known_at}): ${head}.`,
+      `${lead}${company(t, 'zh')}年初至今 ${span(check.current, 'zh')}（${months} 个月，10-Q，${check.current.known_at} 提交）：${head}。`),
     notes: [ask(lang, 'Cumulative fiscal year-to-date flows, not a standalone quarter or trailing twelve months.', '这是财年初至今的累计数，不是单季度，也不是过去十二个月。'),
       ...(superseded ? [ask(lang, `The ${fy(index[t].at(-1).row)} 10-K (to ${annualEnd}) has since been filed and covers this period; ask for the latest annual figures.`, `此后 ${annualEnd.slice(0, 4)} 财年 10-K（截至 ${annualEnd}）已提交并覆盖这段期间；可以问最新年度数字。`)] : [])],
     offers: lang === 'zh' ? [`为什么${ZH_NAME[t]}的现金流和利润不一样`] : [`What explains ${t}'s profit-to-cash gap this year?`]});

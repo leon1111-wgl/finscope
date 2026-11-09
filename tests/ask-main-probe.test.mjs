@@ -1,0 +1,66 @@
+// Classes from the main session's probe of PR #2 at 63aaf77 (54 questions). Written failing-first.
+// Not blind: the probe questions were read before these fixes.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {answerQuestion} from '../web/ask-engine.js';
+
+const bundle = JSON.parse(fs.readFileSync(new URL('../web/data/research.json', import.meta.url)));
+const ask = (q, opts) => answerQuestion(q, bundle, opts);
+
+test('P1 class: "现金/cash" next to profit, conversion or support wording never resolves to the cash balance', () => {
+  const cases = ['谷歌和脸书谁的现金转化更好', '亚马逊利润和现金差得多吗', '苹果的利润和现金对比', '微软现金跟利润比怎么样', 'META 的现金能不能撑住利润', '英伟达赚的钱和现金差了多少', '谷歌利润转化成现金的比例', '哪家公司利润和现金差得最多', 'apple profit vs cash', 'AMZN profit vs cash', 'apple ocf vs net income', 'Does Microsoft turn profit into cash well?', 'Google cash vs earnings', '亚马逊现金和利润哪个多'];
+  for (const q of cases) {
+    const a = ask(q);
+    assert.notEqual(a.plan.metric, 'cash', `${q}: resolved to the cash balance`);
+    assert.ok(!a.facts.some(f => f.key === 'cash'), `${q}: states the cash balance`);
+    assert.ok(a.status === 'clarify' || a.topic === 'cash_support' || ['cash_conversion', 'profit_cash_gap'].includes(a.plan.metric), `${q} → ${a.status}/${a.topic}/${a.plan.metric}`);
+  }
+  assert.equal(ask('谷歌和脸书谁的现金转化更好').plan.metric, 'cash_conversion');
+  assert.equal(ask('亚马逊利润和现金差得多吗').plan.metric, 'profit_cash_gap');
+  for (const q of ['apple ocf vs net income', 'AMZN profit vs cash']) assert.equal(ask(q).topic, 'cash_support', q);
+  // Controls: a question about the cash balance itself still gets the cash balance.
+  for (const q of ['谷歌的现金多不多', 'META 现金及等价物', 'How much cash does Apple have?', '六家公司谁的现金最多']) assert.equal(ask(q).plan.metric, 'cash', q);
+});
+
+test('P2: comparisons name each company\'s fiscal year next to its number', () => {
+  const a = ask('比较 AAPL 和 MSFT 的经营现金流');
+  assert.match(a.summary, /AAPL[^·]*2026 财年[^·]*2026-09-26/);
+  assert.match(a.summary, /MSFT[^·]*2026 财年[^·]*2026-06-30/);
+  assert.match(a.summary, /截止日期不同|不是同一段/);
+  const b = ask('compare NVDA and META net income');
+  assert.match(b.summary, /NVDA [^·]*FY2026[^·]*2026-01-25/);
+  assert.match(b.summary, /META [^·]*FY2025[^·]*2025-12-31/);
+});
+
+test('P2: a quarter question says single quarters are not held, then gives the labelled year-to-date figure', () => {
+  for (const q of ['NVDA 最新季度的经营现金流', 'NVDA 最近一个季度营收', "NVIDIA's latest quarter revenue"]) {
+    const a = ask(q);
+    assert.equal(a.topic, 'ytd', q);
+    assert.match(a.summary, /^(证据包里没有单季度数据|Single quarters are not in this bundle)/, q);
+    assert.match(a.summary, /6 个月|six months|6 months/, q);
+  }
+});
+
+test('P2: year-on-year wording carries a direction', () => {
+  for (const q of ['NVDA 最新季度的经营现金流', '微软最新季报', 'Amazon revenue year to date']) {
+    const s = ask(q).summary;
+    assert.doesNotMatch(s, /较上年同期 \d/, q);
+    assert.doesNotMatch(s, /\(\d[\d.]*% vs/, q);
+    assert.match(s, /增长|下降|up |down /, q);
+  }
+});
+
+test('P2: "what can this do" wordings get the scope answer', () => {
+  for (const q of ['这个工具能干嘛', '这是干什么用的', '能做啥', 'what can this do?', 'what is this tool for']) assert.equal(ask(q).topic, 'scope', q);
+});
+
+test('P3: wording, language requests and small typos', () => {
+  const meta = ask("请用英文回答：does Meta's profit hold water");
+  assert.equal(meta.lang, 'en');
+  assert.doesNotMatch(ask('Meta 利润有现金流支撑吗').summary, /有 0 年/);
+  const typo = ask('amzn net incom 2024');
+  assert.equal(typo.status, 'answered');
+  assert.deepEqual([typo.plan.tickers[0], typo.plan.metric, typo.plan.period], ['AMZN', 'net_income', 'FY2024']);
+  assert.equal(ask('amazn revenue 2024').plan.tickers[0], 'AMZN');
+});
