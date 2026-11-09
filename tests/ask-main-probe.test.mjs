@@ -104,3 +104,31 @@ test('round 2: ratios the bundle lacks get "not in this bundle", like gross marg
     assert.equal(a.topic, 'unsupported_metric', q);
   }
 });
+
+// Round 3: the main session's browser walk at 11c1f89. Named companies plus 谁/哪个…更 must compare those
+// companies; a six-company ranking needs no named company, or an explicit 六家 / all six.
+test('round 3: named companies with 谁…更 are compared, never replaced by a six-company ranking', () => {
+  const cases = [
+    ['微软和谷歌谁的利润更有现金支撑', ['MSFT', 'GOOGL'], 'cash_conversion'],
+    ['苹果和亚马逊谁的利润含金量更高', ['AAPL', 'AMZN'], 'cash_conversion'],
+    ['英伟达和Meta谁的利润更靠谱', ['NVDA', 'META'], 'cash_conversion'],
+    ['Apple and Amazon, whose earnings quality is better?', ['AAPL', 'AMZN'], 'cash_conversion'],
+    ['苹果和微软哪家现金转化更好', ['AAPL', 'MSFT'], 'cash_conversion'],
+    ['苹果和微软谁的利润和现金差距更大', ['AAPL', 'MSFT'], 'profit_cash_gap'],
+    ['苹果和微软哪个应计比率更高', ['AAPL', 'MSFT'], 'accruals'],
+    ['苹果和微软谁的营收增长更快', ['AAPL', 'MSFT'], 'revenue_growth'],
+    ['苹果、微软和英伟达谁的净利润最高', ['AAPL', 'MSFT', 'NVDA'], 'net_income']
+  ];
+  for (const [q, tickers, metric] of cases) {
+    const a = ask(q);
+    assert.equal(a.topic, 'compare', `${q} → ${a.topic} ${a.plan.tickers}`);
+    assert.deepEqual([...a.plan.tickers].sort(), [...tickers].sort(), q);
+    assert.equal(a.plan.metric, metric, q);
+    assert.ok(a.facts.every(f => tickers.includes(f.ticker)), `${q}: states another company`);
+    for (const t of tickers) assert.match(a.summary, new RegExp(`${t} [^·]*(FY|财年)`), `${q}: ${t} without its fiscal year`);
+  }
+  // Growth of other figures, and trends, are not compared across companies in one answer.
+  for (const q of ['苹果和微软谁的净利润增长更快', '苹果和微软近五年营收']) assert.notEqual(ask(q).status, 'answered', q);
+  // Rankings stay rankings when no company is named or all six are asked.
+  for (const q of ['哪家公司利润和现金差距最大', '六家公司谁的现金转化率最高', 'which company has the best earnings quality', '现金转化率最高的是哪家']) assert.equal(ask(q).topic, 'rank', q);
+});

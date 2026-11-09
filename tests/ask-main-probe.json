@@ -1,5 +1,5 @@
 {
- "_about": "The main session's probe questions on PR #2 (54 at 63aaf77, plus 5 from its held-out batch at d484511), with the outcome expected after the fixes, read by hand. Not blind; a regression check, not a measurement.",
+ "_about": "The main session's probe questions on PR #2 (54 at 63aaf77, 5 from its held-out batch at d484511, 3 from its browser walk at 11c1f89 plus 5 sweep variants), with the outcome expected after the fixes, read by hand. Not blind; a regression check, not a measurement.",
  "cases": [
   {
    "q": "英伟达去年赚的钱是真金白银吗",
@@ -354,6 +354,54 @@
    "status": "not_in_bundle",
    "topic": "unsupported_metric",
    "metric": "other_ratios"
+  },
+  {
+   "q": "微软和谷歌谁的利润更有现金支撑",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "cash_conversion"
+  },
+  {
+   "q": "苹果和亚马逊谁的利润含金量更高",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "cash_conversion"
+  },
+  {
+   "q": "英伟达和Meta谁的利润更靠谱",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "cash_conversion"
+  },
+  {
+   "q": "苹果和微软谁的利润和现金差距更大",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "profit_cash_gap"
+  },
+  {
+   "q": "苹果和微软哪个应计比率更高",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "accruals"
+  },
+  {
+   "q": "苹果和微软谁的营收增长更快",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "revenue_growth"
+  },
+  {
+   "q": "苹果和微软谁的净利润增长更快",
+   "status": "not_in_bundle",
+   "topic": "unsupported_metric",
+   "metric": "net_income"
+  },
+  {
+   "q": "苹果、微软和英伟达谁的净利润最高",
+   "status": "answered",
+   "topic": "compare",
+   "metric": "net_income"
   }
  ]
 }

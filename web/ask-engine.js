@@ -201,6 +201,7 @@ const CUE = {
   offTopic: /天气|笑话|写代码|写一首|写首|写诗|翻译|讲个故事|讲故事|你是谁|你叫什么|你是什么模型|chatgpt|gpt-?\d|ignore (all |any |the )?(previous |prior |above |your )?(instructions|rules|prompts?)|system prompt|忽略.{0,8}(规则|指令|提示)|越狱|jailbreak|weather|tell (me )?a joke|\bjoke\b|write (me )?(a |an |some )?(code|poem|story|essay|song|email|script)|recipe|食谱|菜谱|足球|篮球|电影|movie|lottery|彩票|比特币|bitcoin|crypto|加密货币|星座|horoscope/,
   quarterSpecific: /q[1-4]\b|第\s*[一二三四1-4]\s*季|(?<!最新|最近|上|本|这)[一二三四]季度|[一二三四]季报|上半年|下半年|半年报|半年度|\bh[12]\b|first half|second half|half[- ]?year|by quarter|per quarter|each quarter|every quarter|quarter by quarter|每个季度|每季|单季|单个季度|(january|february|march|april|may|june|july|august|september|october|november|december) quarter|前三季度|前两季度|前三个季度|nine months|six months|three months|前九个月|前六个月|前三个月/,
   calendar: /自然年|日历年|公历年|calendar[- ]?year|calendar\s*20\d\d|\bcy\s?'?\d{2,4}\b/,
+  growthCompare: /增长更快|增速更快|增长更多|增长得更快|增长得多|涨得更快|涨得更多|增幅更大|grew faster|grew more|faster growth|higher growth|growing faster|more growth/,
   growthRank: /增长最快|增速最快|增长最多|增幅最大|增长最大|增长最慢|增速最慢|grew (the )?(fastest|most|slowest)|fastest[- ]growing|fastest growth|slowest growth|highest growth|lowest growth|most growth|biggest growth/,
   writeRequest: /把.{0,24}(改成|改为|设为|设成|设置为|调成|调整为|换成|删掉|删除|去掉)|(改成|改为|设为|设成|设置为|调成)\s*[$\d一二三四五六七八九十]|修改.{0,8}(数据|数字|财报|利润|营收|收入|数值)|(删掉|删除|清空).{0,12}(数据|数字|营收|收入|利润|财报|记录)|篡改|\b(change|set|update|edit|modify|overwrite|replace)\b.{0,40}\bto\s+[$\d]|\b(delete|remove|erase|wipe)\b.{0,30}\b(data|figures?|numbers?|filings?|records?|rows?|values?|revenue|income)\b|^(please )?(change|set|edit|modify|overwrite|delete|remove)\b/,
   provenance: /从哪来|从哪里来|哪里来的|来源是|数据来源|数据出处|出处|数据源|where (do|does|did) (the |these |your )?(data|numbers|figures|facts) come from|where (is|are) (the |these |your )?(data|numbers|figures) from|source of (the |these |your )?(data|numbers|figures)|data sources?|what sources/,
@@ -517,7 +518,8 @@ export function answerQuestion(question, bundle, {date} = {}) {
   }
 
   // Period checks: future or unfiled fiscal years and years before the bundle (rankings list them instead).
-  const rankLike = c.rank && (p.companies.length === 0 || p.companies.length >= 3 || /六家|all six|the six|these six|six companies/.test(p.low));
+  // Named companies with 谁/哪个…更 are a comparison of those companies; a six-company ranking needs none named, or 'all six'.
+  const rankLike = c.rank && (p.companies.length === 0 || /六家|六个公司|所有公司|全部公司|all six|the six|these six|six companies|all companies/.test(p.low));
   const wanted = p.range ? null : p.years;
   const perCompanyYears = p.companies.length >= 2 && p.yearOrder.length === p.companies.length;
   const pairs = perCompanyYears ? p.companies.map((t, i) => [t, [p.yearOrder[i]]]) : (p.companies.length ? p.companies : TICKERS).map(t => [t, wanted || []]);
@@ -543,7 +545,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
   if (c.filingLink && !p.metrics.length || (c.filingDoc && !p.metrics.length && !c.ytd && !c.bridge && !c.cashSupport && !c.change && p.companies.length && !c.trend)) return withCompanies(r, p, 'filing', ts => filingAnswer(r, p, bundle, index, ts, asOf));
   const bridgeTopic = p.bridge.length || (c.bridge && (c.why || /working capital|营运资本|营运资金|运营资本|调节|桥|bridge|reconcil|拆解|分解|breakdown/.test(p.low)) && (p.metrics.some(m => ['operating_cash_flow', 'net_income', 'profit_cash_gap', 'cash'].includes(m)) || c.gap || /working capital|营运资本|营运资金|运营资本|bridge|桥|reconcil|调节/.test(p.low)));
   if (bridgeTopic) return p.companies.length >= 2 ? oneAtATime(r, p, 'bridge') : withCompanies(r, p, 'bridge', ts => bridgeAnswer(r, p, bundle, index, ts, asOf));
-  if (c.cashSupport && p.companies.length <= 1 && !c.rank) return withCompanies(r, p, 'cash_support', ts => cashSupportAnswer(r, p, bundle, index, ts[0], asOf));
+  if (c.cashSupport && (p.companies.length === 1 || (p.companies.length === 0 && !c.rank))) return withCompanies(r, p, 'cash_support', ts => cashSupportAnswer(r, p, bundle, index, ts[0], asOf));
   const annualThisYear = p.companies.length && index[p.companies[0]].at(-1)?.row.period_end.slice(0, 4) === asOf.slice(0, 4);
   if (c.ytd || (p.relative === 'this_year' && !wanted?.length && !annualThisYear)) {
     if (p.years.length && p.years.some(y => y < Number(asOf.slice(0, 4)) - 1)) return finish(r, {status: 'not_in_bundle', topic: 'quarter_history', summary: ask(lang,
@@ -580,7 +582,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
       `想了解 ${p.companies.map(t => company(t, lang)).join('、')} 的哪方面？可以说一个数字（如经营现金流）、一个比率、一个财年，或者问它的利润有没有现金流支撑。`), offers: defaultOffers(lang, p.companies[0])});
     return finish(r, {status: 'clarify', topic: 'gibberish', summary: ask(lang, 'Which company and which figure? This box answers about AAPL, MSFT, NVDA, AMZN, GOOGL and META.', '请说明哪家公司、哪个数字。这个问答框回答 AAPL、MSFT、NVDA、AMZN、GOOGL、META 的问题。'), offers: defaultOffers(lang)});
   }
-  if (rankLike || (c.cashSupport && c.rank)) {
+  if (rankLike) {
     if (c.growthRank || c.change) {
       if (!['revenue', 'revenue_growth'].includes(metric)) return finish(r, {status: 'not_in_bundle', topic: 'unsupported_metric', plan: {...r.plan, metric}, summary: ask(lang,
         `Rankings by growth are available for revenue only (revenue growth). For ${label(metric, 'en').toLowerCase()}, ask one company's change, for example "NVDA ${label(metric, 'en').toLowerCase()} change".`,
@@ -591,7 +593,20 @@ export function answerQuestion(question, bundle, {date} = {}) {
     return rankAnswer(r, p, bundle, index, metric, asOf);
   }
   r.plan.metric = metric;
-  if (p.companies.length >= 2) return compareAnswer(r, p, bundle, index, metric, p.companies, asOf);
+  if (p.companies.length >= 2) {
+    if (c.trend || p.range || p.lastN) return finish(r, {status: 'clarify', topic: 'clarify', summary: ask(lang,
+      'Trends are shown one company at a time, each over its own fiscal years. Pick one:', '走势一次只显示一家公司，各按自己的财年。请选一家：'),
+      offers: p.companies.map(t => lang === 'zh' ? `${ZH_NAME[t]}近几年的${label(metric, 'zh')}` : `${t} ${label(metric, 'en').toLowerCase()} trend`)});
+    if (c.growthCompare || c.growthRank || (c.change && p.yearOrder.length < 2)) {
+      if (!['revenue', 'revenue_growth'].includes(metric)) return finish(r, {status: 'not_in_bundle', topic: 'unsupported_metric', plan: {...r.plan, metric}, summary: ask(lang,
+        `Growth is compared across companies for revenue only (revenue growth). For ${label(metric, 'en').toLowerCase()}, ask one company's change at a time.`,
+        `跨公司只比较营收的增长（营收增长率）。${label(metric, 'zh')}的变化请一次问一家公司。`),
+        offers: p.companies.map(t => lang === 'zh' ? `${ZH_NAME[t]}的${label(metric, 'zh')}比上年变化多少` : `${t} ${label(metric, 'en').toLowerCase()} change`)});
+      metric = 'revenue_growth';
+      r.plan.metric = metric;
+    }
+    return compareAnswer(r, p, bundle, index, metric, p.companies, asOf);
+  }
   if (!p.companies.length) return finish(r, {status: 'clarify', topic: 'ambiguous', summary: ask(lang,
     `Which company? ${label(metric, 'en')} is available for AAPL, MSFT, NVDA, AMZN, GOOGL and META, or ask which of the six is highest.`,
     `哪家公司？${label(metric, 'zh')} 对 AAPL、MSFT、NVDA、AMZN、GOOGL、META 都可以查，也可以问六家里谁最高。`),
@@ -612,7 +627,7 @@ function selectFigures(p) {
   for (const s of p.spans) if (s.kind === 'metric' && !figSpans.some(f => f.id === s.id)) figSpans.push(s);
   const ids = figSpans.map(s => s.id);
   if (c.gap && ids.includes('net_income') && (ids.includes('operating_cash_flow') || ids.includes('cash'))) return {metric: 'profit_cash_gap'};
-  if (c.cashSupport && (p.companies.length >= 2 || c.rank)) return {metric: 'cash_conversion'};
+  if (c.cashSupport && (p.companies.length >= 2 || (c.rank && !p.companies.length))) return {metric: 'cash_conversion'};
   // The bare word 现金 / cash next to profit, conversion or support wording means operating cash against
   // profit, never the cash balance: cash support for one company, cash conversion across companies.
   const bareCash = figSpans.some(f => f.id === 'cash' && ['现金', 'cash'].includes(f.alias));
@@ -620,7 +635,7 @@ function selectFigures(p) {
   const convish = /转化|转换|含金量|支撑|撑|兑现|对得上|跟得上|into cash|convert|conversion|back(ed|ing)?\b|support/.test(p.low);
   if (bareCash && (profitish || convish)) {
     if (c.gap) return {metric: 'profit_cash_gap'};
-    return p.companies.length >= 2 || c.rank ? {metric: 'cash_conversion'} : {route: 'cash_support'};
+    return p.companies.length >= 2 || (c.rank && !p.companies.length) ? {metric: 'cash_conversion'} : {route: 'cash_support'};
   }
   if (ids.length >= 2) {
     const [a, b] = figSpans;
@@ -629,7 +644,7 @@ function selectFigures(p) {
     if (/minus|减去|减掉|after (deducting|subtracting)/.test(between)) { const m = {'net_income>operating_cash_flow': 'profit_cash_gap', 'operating_cash_flow>capex': 'free_cash_flow'}[key]; return m ? {metric: m} : {decline: 'combination'}; }
     if (EXCLUDE.test(window)) return set === 'capex|operating_cash_flow' ? {metric: 'free_cash_flow'} : {decline: 'combination'};
     if (/divided by|÷|\/|as an? (%|percent|percentage|share|proportion) of|% of|percent of|percentage of|share of|占|除以|之比|比率|ratio of|relative to/.test(between) || /占.{0,4}比|比例/.test(window)) return RATIO_PAIRS[key] ? {metric: RATIO_PAIRS[key]} : {decline: 'combination'};
-    if (ids.length === 2 && set === 'net_income|operating_cash_flow') return p.companies.length >= 2 || c.rank ? {metric: 'cash_conversion'} : {route: 'cash_support'};
+    if (ids.length === 2 && set === 'net_income|operating_cash_flow') return p.companies.length >= 2 || (c.rank && !p.companies.length) ? {metric: 'cash_conversion'} : {route: 'cash_support'};
     return {figures: ids};
   }
   if (ids.length === 1 && REPORTED.includes(ids[0])) {
