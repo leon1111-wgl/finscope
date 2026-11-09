@@ -3,6 +3,7 @@ import {initOfficialUpdates} from './official-updates.js?v=20261020-facts2';
 import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';
+import {answerQuestion, MAX_QUESTION} from './ask-engine.js?v=20261109-ask';
 import {
   bridgeMarkup,
   cashBridgeSVG
@@ -51,6 +52,7 @@ const ratioFormat = (key, value) => ['current_ratio', 'cash_coverage'].includes(
 let bundle, snapshot, company, row, selectedDate, page = 'review';
 let pendingRestore = null, restoreSequence = 0, ready = false;
 let loadingEvidence = false, controlsBound = false, traceYear = null, shell, pendingEntry = null;
+let askQuestion = '', askAnswer = null, pendingQuestion = null;
 let assumptions = {
   revenuePercent: 0,
   marginPoints: 0,
@@ -194,6 +196,69 @@ function interimMarkup(selection, includeSources = true) {
     ${includeSources ? `<details><summary>Trace the matched YTD facts and formulas</summary><h4>Current YTD · ${period(c.current)}</h4>${factsTable(c.current.metrics)}${c.prior ? `<h4>Prior YTD · ${period(c.prior)}</h4>${factsTable(c.prior.metrics)}` : '<p>Prior matching revenue period unavailable; no growth comparison is made.</p>'}<p>Each flow must match both the fiscal start and end. Prior-year duration may differ by up to eight days to allow a 53-week fiscal calendar. Cash-margin change = (current cash flow / current revenue − prior cash flow / prior revenue) × 100. Operating-margin change uses operating income instead of cash flow.</p><p><a href="https://www.ecfr.gov/current/title-17/chapter-II/part-210/section-210.10-01" target="_blank" rel="noopener noreferrer">Why interim cash-flow comparisons use fiscal YTD ↗</a></p></details>` : `<p class="note">Interim source filings: ${[...new Map([c.current,c.prior].filter(Boolean).flatMap(p=>Object.values(p.metrics).filter(Boolean)).map(f=>[f.url,f])).values()].map(f=>`<a href="${e(f.url)}">${e(f.form)} · ${f.filed} · ${e(f.accession)}</a>`).join('; ')}. Exact metric-to-source mappings are in both downloads.</p>`}${bridgeMarkup(c.current,c.prior,company.ticker,!includeSources)}`;
 }
 
+const ASK_EXAMPLES = ['NVDA 的利润有现金流支撑吗', '哪家公司利润和现金差距最大', 'MSFT 2024 年经营现金流是多少', '苹果的应收账款变化', 'Compare AMZN and META cash conversion', 'Should I buy NVDA now?'];
+const ASK_STATUS = {answered: 'Answered', not_in_bundle: 'Not in this bundle', refused: 'Declined', clarify: 'Needs more detail'};
+const chips = (list, label) => `<div class="ask-chips" role="group" aria-label="${e(label)}">${list.map(q => `<button type="button" class="chip" data-ask="${e(q)}">${e(q)}</button>`).join('')}</div>`;
+function sourceLink(f) {
+  if (f.accession) return evidenceLink(f);
+  try {
+    const url = new URL(f.url);
+    if (url.protocol === 'https:' && url.hostname === 'home.treasury.gov') return `<span class="evidence-links"><a href="${e(url.href)}" target="_blank" rel="noopener noreferrer">Treasury source ↗</a><small>${e(f.form)}</small></span>`;
+  } catch { /* fall through */ }
+  return 'Source unavailable';
+}
+function noteMarkup(n) {
+  return /^https:\/\/www\.sec\.gov\/[\w/.-]*$/.test(n) ? `<a href="${e(n)}" target="_blank" rel="noopener noreferrer">SEC EDGAR company search ↗</a>` : e(n);
+}
+function answerMarkup(a) {
+  const facts = a.facts.map(f => [e(f.label), e(f.ticker || '—'), `${e(f.display)}${f.exact_usd && f.exact_usd !== '—' ? `<small class="exact">${e(f.exact_usd)} ${e(f.unit)}</small>` : ''}`, e(f.period_start ? `${f.period_start} → ${f.period_end}` : f.period_end), e(f.filed || '—'), sourceLink(f)]);
+  return `<article class="answer answer-${e(a.status)}" lang="${a.lang === 'zh' ? 'zh-Hans' : 'en'}" aria-labelledby="answer-q">
+  <header class="answer-head"><span class="engine-stamp">Rules · tier 1 · no model</span><span class="answer-status" lang="en">${e(ASK_STATUS[a.status] || a.status)}</span></header>
+  <h3 id="answer-q" tabindex="-1"><span class="sr-only" lang="en">Your question: </span>${e(a.question)}</h3>
+  <p class="answer-summary">${e(a.summary)}</p>
+  ${a.table ? table(a.table.columns.map(e), a.table.rows.map(r => r.map(e))) : ''}
+  ${a.calculations.length ? `<h4 lang="en">How the program calculated it</h4><ul class="calc-list">${a.calculations.map(c => `<li><strong>${e(c.label)}</strong> = ${e(c.formula)} → <span class="calc-result">${e(c.result)}</span></li>`).join('')}</ul>` : ''}
+  ${facts.length ? `<details class="answer-sources"${facts.length <= 8 ? ' open' : ''}><summary lang="en">Source lines (${facts.length}) · every stated figure, with its SEC filing</summary>${table(['Figure', 'Company', 'Value', 'Period', 'Filed', 'Evidence'], facts)}</details>` : ''}
+  ${a.notes.length ? `<ul class="answer-notes">${a.notes.map(n => `<li>${noteMarkup(n)}</li>`).join('')}</ul>` : ''}
+  ${a.offers.length ? `<div class="ask-offers"><span lang="en">Try next</span>${chips(a.offers, 'Suggested questions')}</div>` : ''}
+  <p class="engine-note">${e(a.engine.label)} · information date ${e(a.info_date)} · snapshot ${e(a.snapshot_date)}${a.dataset_sha256 ? ` · dataset ${e(a.dataset_sha256.slice(0, 12))}` : ''}</p>
+</article>`;
+}
+function askView() {
+  if (askQuestion && (!askAnswer || askAnswer.info_date !== selectedDate)) askAnswer = answerQuestion(askQuestion, bundle, {date: selectedDate});
+  return `<p class="eyebrow">ASK THE LEDGER / RULES, NOT A MODEL</p><h2>Ask a question of your own.</h2><p class="muted">Ask in Chinese or English about AAPL, MSFT, NVDA, AMZN, GOOGL or META. Fixed rules read the saved SEC evidence in your browser and state every number with the filing line it came from. No language model, no API key, and nothing you type leaves this page. It gives no investment advice or forecasts, and says so when the evidence does not hold what you asked.</p>
+  <form id="ask-form" class="ask-form" role="search" aria-labelledby="ask-label"><label id="ask-label" for="ask-input">Your question</label><div class="ask-row"><input id="ask-input" type="search" maxlength="${MAX_QUESTION}" autocomplete="off" enterkeyhint="search" value="${e(askQuestion)}" placeholder="NVDA 的利润有现金流支撑吗？" required><button class="primary" type="submit">Ask</button></div><p class="note">Answers use evidence filed by your information date, ${e(selectedDate)}. Change it above to ask about an earlier view.</p></form>
+  ${chips(ASK_EXAMPLES, 'Example questions')}
+  <p id="ask-live" class="sr-only" role="status" aria-live="polite"></p>
+  <div id="ask-answer" class="ask-answer">${askAnswer ? answerMarkup(askAnswer) : ''}</div>
+  <details class="ask-scope"><summary>What this box can and cannot answer</summary><p>It answers: one figure or ratio for a fiscal year; trends and year-over-year changes; side-by-side comparisons and which of the six is highest; whether profit is backed by operating cash; the latest fiscal year-to-date checkpoint and its profit-to-cash bridge; the AI triage percentile; Treasury yields; filing links; definitions; and how recent the data is.</p><p>It does not answer: buy, sell or hold questions, price targets, forecasts or unfiled years, share prices and valuation, companies outside the six, or figures the bundle does not hold (for example EPS, gross margin, debt, segments or dividends). It will not substitute a different figure.</p><p>The question is read by fixed rules with a closed vocabulary, so unfamiliar wording gets “needs more detail” rather than a guess. <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/ASK.md">How it works and how it was tested ↗</a></p></details>`;
+}
+function runAsk(text, {focusAnswer = false} = {}) {
+  const question = String(text ?? '').trim().slice(0, MAX_QUESTION);
+  const input = $('#ask-input');
+  if (!question) { $('#status').textContent = 'Type a question first.'; input?.focus(); return; }
+  if (!validScenarioDraft()) return;
+  askQuestion = question;
+  try {
+    askAnswer = answerQuestion(question, bundle, {date: selectedDate});
+  } catch (error) {
+    askAnswer = null;
+    $('#status').textContent = `The question could not be answered: ${error.message}`;
+    return;
+  }
+  if (input) input.value = question;
+  const target = $('#ask-answer');
+  if (!target) return;
+  target.innerHTML = answerMarkup(askAnswer);
+  bindAskChips(target);
+  $('#ask-live').textContent = `${ASK_STATUS[askAnswer.status]}. ${askAnswer.summary}`;
+  $('#status').textContent = '';
+  if (focusAnswer) $('#answer-q')?.focus();
+}
+function bindAskChips(scope = document) {
+  scope.querySelectorAll('[data-ask]').forEach(b => b.addEventListener('click', () => runAsk(b.dataset.ask, {focusAnswer: true})));
+}
+
 function review() {
   const r = row.ratios,
     ai = snapshot.ai.scores[company.ticker],
@@ -324,12 +389,16 @@ function render() {
   });
   revealCurrentStep();
   $('#content').innerHTML = ({
+    ask: askView,
     review,
     compare,
     stress,
     brief,
     method
   } [page] || review)();
+  $('#ask-form')?.addEventListener('submit', ev => { ev.preventDefault(); runAsk($('#ask-input').value); });
+  bindAskChips($('#content'));
+  if (pendingQuestion !== null && page === 'ask') { const q = pendingQuestion; pendingQuestion = null; runAsk(q, {focusAnswer: true}); }
   $('#export-cash-svg')?.addEventListener('click', () => {
     const selected = selectInterim(bundle, company.ticker, selectedDate, row);
     if (selected.checkpoint) download(cashBridgeSVG(selected.checkpoint.current, company.ticker), 'image/svg+xml', 'svg');
@@ -403,6 +472,7 @@ function enterConsole({view, ticker} = {}) {
     $('#company').value = ticker;
     useSelection();
   } else if (view && view !== page) show(view);
+  if (pendingQuestion !== null && page === 'ask' && $('#ask-form')) { const q = pendingQuestion; pendingQuestion = null; runAsk(q, {focusAnswer: true}); }
   updateURL();
 }
 async function init() {
@@ -492,6 +562,13 @@ async function init() {
   }
 }
 shell = initShell(document, {onEnter: enterConsole});
+$('#intro-ask')?.addEventListener('submit', ev => {
+  ev.preventDefault();
+  const question = $('#intro-ask-input').value.trim();
+  if (!question) return;
+  pendingQuestion = question.slice(0, MAX_QUESTION);
+  shell.enter({view: 'ask', focus: 'answer-q'});
+});
 initThemeToggle(document, $('#theme-toggle'));
 initOfficialUpdates(document,{research:()=>ready?bundle:null});
 init();

@@ -1,7 +1,7 @@
 // Only restore selection inputs. Saved financial values and model outputs are never imported.
 export const CALCULATION_VERSION = '1';
 export const MAX_BRIEF_BYTES = 2_000_000;
-const views = ['review', 'compare', 'stress', 'brief', 'method'];
+const views = ['ask', 'review', 'compare', 'stress', 'brief', 'method'];
 const ranges = {
   revenuePercent: [-100, 100], marginPoints: [-50, 50],
   refinanceBillions: [0, 1000], rateBps: [-500, 1000], collectionDays: [0, 180]

@@ -49,6 +49,7 @@
 [data-section="stress"], .steps [data-page="stress"], body[data-page="stress"] { --tab: var(--lilac); --section: var(--lilac); }
 [data-section="brief"], .steps [data-page="brief"], body[data-page="brief"] { --tab: var(--parch); --section: var(--parch); }
 [data-section="method"], .steps [data-page="method"], body[data-page="method"] { --tab: var(--stone); --section: var(--stone); }
+[data-section="ask"], .steps [data-page="ask"], body[data-page="ask"] { --tab: var(--gold); --section: var(--gold); }
 
 * { box-sizing: border-box; }
 body { margin: 0; color: var(--text); background: var(--bg); --section: var(--aqua); font-variant-numeric: tabular-nums; }
@@ -432,6 +433,49 @@ details p { margin-top: 14px; }
   .filing-facts li { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
   .site-footer { flex-direction: column; }
 }
+/* Ask the ledger: a typed question answered by fixed rules; facts keep the gold tick of a traced filing. */
+.ask-intro { margin: 0 0 22px; padding: 14px 16px 16px; border: 1px solid var(--rule); border-left: 3px solid var(--gold); background: var(--raise); }
+.ask-intro label, .ask-form label { display: block; margin-bottom: 8px; font: 600 17px var(--serif); }
+.ask-intro label span { display: block; margin-top: 2px; font: 400 14px/1.5 var(--sans); color: var(--text-2); }
+.ask-row { display: flex; gap: 8px; }
+.ask-row input { flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 9px 12px; border: 1px solid var(--rule-strong); border-radius: 4px; background: var(--surface); color: var(--text); font-size: 16px; }
+.ask-row input::placeholder { color: var(--text-2); opacity: .85; }
+.ask-row input:focus-visible { outline: 2px solid var(--aqua); outline-offset: 1px; }
+.ask-form { margin: 18px 0 6px; }
+.ask-form .note { margin: 8px 0 0; }
+.ask-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+.chip { min-height: 40px; padding: 6px 13px; border-radius: 20px; font-size: 14px; background: var(--raise); text-align: left; }
+.chip:hover { border-color: var(--gold); }
+.answer { margin: 22px 0 10px; padding: 18px 20px 14px; background: var(--surface); border: 1px solid var(--rule); border-top: 3px double var(--rule-strong); }
+.answer-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
+.engine-stamp { padding: 3px 9px; border: 1px solid var(--rule-strong); border-left: 3px solid var(--gold); font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.answer-status { font-size: 14px; font-weight: 650; color: var(--text-2); }
+.answer-answered .answer-status { color: var(--text); }
+.answer-answered .answer-status::before { content: "✓\00a0"; content: "✓\00a0" / ""; color: var(--gold); }
+.answer-refused .answer-status { color: var(--coral); }
+.answer h3 { margin: 0 0 8px; font-size: 19px; overflow-wrap: anywhere; }
+.answer-summary { font-size: 17px; line-height: 1.65; overflow-wrap: anywhere; }
+.answer h4 { margin-top: 18px; font-size: 16px; }
+.calc-list, .answer-notes { padding-left: 20px; }
+.calc-list li { margin: 6px 0; overflow-wrap: anywhere; }
+.calc-result { font-weight: 650; }
+.answer-notes { font-size: 14px; color: var(--text-2); }
+.answer-notes li { margin: 6px 0; }
+.answer-sources { margin: 16px 0 6px; }
+.answer-sources summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+.answer td small.exact { display: block; font: 12px var(--mono); color: var(--text-2); }
+.ask-offers { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 12px; }
+.ask-offers > span { font-size: 13px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.ask-offers .ask-chips { margin: 4px 0; }
+.engine-note { margin: 14px 0 0; padding-top: 10px; border-top: 1px solid var(--rule); font: 12px/1.5 var(--mono); color: var(--text-2); overflow-wrap: anywhere; }
+.ask-scope { margin: 24px 0 0; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--text-2); font-size: 15px; }
+.ask-scope summary { cursor: pointer; color: var(--text); font-weight: 600; min-height: 32px; }
+@media (max-width: 560px) {
+  .ask-row { flex-direction: column; }
+  .ask-row button { width: 100%; }
+  .answer { padding: 14px 14px 12px; margin-left: -4px; margin-right: -4px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
