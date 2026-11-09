@@ -1,6 +1,6 @@
 {
-  "label": "seen rerun at 4ecf35d (after reading the set; not blind)",
-  "engine_commit": "4ecf35d",
+  "label": "seen rerun (after reading the set; not blind)",
+  "engine_commit": "1cfe828",
   "set_commit": "f43486b",
   "dataset_sha256": "2d3abdf26ce3e391689d9b00d6ce26a10928c3ce28b2af1ac0b4782b6457cf7c",
   "bundle_as_of": "2026-11-07",
@@ -1780,7 +1780,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "六家公司中利润与现金差距最高的是英伟达（NVDA）：173.49 亿美元（2026 财年）。 只有 NVDA 的净利润高于经营现金流。 绝对差额最大的是 AMZN（−618.44 亿美元，经营现金高于利润）。"
+      "summary": "六家公司中利润与现金差距最大的是英伟达（NVDA）：173.49 亿美元（2026 财年）。只有 NVDA 的净利润高于经营现金流。绝对差额最大的是 AMZN（−618.44 亿美元，经营现金高于利润）。"
     },
     {
       "id": "b053",
@@ -1806,7 +1806,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "六家公司中利润与现金差距最高的是英伟达（NVDA）：173.49 亿美元（2026 财年）。 只有 NVDA 的净利润高于经营现金流。 绝对差额最大的是 AMZN（−618.44 亿美元，经营现金高于利润）。"
+      "summary": "六家公司中利润与现金差距最大的是英伟达（NVDA）：173.49 亿美元（2026 财年）。只有 NVDA 的净利润高于经营现金流。绝对差额最大的是 AMZN（−618.44 亿美元，经营现金高于利润）。"
     },
     {
       "id": "b054",

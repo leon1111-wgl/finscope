@@ -1,5 +1,9 @@
 # Continuous improvement log
 
+## 2026-11-09 — Ask the ledger (0.2.0)
+
+Problem: a visitor could follow the ledger's sections but could not ask anything of their own. Implemented a tier-1 answer box (fixed rules over the evidence bundle; no model) on the intro page and as the first console tab, with a source line for every stated figure and honest refusals; `scripts/ask.mjs` runs the same engine from the command line. A blind set of 145 questions was committed before the rules; the first run is recorded with its commit. A release walk now runs in CI. Details: [CHANGELOG.md](../CHANGELOG.md), [ASK.md](ASK.md), [FRONTIER_REVIEW.md](FRONTIER_REVIEW.md).
+
 ## 2026-11-05 — Visible current section on narrow screens
 
 Reproduced and fixed a ledger navigation issue: resizing a desktop Brief view to mobile hid the active tab. The shared visibility helper now responds to window resizing without changing research state or moving a fully visible selection. All 115 JavaScript tests pass, including the failing-before-fix regression. Native Chrome checks covered desktop and 390 × 844, retained historical inputs, real downloads and unchanged export contents (except timestamp/host). Before/after captures and the 34-field historical filing-date audit are retained locally. [Design details](DESIGN_LOG.md). Publication pending.
