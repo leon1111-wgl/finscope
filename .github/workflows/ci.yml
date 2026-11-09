@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts
-      - run: npm install --no-save --ignore-scripts playwright@1.55.0
+      - run: npm install --no-save --ignore-scripts playwright@1.62.1
       - run: npx playwright install --with-deps chromium
       - run: node scripts/release-walk.mjs --out walk-output
       - uses: actions/upload-artifact@v4
