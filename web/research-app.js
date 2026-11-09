@@ -253,7 +253,15 @@ function runAsk(text, {focusAnswer = false} = {}) {
   bindAskChips(target);
   $('#ask-live').textContent = `${ASK_STATUS[askAnswer.status]}. ${askAnswer.summary}`;
   $('#status').textContent = '';
-  if (focusAnswer) $('#answer-q')?.focus();
+  if (focusAnswer) {
+    // Keep the engine stamp clear of the sticky section tabs.
+    $('#answer-q')?.focus({preventScroll: true});
+    target.querySelector('.answer')?.scrollIntoView({block: 'start'});
+  }
+}
+function notePendingQuestion() {
+  const note = $('#pending-question');
+  if (note) note.textContent = pendingQuestion === null ? '' : `Your question “${pendingQuestion}” is kept and will be answered once the evidence loads.`;
 }
 function bindAskChips(scope = document) {
   scope.querySelectorAll('[data-ask]').forEach(b => b.addEventListener('click', () => runAsk(b.dataset.ask, {focusAnswer: true})));
@@ -464,7 +472,7 @@ function drawTrend() {
 }
 
 function enterConsole({view, ticker} = {}) {
-  if (!ready) { pendingEntry = {view, ticker}; return; }
+  if (!ready) { pendingEntry = {view, ticker}; notePendingQuestion(); return; }
   if (pendingRestore) return;
   if (ticker && ticker !== company.ticker && bundle.companies.some(c => c.ticker === ticker)) {
     if (!validScenarioDraft()) return;
@@ -552,8 +560,9 @@ async function init() {
     // Announced through the status region; shown once, inside the error panel.
     $('#status').textContent = error.message;
     $('#status').classList.add('sr-only');
-    $('#content').innerHTML = `<div class="error"><h3>The evidence snapshot could not be loaded</h3><p>Your link has been kept. Retry to load the published evidence before reviewing the company, date and assumptions. No financial results are available yet.</p><p class="error-detail">Details: ${e(error.message)}</p><div class="actions"><button type="button" id="retry-evidence">Retry loading evidence</button><a href="https://github.com/leon1111-wgl/finscope">Read the project guide ↗</a></div></div>`;
+    $('#content').innerHTML = `<div class="error"><h3>The evidence snapshot could not be loaded</h3><p>Your link has been kept. Retry to load the published evidence before reviewing the company, date and assumptions. No financial results are available yet.</p><p id="pending-question"></p><p class="error-detail">Details: ${e(error.message)}</p><div class="actions"><button type="button" id="retry-evidence">Retry loading evidence</button><a href="https://github.com/leon1111-wgl/finscope">Read the project guide ↗</a></div></div>`;
     $('#retry-evidence').addEventListener('click', init);
+    notePendingQuestion();
     $('#freshness').textContent = 'Evidence snapshot unavailable.';
     introUnavailable(document);
   } finally {

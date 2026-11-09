@@ -20,3 +20,25 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: node --test tests/*.test.mjs
       - run: python scripts/build_demo.py
+      - name: Blind set and own probe through the page's answer engine
+        run: node scripts/score-blind.mjs --label "CI rerun (seen set)"
+  browser:
+    # The release walk: intro, Ask, every tab and the failure paths in Chromium, 1440 and 375 px, both themes.
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npm install --no-save --ignore-scripts playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/release-walk.mjs --out walk-output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-walk
+          path: walk-output
+          retention-days: 14

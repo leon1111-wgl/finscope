@@ -674,15 +674,15 @@ function rankAnswer(r, p, bundle, index, metric, asOf) {
   if (metric === 'profit_cash_gap') {
     const absTop = [...ok].sort((a, b) => Math.abs(b.value) - Math.abs(a.value))[0];
     extra = top.value > 0
-      ? ask(lang, ` Only ${ok.filter(x => x.value > 0).map(x => x.t).join(', ')} reported net income above operating cash flow.`, ` 只有 ${ok.filter(x => x.value > 0).map(x => x.t).join('、')} 的净利润高于经营现金流。`)
-      : ask(lang, ' None of the six reported net income above operating cash flow in its latest year.', ' 六家公司最新一年的净利润都没有高于经营现金流。');
-    if (absTop.t !== top.t) extra += ask(lang, ` The largest absolute difference is ${absTop.t} (${money(absTop.value, 'en')}; operating cash above profit).`, ` 绝对差额最大的是 ${absTop.t}（${money(absTop.value, 'zh')}，经营现金高于利润）。`);
+      ? ask(lang, ` Only ${ok.filter(x => x.value > 0).map(x => x.t).join(', ')} reported net income above operating cash flow.`, `只有 ${ok.filter(x => x.value > 0).map(x => x.t).join('、')} 的净利润高于经营现金流。`)
+      : ask(lang, ' None of the six reported net income above operating cash flow in its latest year.', '六家公司最新一年的净利润都没有高于经营现金流。');
+    if (absTop.t !== top.t) extra += ask(lang, ` The largest absolute difference is ${absTop.t} (${money(absTop.value, 'en')}; operating cash above profit).`, `绝对差额最大的是 ${absTop.t}（${money(absTop.value, 'zh')}，经营现金高于利润）。`);
   }
   return finish(r, {topic: 'rank', plan: {tickers: [], metric, period: p.years.length ? `FY${p.years.at(-1)}` : 'latest'}, facts, calculations: calcs,
     table: {columns: [L(lang, 'Rank', '排名'), L(lang, 'Company', '公司'), L(lang, 'Fiscal period', '财年期间'), label(metric, lang)], rows: [...ok.map((x, i) => [String(i + 1), x.t, `${fy(x.entry.row)} · ${span(x.entry.row, lang)}`, display(metric, x.value, lang)]), ...missing.map(t => ['—', t, '—', L(lang, 'unavailable', '无')])]},
     summary: ask(lang,
       `${low ? 'Lowest' : 'Highest'} ${label(metric, 'en').toLowerCase()} among the six: ${company(top.t, 'en')} at ${display(metric, top.value, 'en')} (${fy(top.entry.row)}).${extra}`,
-      `六家公司中${label(metric, 'zh')}${low ? '最低' : '最高'}的是${company(top.t, 'zh')}：${display(metric, top.value, 'zh')}（${top.entry.row.period_end.slice(0, 4)} 财年）。${extra}`),
+      `六家公司中${label(metric, 'zh')}${metric === 'profit_cash_gap' ? (low ? '最小' : '最大') : (low ? '最低' : '最高')}的是${company(top.t, 'zh')}：${display(metric, top.value, 'zh')}（${top.entry.row.period_end.slice(0, 4)} 财年）。${extra}`),
     notes: [ask(lang, `Each company’s own ${p.years.length ? 'named' : 'latest'} fiscal year; calendars differ. ${metric === 'profit_cash_gap' ? 'Gap = net income − operating cash flow, in dollars; the accrual ratio scales it by assets. ' : ''}A descriptive ordering, not a judgement of quality or investment merit.${missing.length ? ` Unavailable: ${missing.join(', ')}.` : ''}`,
       `每家公司用自己的${p.years.length ? '指定' : '最新'}财年，财年日历不同。${metric === 'profit_cash_gap' ? '差距 = 净利润 − 经营现金流（美元）；应计比率按资产规模缩放。' : ''}这只是描述性排序，不评价质量或投资价值。${missing.length ? `无法给出：${missing.join('、')}。` : ''}`)],
     offers: lang === 'zh' ? [`${ZH_NAME[top.t]}的利润有现金流支撑吗`] : [`Is ${top.t}'s profit backed by operating cash?`]});

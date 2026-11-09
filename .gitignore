@@ -10,3 +10,4 @@ local-data/
 runs/
 *.egg-info/
 node_modules/
+walk-output/

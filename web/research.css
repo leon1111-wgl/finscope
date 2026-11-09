@@ -446,7 +446,7 @@ details p { margin-top: 14px; }
 .ask-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
 .chip { min-height: 40px; padding: 6px 13px; border-radius: 20px; font-size: 14px; background: var(--raise); text-align: left; }
 .chip:hover { border-color: var(--gold); }
-.answer { margin: 22px 0 10px; padding: 18px 20px 14px; background: var(--surface); border: 1px solid var(--rule); border-top: 3px double var(--rule-strong); }
+.answer { scroll-margin-top: 76px; margin: 22px 0 10px; padding: 18px 20px 14px; background: var(--surface); border: 1px solid var(--rule); border-top: 3px double var(--rule-strong); }
 .answer-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
 .engine-stamp { padding: 3px 9px; border: 1px solid var(--rule-strong); border-left: 3px solid var(--gold); font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
 .answer-status { font-size: 14px; font-weight: 650; color: var(--text-2); }
@@ -468,6 +468,7 @@ details p { margin-top: 14px; }
 .ask-offers > span { font-size: 13px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
 .ask-offers .ask-chips { margin: 4px 0; }
 .engine-note { margin: 14px 0 0; padding-top: 10px; border-top: 1px solid var(--rule); font: 12px/1.5 var(--mono); color: var(--text-2); overflow-wrap: anywhere; }
+#pending-question:empty { display: none; }
 .ask-scope { margin: 24px 0 0; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--text-2); font-size: 15px; }
 .ask-scope summary { cursor: pointer; color: var(--text); font-weight: 600; min-height: 32px; }
 @media (max-width: 560px) {
