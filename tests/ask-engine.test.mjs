@@ -141,3 +141,24 @@ test('the engine module has no network, storage or model access', () => {
   for (const word of ['fetch(', 'XMLHttpRequest', 'localStorage', 'sessionStorage', 'indexedDB', 'WebSocket', 'import(', 'navigator.gpu'])
     assert.ok(!src.includes(word), word);
 });
+
+test('exhaustive: every company, fiscal year and reported figure states the bundle fact or declines', () => {
+  const keys = ['revenue', 'net_income', 'operating_income', 'operating_cash_flow', 'assets', 'liabilities', 'current_assets', 'current_liabilities', 'cash', 'capex'];
+  const words = {revenue: 'revenue', net_income: 'net income', operating_income: 'operating income', operating_cash_flow: 'operating cash flow', assets: 'total assets', liabilities: 'total liabilities', current_assets: 'current assets', current_liabilities: 'current liabilities', cash: 'cash and cash equivalents', capex: 'capex'};
+  let checked = 0;
+  for (const t of TICKERS) {
+    const ends = new Set();
+    for (const s of bundle.snapshots) for (const r of s.companies[t]) ends.add(r.period_end);
+    for (const end of ends) for (const key of keys) {
+      const a = ask(`${t} ${words[key]} FY${end.slice(0, 4)}`);
+      const truth = bundleFact(t, key, end);
+      if (!truth) { assert.notEqual(a.status, 'answered', `${t} ${key} ${end}`); continue; }
+      assert.equal(a.status, 'answered', `${t} ${key} ${end}`);
+      assert.equal(a.plan.metric, key);
+      const f = a.facts.find(x => x.key === key);
+      assert.deepEqual([f.value, f.period_end, f.tag, f.accession], [truth.value, truth.end, truth.tag, truth.accession], `${t} ${key} ${end}`);
+      checked++;
+    }
+  }
+  assert.ok(checked > 700, `checked ${checked}`);
+});

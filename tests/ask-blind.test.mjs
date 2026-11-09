@@ -8,7 +8,8 @@ import {scoreBlind} from '../scripts/score-blind.mjs';
 test('the engine reproduces the recorded seen rerun of the blind set', () => {
   const recorded = JSON.parse(fs.readFileSync(new URL('../docs/validation/ask-blind-seen-rerun.json', import.meta.url)));
   const now = scoreBlind();
-  assert.deepEqual(now.rows.map(r => [r.id, r.outcome, r.got.status, r.got.topic]), recorded.rows.map(r => [r.id, r.outcome, r.got.status, r.got.topic]));
+  const view = r => [r.id, r.outcome, r.got.status, r.got.topic, JSON.stringify(r.got.plan)];
+  assert.deepEqual(now.rows.map(view), recorded.rows.map(view));
   assert.equal(now.must_not_answer.wrong, 0);
   const first = JSON.parse(fs.readFileSync(new URL('../docs/validation/ask-blind-first-run-ac0afc4.json', import.meta.url)));
   assert.equal(first.engine_commit, 'ac0afc4');

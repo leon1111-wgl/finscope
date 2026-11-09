@@ -26,6 +26,7 @@ This is tier 1 of the portfolio's demo pattern: instant, no download beyond the 
 | Is profit backed by operating cash? | NVDA 的利润有现金流支撑吗 |
 | One figure for a fiscal year | MSFT 2024 年经营现金流是多少 |
 | One ratio or indicator | What was Apple's current ratio in FY2025? |
+| Several figures for one company and year | 苹果2025年的营收和净利润 |
 | A trend | 谷歌近五年的营收 |
 | A year-over-year change | Amazon net income change |
 | Two or more companies side by side | compare AMZN and META cash conversion |
@@ -40,7 +41,11 @@ This is tier 1 of the portfolio's demo pattern: instant, no download beyond the 
 
 Figures: revenue, net income, operating income, operating cash flow, total assets, total liabilities, current assets, current liabilities, cash and cash equivalents, cash capital expenditure. Indicators: operating, net and operating-cash margins, current ratio, liabilities / assets, cash coverage, the accrual ratio, revenue growth, cash conversion (operating cash flow ÷ net income), free cash flow (operating cash flow − capital expenditure) and the profit-to-cash gap (net income − operating cash flow).
 
-**Fiscal years.** "FY N" or "N 年" is the annual period that ends in calendar year N; the answer always prints the exact start and end. NVIDIA's year ends in late January, so its FY2026 mostly covers calendar 2025, and the answer says so.
+**Fiscal years.** "FY N" or "N 年" is the annual period that ends in calendar year N; the answer always prints the exact start and end. NVIDIA's year ends in late January, so its FY2026 mostly covers calendar 2025, and the answer says so. A date is accepted when it is the company's fiscal year end. 去年, 今年 and "two years ago" count from the information date. Comparisons can take one year per company ("Meta in 2025 compared to Google in 2024").
+
+**Two figures in one question.** A defined combination becomes its indicator ("operating cash flow minus capex" is free cash flow, "net income divided by revenue" is net margin). Other figures for one company and year are listed side by side. A combination FinScope does not define (capex as a share of revenue), or different figures for different companies, gets a decline or a request to ask one figure at a time; the box never states one of the inputs as the answer.
+
+**Treasury years.** "The 10-year yield in 2024" gives that year's first, last, lowest and highest observations with their dates. Only the five tenors in the bundle are answered.
 
 ## What it does not answer
 
@@ -53,7 +58,9 @@ Figures: revenue, net income, operating income, operating cash flow, total asset
 | A company outside the six | Not in this bundle, with the SEC EDGAR company search |
 | EPS, gross margin, R&D, segments, debt, dividends, buybacks, equity, investing or financing cash flow, a receivables or inventory balance | Not in this bundle, by name; never a substitute figure |
 | A figure whose standard tag is missing (AMZN total liabilities, NVDA and AMZN capital expenditure, and anything derived from them) | Not in this bundle; a missing value is never treated as zero |
-| A fiscal year before the bundle's first period, or a standalone historical quarter | Not in this bundle |
+| A fiscal year before the bundle's first period, a standalone quarter or half-year, a calendar year for a company whose fiscal year does not end in December, or a date that is not a fiscal year end | Not in this bundle, or a request for a fiscal year |
+| A narrower or broader scope: excluding a part, a region or product, cash plus marketable securities, per-share, CAGR, another currency | Not in this bundle |
+| A ranking by growth of anything but revenue | Not in this bundle |
 | Other topics or instructions | Declined |
 | Gibberish, or a figure without a company | Needs more detail, with suggestions |
 
@@ -95,6 +102,10 @@ The first run is kept as [`docs/validation/ask-blind-first-run-ac0afc4.json`](va
 **Coverage.** [`tests/ask-coverage.json`](../tests/ask-coverage.json): every topic the box claims, every figure and indicator, and every non-answer class, each in a plain and a colloquial wording (129 questions, written by the developer). The test also requires every stated figure to carry an SEC or Treasury source line and every non-answer to state no figure.
 
 **Exactness.** Stated figures are compared with the bundle fact for that company, tag, period and accession; the accrual ratio is recomputed from the cited facts (including the prior-year assets) and must equal the pipeline value; answers at an earlier information date use only facts filed by then.
+
+**Independent review.** A read-only Fable review at `09a54fd` ran 181 adversarial questions of its own and verified a sample of figures, the bridge arithmetic and information-date bounding against the bundle; it found no wrong figure. It found classes where a different figure or period than the one asked was stated: two figures in one question (the first one won), growth or earnings-quality rankings answered with a level figure, quarters, half-years, calendar years and dates mapped to another period, Treasury years and tenors ignored, and sub-scope qualifiers (excluding China, cash plus marketable securities) ignored. It also found harmless questions refused ("What does NVDA sell?", "英伟达持有多少现金", "Did Apple's revenue go up last year?"). All were fixed with failing-first tests (`tests/ask-review.test.mjs`); the reviewer's questions are kept with their read-by-hand outcomes (`tests/ask-review-probe.json`). There was no second review.
+
+**Exhaustive exactness.** For every company, every fiscal year in the bundle and every reported figure, the test asks the question and requires the stated value, period, tag and accession to equal the bundle fact, or a decline where the fact is missing.
 
 **In the page.** jsdom tests cover the intro box, the Ask tab, escaping of the visitor's text, follow-up buttons, empty input and the information date. The release walk (`scripts/release-walk.mjs`, run in CI with screenshots as an artifact) asks real questions and refusals at 1440 and 375 px in both themes, with zero console errors, failed or cross-origin requests allowed.
 

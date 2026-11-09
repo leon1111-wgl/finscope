@@ -1,6 +1,6 @@
 {
   "label": "seen rerun (after reading the set; not blind)",
-  "engine_commit": "1cfe828",
+  "engine_commit": "09a54fd",
   "set_commit": "f43486b",
   "dataset_sha256": "2d3abdf26ce3e391689d9b00d6ce26a10928c3ce28b2af1ac0b4782b6457cf7c",
   "bundle_as_of": "2026-11-07",
@@ -2180,7 +2180,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI 分诊（虚线墨）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
+      "summary": "AI 分诊（虚线墨，快照 2026-11-07）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
     },
     {
       "id": "b067",
@@ -2210,7 +2210,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI 分诊（虚线墨）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
+      "summary": "AI 分诊（虚线墨，快照 2026-11-07）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
     },
     {
       "id": "b068",
@@ -2240,7 +2240,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI triage (dashed ink): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
+      "summary": "AI triage (dashed ink, snapshot 2026-11-07): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
     },
     {
       "id": "b069",
@@ -2270,7 +2270,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI triage (dashed ink): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
+      "summary": "AI triage (dashed ink, snapshot 2026-11-07): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
     },
     {
       "id": "b070",

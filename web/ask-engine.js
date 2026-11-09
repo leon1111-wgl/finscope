@@ -58,21 +58,21 @@ const COMPANY_TABLE = Object.entries(COMPANY_ALIASES).flatMap(([t, list]) => lis
 // Companies outside the bundle, by name or ticker. Capitalised tickers are also caught below.
 const OTHER_COMPANIES = ['tesla', '特斯拉', 'tsla', 'netflix', '奈飞', '网飞', 'nflx', 'berkshire', '伯克希尔', 'brk', '贵州茅台', '茅台', 'moutai', '腾讯', 'tencent', '阿里巴巴', '阿里', 'alibaba', 'baba', '百度', 'baidu', 'bidu', '京东', 'jd.com', '拼多多', 'pdd', '台积电', 'tsmc', 'tsm', '三星', 'samsung', '小米', 'xiaomi', '华为', 'huawei', '比亚迪', 'byd', 'intel', '英特尔', 'intc', 'amd', '超威', 'ibm', 'oracle', '甲骨文', 'orcl', 'salesforce', 'adobe', 'adbe', 'qualcomm', '高通', 'qcom', 'broadcom', '博通', 'avgo', 'cisco', '思科', 'csco', 'uber', '优步', 'disney', '迪士尼', 'coca-cola', 'coca cola', '可口可乐', 'walmart', '沃尔玛', 'wmt', 'boeing', '波音', 'jpmorgan', 'jp morgan', '摩根大通', 'jpm', 'goldman sachs', '高盛', 'twitter', '推特', 'openai', 'palantir', 'pltr', '美团', 'meituan', '字节跳动', 'bytedance', 'tiktok', '蔚来', '小鹏', '理想汽车', '宁德时代', '中国石油', '工商银行', '中国平安', 'costco', '好市多', 'nike', '耐克', 'starbucks', '星巴克', "mcdonald's", 'mcdonalds', '麦当劳', 'pfizer', '辉瑞', 'paypal', 'shopify', 'spotify', 'micron', '美光', 'dell', '戴尔', 'arm holdings', 'sony', '索尼', 'toyota', '丰田', 'berkshire hathaway', 'exxon', '埃克森', 'johnson & johnson', '强生', 'visa inc', 'mastercard', '万事达', 'snowflake', 'zoom', 'airbnb', 'nio', 'xpeng', 'li auto', 'pinduoduo', 'asml', 'sap', 'lvmh', 'nestle', '雀巢', '贵州茅台酒'];
 const OTHER_TABLE = OTHER_COMPANIES.map(a => [a, 'other', a]);
-const NOT_TICKERS = new Set(['SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', 'PE', 'ROE', 'ROA', 'ROIC', 'FCF', 'OCF', 'CFO', 'YOY', 'QOQ', 'YTD', 'TTM', 'FY', 'CEO', 'CFO', 'AI', 'IPO', 'ETF', 'API', 'JSON', 'CSV', 'PDF', 'EBIT', 'EBITDA', 'DCF', 'CAPEX', 'AR', 'AP', 'NI', 'OK', 'LOL', 'PS', 'IT', 'ID', 'UK', 'EU', 'CN', 'HK', 'NYSE', 'NASDAQ', 'SP', 'GDP', 'CPI', 'FED', 'IRS', 'DQC', 'URL', 'HTML', 'AWS', 'SBC', 'DA', 'PP', 'PPE', 'SGA', 'COGS', 'BTW', 'FYI', 'ASAP', 'IS', 'THE', 'AND', 'OR', 'OF', 'TO', 'IN', 'FOR', 'VS', 'AN', 'ON', 'AT', 'BY', 'MY', 'ME', 'WE', 'DO', 'BE', 'NO', 'HI', 'SO', 'UP', 'IF', 'HOW', 'WHAT', 'WHY', 'WHO', 'TTL', 'Q', 'QA', 'FAQ', 'MD', 'AM', 'PM', 'UTC', 'EST', 'CN', 'RMB', 'OTC', 'ADR', 'GMT', 'LTM', 'NTM', 'MRQ', 'KPI', 'OKR', 'CAGR', 'WACC', 'ROI', 'NPV', 'IRR', 'BS', 'IS', 'CF', 'PL', 'PNL', 'OPEX', 'RND', 'RD', 'IR', 'CIK', 'EDGAR', 'TL', 'DR', 'TLDR', 'ELI', 'PLS', 'THX', 'TY', 'IMO', 'IMHO', 'WTF', 'OMG', 'FB']);
+const NOT_TICKERS = new Set(['SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', 'PE', 'ROE', 'ROA', 'ROIC', 'FCF', 'OCF', 'CFO', 'YOY', 'QOQ', 'YTD', 'TTM', 'FY', 'CEO', 'CFO', 'AI', 'IPO', 'ETF', 'API', 'JSON', 'CSV', 'PDF', 'EBIT', 'EBITDA', 'DCF', 'CAPEX', 'AR', 'AP', 'NI', 'OK', 'LOL', 'PS', 'IT', 'ID', 'UK', 'EU', 'CN', 'HK', 'NYSE', 'NASDAQ', 'SP', 'GDP', 'CPI', 'FED', 'IRS', 'DQC', 'URL', 'HTML', 'AWS', 'SBC', 'DA', 'PP', 'PPE', 'SGA', 'COGS', 'BTW', 'FYI', 'ASAP', 'IS', 'THE', 'AND', 'OR', 'OF', 'TO', 'IN', 'FOR', 'VS', 'AN', 'ON', 'AT', 'BY', 'MY', 'ME', 'WE', 'DO', 'BE', 'NO', 'HI', 'SO', 'UP', 'IF', 'HOW', 'WHAT', 'WHY', 'WHO', 'TTL', 'Q', 'QA', 'FAQ', 'MD', 'AM', 'PM', 'GPU', 'CPU', 'PC', 'TV', 'CTO', 'COO', 'HR', 'PR', 'ESG', 'EV', 'VR', 'ML', 'LLM', 'SAAS', 'ARR', 'MAU', 'DAU', 'ADS', 'APP', 'APPS', 'IOS', 'OS', 'NYC', 'SF', 'LA', 'UAE', 'IP', 'R', 'RMB', 'UTC', 'EST', 'CN', 'RMB', 'OTC', 'ADR', 'GMT', 'LTM', 'NTM', 'MRQ', 'KPI', 'OKR', 'CAGR', 'WACC', 'ROI', 'NPV', 'IRR', 'BS', 'IS', 'CF', 'PL', 'PNL', 'OPEX', 'RND', 'RD', 'IR', 'CIK', 'EDGAR', 'TL', 'DR', 'TLDR', 'ELI', 'PLS', 'THX', 'TY', 'IMO', 'IMHO', 'WTF', 'OMG', 'FB']);
 
 // Figures, indicators, look-alikes the bundle does not hold, and bridge lines.
 const METRIC_ALIASES = {
   revenue: ['营收', '营业收入', '营业总收入', '总营收', '收入', '销售额', '销售收入', '营业额', '总收入', '主营收入', 'revenue', 'revenues', 'net sales', 'sales', 'total revenue', 'top line', 'topline', 'rev', 'revs'],
   net_income: ['净利润', '净利', '纯利', '净收益', '净收入', '税后利润', '归母净利润', '利润', '盈利', '赚了多少钱', '赚多少钱', '赚了多少', '赚多少', '赚钱', '赚了', 'net income', 'net profit', 'net earnings', 'profit', 'profits', 'earnings', 'bottom line'],
   operating_income: ['营业利润', '经营利润', '营运利润', '经营性利润', '营业利益', 'operating income', 'operating profit', 'income from operations', 'operating earnings', 'op income', 'op inc'],
-  operating_cash_flow: ['经营活动现金流量净额', '经营活动产生的现金流量净额', '经营活动产生的现金流', '经营活动现金流量', '经营活动现金流', '经营活动的现金流', '经营现金流量', '经营现金流', '经营性现金流', '营运现金流', '经营现金', '现金流量', '现金流', 'operating cash flow', 'operating cash flows', 'cash flow from operations', 'cash flows from operations', 'cash from operations', 'cash from operating activities', 'net cash provided by operating activities', 'operating cash', 'ocf', 'cfo', 'cash flow', 'cash flows', 'cashflow'],
+  operating_cash_flow: ['经营活动现金流量净额', '经营活动产生的现金流量净额', '经营活动产生的现金流', '经营活动现金流量', '经营活动现金流', '经营活动的现金流', '经营现金流量', '经营现金流', '经营性现金流', '营运现金流', '经营现金', '现金流量', '现金流', 'operating cash flow', 'operating cash flows', 'cash flow from operations', 'cash flows from operations', 'cash from operations', 'cash from operating activities', 'net cash provided by operating activities', 'operating cash', 'ocf', 'cash flow', 'cash flows', 'cashflow'],
   assets: ['总资产', '资产总额', '资产总计', '资产规模', '资产', 'total assets', 'assets'],
   liabilities: ['总负债', '负债总额', '负债合计', '负债', 'total liabilities', 'liabilities', 'total liabs', 'liabs'],
   current_assets: ['流动资产', 'current assets'],
   current_liabilities: ['流动负债', 'current liabilities'],
   cash: ['现金及现金等价物', '现金和现金等价物', '现金及等价物', '现金等价物', '现金储备', '账上现金', '账面现金', '手上现金', '手头现金', '持有现金', '现金余额', '现金', 'cash and cash equivalents', 'cash & cash equivalents', 'cash and equivalents', 'cash & equivalents', 'cash on hand', 'cash balance', 'cash pile', 'cash reserves', 'cash position', 'cash'],
   capex: ['资本开支', '资本支出', '资本性支出', '购建固定资产', '资本投入', 'capex', 'cap ex', 'capital expenditure', 'capital expenditures', 'capital spending', 'purchases of property and equipment'],
-  operating_margin: ['营业利润率', '经营利润率', '营运利润率', '营业利益率', 'operating margin', 'operating profit margin', 'op margin', 'operating margins'],
+  operating_margin: ['营业利润率', '经营利润率', '营运利润率', '营业利益率', 'operating margin', 'operating profit margin', 'operating income margin', 'op income margin', 'op margin', 'operating margins'],
   net_margin: ['净利率', '净利润率', '销售净利率', '纯利率', '利润率', 'net margin', 'net profit margin', 'profit margin', 'net income margin', 'profit margins'],
   cash_margin: ['经营现金流利润率', '经营现金利润率', '现金流利润率', '现金利润率', '经营现金流率', '经营现金率', '现金流率', 'cash margin', 'operating cash margin', 'cash flow margin', 'ocf margin', 'operating cash flow margin'],
   current_ratio: ['流动比率', '流动比', 'current ratio', 'curr ratio', 'cur ratio'],
@@ -88,7 +88,7 @@ const UNSUPPORTED = {
   gross_margin: [['毛利率', '毛利润', '毛利', 'gross margin', 'gross profit', 'gross margins'], 'Gross profit and gross margin', '毛利与毛利率'],
   eps: [['每股收益', '每股盈利', '每股净利', '每股利润', 'eps', 'earnings per share', 'diluted eps'], 'Earnings per share', '每股收益'],
   rnd: [['研发费用', '研发支出', '研发投入', '研发', 'r&d', 'research and development'], 'Research and development spending', '研发费用'],
-  segment: [['分部收入', '分部', '业务板块', '板块收入', '云业务', '云计算收入', '云收入', '广告收入', '数据中心收入', '游戏收入', '服务收入', 'aws', 'azure', 'google cloud', 'iphone', 'ipad', 'xbox', 'segment', 'segments', 'data center revenue', 'advertising revenue', 'ad revenue', 'cloud revenue', 'services revenue'], 'Segment or product-line figures', '分部或产品线数据'],
+  segment: [['分部收入', '分部', '业务板块', '板块收入', '云业务', '云计算收入', '云收入', '广告收入', '数据中心收入', '游戏收入', '服务收入', 'aws', 'azure', 'google cloud', 'iphone', 'ipad', 'xbox', 'segment', 'segments', 'data center revenue', 'advertising revenue', 'ad revenue', 'cloud revenue', 'services revenue', '大中华区', '中国区', '中国市场', '美国以外', '海外', '国际业务', '地区', '区域', '按地区', '按产品', '分产品', '分地区', 'greater china', 'china', '中国', 'americas', 'europe', '欧洲', 'japan', '日本', 'by region', 'by geography', 'geographic', 'geography', 'region', 'regional', 'outside the united states', 'outside the us', 'outside the u.s.', 'international', 'by product', 'product line', 'product lines', 'gpu', 'gpus', 'gaming', 'data center', '数据中心', '游戏', '显卡', '芯片', 'chips'], 'Segment, product or geographic figures', '分部、产品或地区数据'],
   debt: [['有息负债', '长期债务', '短期债务', '债务', '借款', '贷款', '债券', 'debt', 'borrowings', 'long-term debt', 'notes payable', 'total debt', 'net debt'], 'Debt (borrowings) — total liabilities is a different figure', '债务（借款）——与总负债不是同一个数'],
   dividends: [['分红', '股息', '派息', 'dividend', 'dividends', 'payout ratio'], 'Dividends', '分红与股息'],
   buybacks: [['股票回购', '回购', 'buyback', 'buybacks', 'repurchase', 'repurchases', 'share repurchase'], 'Share buybacks', '股票回购'],
@@ -105,6 +105,11 @@ const UNSUPPORTED = {
   goodwill: [['商誉', '无形资产', 'goodwill', 'intangible assets', 'intangibles'], 'Goodwill and intangibles', '商誉与无形资产'],
   ppe: [['固定资产', 'property and equipment', 'pp&e', 'ppe'], 'Property and equipment balance', '固定资产余额'],
   deferred_revenue: [['递延收入', '合同负债', 'deferred revenue', 'unearned revenue'], 'Deferred revenue', '递延收入'],
+  investments: [['现金及短期投资', '现金和短期投资', '现金及投资', '短期投资', '有价证券', '可交易证券', 'marketable securities', 'short-term investments', 'cash and investments', 'cash and marketable securities', 'cash, cash equivalents and marketable securities'], 'Marketable securities and investments (cash here is cash and cash equivalents only)', '有价证券与投资（这里的现金只含现金及现金等价物）'],
+  currency: [['人民币', '换算成人民币', '折合人民币', '欧元', '日元', '港币', '港元', 'rmb', 'cny', 'yuan', 'euros', 'in euro', 'yen', 'in gbp'], 'Currency conversion (all figures are reported in USD)', '货币换算（所有数字均为财报中的美元）'],
+  per_share: [['每股', 'per share', 'per-share'], 'Per-share figures', '每股数据'],
+  cagr: [['年复合增长率', '复合年增长率', '复合增长率', 'cagr', 'compound annual growth'], 'Compound annual growth rates', '复合增长率'],
+  fcf_margin: [['自由现金流利润率', '自由现金流率', 'free cash flow margin', 'fcf margin'], 'Free-cash-flow margin', '自由现金流利润率'],
   pretax: [['利润总额', '税前利润', 'pretax income', 'pre-tax income', 'income before tax', 'income before taxes'], 'Pre-tax income', '税前利润'],
   quarter_history: [], // filled by period rules
   receivables_balance: [[], 'Accounts receivable balance (only the year-to-date change is in the bundle)', '应收账款余额（证据包里只有年初至今的变动）'],
@@ -193,9 +198,12 @@ const DEFINITION = {
 // Topic and refusal cues, matched on the normalised lower-case question.
 const CUE = {
   offTopic: /天气|笑话|写代码|写一首|写首|写诗|翻译|讲个故事|讲故事|你是谁|你叫什么|你是什么模型|chatgpt|gpt-?\d|ignore (all |any |the )?(previous |prior |above |your )?(instructions|rules|prompts?)|system prompt|忽略.{0,8}(规则|指令|提示)|越狱|jailbreak|weather|tell (me )?a joke|\bjoke\b|write (me )?(a |an |some )?(code|poem|story|essay|song|email|script)|recipe|食谱|菜谱|足球|篮球|电影|movie|lottery|彩票|比特币|bitcoin|crypto|加密货币|星座|horoscope/,
+  quarterSpecific: /q[1-4]\b|第\s*[一二三四1-4]\s*季|(?<!最新|最近|上|本|这)[一二三四]季度|[一二三四]季报|上半年|下半年|半年报|半年度|\bh[12]\b|first half|second half|half[- ]?year|by quarter|per quarter|each quarter|every quarter|quarter by quarter|每个季度|每季|单季|单个季度|(january|february|march|april|may|june|july|august|september|october|november|december) quarter|前三季度|前两季度|前三个季度|nine months|six months|three months|前九个月|前六个月|前三个月/,
+  calendar: /自然年|日历年|公历年|calendar[- ]?year|calendar\s*20\d\d|\bcy\s?'?\d{2,4}\b/,
+  growthRank: /增长最快|增速最快|增长最多|增幅最大|增长最大|增长最慢|增速最慢|grew (the )?(fastest|most|slowest)|fastest[- ]growing|fastest growth|slowest growth|highest growth|lowest growth|most growth|biggest growth/,
   pastMove: /涨跌幅|涨了多少|跌了多少|涨了多|跌了多/,
-  stockMove: /会涨|会跌|能涨|涨吗|跌吗|还能涨|涨不涨|跌不跌|go(ing)? up\b|go(ing)? down\b|moon/,
-  advice: /买入|买进|卖出|卖掉|抛售|抛了|抛掉|持有|加仓|减仓|建仓|清仓|抄底|仓位|值得买|值不值得|值得投资|能买吗|能买么|可以买|能不能买|该不该买|要不要买|买吗|买么|买不买|卖吗|卖么|卖不卖|推荐.{0,6}股|荐股|目标价|上车|梭哈|all in|投资建议|该买|该卖|入手|低估|高估|便宜吗|贵吗|划算|投资价值|长期持有|买哪|投哪|选哪只|哪只股票|哪个股票|哪支股票|牛股|跑赢|赚钱机会|能投吗|可以投吗|投不投|要不要投|值得入|能不能投|\bbuy\b|\bbuying\b|\bsell\b|\bselling\b|(should|do|would|can) (i|you|we) (keep )?hold|hold (the |this |my |its )?(stock|shares|position)|buy,? (or )?hold|hold or sell|keep holding|\bhold (nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|it|them)\b|\bholding it\b|should i (invest|buy|sell|hold|get|own|add|trim|short|long)|worth (investing|buying|it)|(good|best|better|safest|top) (investment|buy|stock|pick)s?|最值得投资|最值得买|哪个最值得|invest in|investment advice|price target|target price|undervalued|overvalued|bullish|bearish|to the moon|recommend(ation)? (a |any )?stock|which stock|stock pick|long or short|go long|go short|portfolio|allocat|outperform|is it a buy|cheap stock|expensive stock/,
+  stockMove: /会涨|会跌|能涨|涨吗|跌吗|还能涨|涨不涨|跌不跌|going (to go )?(up|down)\b|will .{0,30}\bgo (up|down)\b|moon/,
+  advice: /买入|买进|卖出|卖掉|抛售|抛了|抛掉|继续持有|该持有|要不要持有|值得持有|持有还是|还能持有|持有吗|加仓|减仓|建仓|清仓|抄底|仓位|值得买|值不值得|值得投资|能买吗|能买么|可以买|能不能买|该不该买|要不要买|买吗|买么|买不买|卖吗|卖么|卖不卖|推荐.{0,6}股|荐股|目标价|上车|梭哈|all in|投资建议|该买|该卖|入手|低估|高估|便宜吗|贵吗|划算|投资价值|长期持有|买哪|投哪|选哪只|哪只股票|哪个股票|哪支股票|牛股|跑赢|赚钱机会|能投吗|可以投吗|投不投|要不要投|值得入|能不能投|\bbuy\b(?! ?backs?)|\bbuying\b(?! ?backs?)|(should|time to|when to|do|would|can|must) (i |we |you )?(still )?sell\b|\bsell (it|them|my|the stock|the shares|shares|stock|now|before|after|or|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet)\b|buy or sell|\bsell signal|\bselling (it|now|my)\b|(should|do|would|can) (i|you|we) (keep )?hold|hold (the |this |my |its )?(stock|shares|position)|buy,? (or )?hold|hold or sell|keep holding|\bhold (nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|it|them)\b|\bholding it\b|should i (invest|buy|sell|hold|get|own|add|trim|short|long)|worth (investing|buying|it)|(good|best|better|safest|top) (investment|buy|stock|pick)s?|最值得投资|最值得买|哪个最值得|invest in|investment advice|price target|target price|undervalued|overvalued|bullish|bearish|to the moon|recommend(ation)? (a |any )?stock|which stock|stock pick|long or short|go long|go short|portfolio|allocat|outperform|is it a buy|cheap stock|expensive stock/,
   fraud: /造假|做假账|假账|财务造假|财务舞弊|舞弊|欺诈|粉饰|操纵利润|利润操纵|操纵财报|调节利润|做账|虚增|暴雷|爆雷|骗局|fraud|cook(ing|ed|s)? (the|its|their)? ?books|manipulat|accounting scandal|beneish|m-score|cheat|lying about|fake (numbers|earnings|profit)|ponzi/,
   forecast: /gonna|going to be|next yr|下一年度|预测|预计|预期|明年|后年|下一年|下个财年|下一个财年|下一财年|未来|将来|以后会|接下来|会不会|会增长|会下降|会怎样|会怎么样|会如何|能达到|能不能达到|前景|展望|业绩指引|指引|guidance|forecast|predict|projection|projected|outlook|next year|next fiscal|next quarter|下个季度|下季度|in the future|going forward|will (it|they|its|their|the|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|revenue|profit|earnings|cash)?.{0,30}\b(grow|increase|decrease|rise|fall|be|reach|beat|miss|keep|continue|stay|go)\b|expected to|estimates? for|consensus|分析师预期/,
   scope: /what can (you|u) do|what do (you|u) do|哪几家|几家公司|哪些家|能问啥|问啥|能干啥|能做啥|能回答啥|可以问啥|你能回答什么|你能做什么|你会什么|能问什么|可以问什么|可以回答什么|能回答什么|能回答哪些|支持哪些|支持什么|怎么用|如何使用|使用说明|有什么功能|帮助|help\b|what can (you|i) (ask|do|answer)|what (questions|kinds? of questions|can this)|how (do|does|can) (i use|this work|it work)|哪些公司|有哪些公司|包括哪些公司|覆盖(哪些|什么)|which companies|what companies|companies (are )?(covered|included|available)|list (of )?(the )?companies|^(你好|您好|hello|hi|hey)[!！.。 ]*$/,
@@ -207,11 +215,11 @@ const CUE = {
   anomaly: /异常|离群|孤立森林|isolation forest|anomal|outlier|unusual|percentile|百分位|分位数|ai\s*(评分|打分|分数|score|triage|分诊|分)|模型(评分|打分|分数|怎么看)|triage|分诊|red flags?|风险评分|风险分|警示分/,
   filingLink: /链接|link|url|在哪(里)?(看|读|找|下载|查)|哪里(看|读|找|下载|查)|where (can|do|could) i (read|find|get|see|download)|下载|download|原文|primary document|source document|open the (10-?k|10-?q|filing)|read the (10-?k|10-?q|filing|report)|edgar/,
   filingDoc: /10-?k|10-?q|年报|季报|财报|filing|annual report|quarterly report|sec 文件|sec filing|报告/,
-  ytd: /季度|季报|本季|上季|一季|最新季|q[1-4]\b|第[一二三四1-4]季|今年以来|年初至今|年初到现在|截至目前|截止目前|迄今|year[- ]to[- ]date|\bytd\b|so far this year|this year so far|latest quarter|last quarter|recent quarter|most recent quarter|quarterly|interim|10-?q|nine months|six months|前三季度|上半年|前九个月|前六个月|三个季度|六个月|九个月/,
+  ytd: /\bso far\b|到目前为止|迄今为止|季度|季报|本季|上季|一季|最新季|q[1-4]\b|第[一二三四1-4]季|今年以来|年初至今|年初到现在|截至目前|截止目前|迄今|year[- ]to[- ]date|\bytd\b|so far this year|this year so far|latest quarter|last quarter|recent quarter|most recent quarter|quarterly|interim|10-?q|nine months|six months|前三季度|上半年|前九个月|前六个月|三个季度|六个月|九个月/,
   bridge: /为什么|为何|为啥|咋回事|咋会|咋就|怎么会|差在哪|主要差在|差异来自|差距来自|来自哪|从哪来|原因|什么导致|导致|怎么回事|拆解|分解|调节|现金流桥|桥|bridge|reconcil|\bwhy\b|what explains|explain the gap|what drives|drivers?|breakdown|working capital|营运资本|营运资金|运营资本|营运资金变动/,
-  cashSupport: /cash[- ]?wise|legit.{0,12}cash|cash.{0,12}legit|纸面|账面富贵|(profits?|earnings|net income)\b.{0,25}\b(backed|supported|covered|matched|converted|turns?|turned|turning|translat\w*)\b.{0,20}\bcash|\bcash\b.{0,20}\b(backs?|supports?|covers?|keeps? up with|matches)\b.{0,15}\b(profits?|earnings|net income)|(利润|盈利|净利|赚的钱|赚的|profit|earnings).{0,10}(现金|cash).{0,8}(撑|支撑|支持|覆盖|跟上|跟得上|对得上|匹配|兑现)|(现金|现金流).{0,6}(撑得住|撑住|跟得上|对得上|覆盖得了).{0,6}(利润|盈利|净利)|现金撑|现金流支撑|现金支撑|现金流支持|现金支持|有现金流|现金流覆盖|现金流撑|利润质量|盈利质量|收益质量|含金量|真金白银|真的赚钱|真赚钱|真金|真钱|纸面利润|账面利润|利润能变成现金|利润转化为现金|利润变现|变成现金|转成现金|变现能力|兑现|hold water|backed by (real )?cash|cash[- ]backed|cash support|supported by (operating )?cash|earnings quality|quality of (its |their )?earnings|profit quality|real cash|turn(ing|s|ed)? (its |their )?(profits?|earnings|income) into cash|convert(ing|s|ed)? (its |their )?(profits?|earnings|income) (in)?to cash|paper profits?|actually (making|earning|generating) cash|backing (its |their )?(profits?|earnings)|back(ed)? up by cash/,
+  cashSupport: /(profits?|earnings) (is |are )?(actually )?real\b|利润是真的|利润真实|cash[- ]?wise|legit.{0,12}cash|cash.{0,12}legit|纸面|账面富贵|(profits?|earnings|net income)\b.{0,25}\b(backed|supported|covered|matched|converted|turns?|turned|turning|translat\w*)\b.{0,20}\bcash|\bcash\b.{0,20}\b(backs?|supports?|covers?|keeps? up with|matches)\b.{0,15}\b(profits?|earnings|net income)|(利润|盈利|净利|赚的钱|赚的|profit|earnings).{0,10}(现金|cash).{0,8}(撑|支撑|支持|覆盖|跟上|跟得上|对得上|匹配|兑现)|(现金|现金流).{0,6}(撑得住|撑住|跟得上|对得上|覆盖得了).{0,6}(利润|盈利|净利)|现金撑|现金流支撑|现金支撑|现金流支持|现金支持|有现金流|现金流覆盖|现金流撑|利润质量|盈利质量|收益质量|含金量|真金白银|真的赚钱|真赚钱|真金|真钱|纸面利润|账面利润|利润能变成现金|利润转化为现金|利润变现|变成现金|转成现金|变现能力|兑现|hold water|backed by (real )?cash|cash[- ]backed|cash support|supported by (operating )?cash|earnings quality|quality of (its |their )?earnings|profit quality|real cash|turn(ing|s|ed)? (its |their )?(profits?|earnings|income) into cash|convert(ing|s|ed)? (its |their )?(profits?|earnings|income) (in)?to cash|paper profits?|actually (making|earning|generating) cash|backing (its |their )?(profits?|earnings)|back(ed)? up by cash/,
   trend: /over (the )?(yrs|years)|这些年|历年来|多年来|走势|趋势|历年|近几年|最近几年|过去几年|这几年|历史|每年|多年|逐年|变化趋势|一路|\btrend|over time|history|historical|past (few|several) years|last (few|several) years|each year|every year|over the years|year by year|annual history/,
-  change: /比前一年|较前一年|比上一年|变化|变动|增长|增加|减少|下降|上升|提高|降低|同比|比去年|较去年|相比去年|和去年比|跟去年比|较上年|比上年|增速|涨了|跌了|多了|少了|\byoy\b|y\/y|year over year|year-over-year|\bchange[sd]?\b|\bgrow(th|n|s)?\b|\bgrew\b|increase[sd]?|decrease[sd]?|declin(e|ed|ing)|\brise\b|\brose\b|\bfell\b|\bfall\b|vs\.? (last|prior|previous) year|versus (last|prior|previous) year|compared (to|with) (the )?(prior|previous|last) year|up or down|went up|went down/,
+  change: /go up|go down|went up|went down|gone up|gone down|比前一年|较前一年|比上一年|变化|变动|增长|增加|减少|下降|上升|提高|降低|同比|比去年|较去年|相比去年|和去年比|跟去年比|较上年|比上年|增速|涨了|跌了|多了|少了|\byoy\b|y\/y|year over year|year-over-year|\bchange[sd]?\b|\bgrow(th|n|s)?\b|\bgrew\b|increase[sd]?|decrease[sd]?|declin(e|ed|ing)|\brise\b|\brose\b|\bfell\b|\bfall\b|vs\.? (last|prior|previous) year|versus (last|prior|previous) year|compared (to|with) (the )?(prior|previous|last) year|up or down|went up|went down/,
   compare: /对比|比较|相比|比一比|pk|\bvs\.?\b|v\.s\.|versus|compare|comparison|side by side|against|谁更|哪个更|哪家更|和.{1,12}比|跟.{1,12}比|与.{1,12}相比/,
   rank: /哪家|哪个公司|哪一家|哪间|谁的|谁最|谁家|最高|最低|最大|最小|最多|最少|最强|最弱|最好|最差|排名|排行|排序|which (company|one|firm|of (the|these|them|those))|who has|highest|lowest|largest|biggest|smallest|\bmost\b|\bleast\b|\brank|\btop\b|best|worst|六家|all six|the six|these six|six companies/,
   low: /最低|最小|最少|最弱|最差|lowest|smallest|\bleast\b|worst|weakest/,
@@ -305,7 +313,7 @@ function indicator(bundle, ticker, entry, key, asOf, lang) {
 }
 
 // ---------------------------------------------------------------- reading the question
-export function parseQuestion(question, bundle) {
+export function parseQuestion(question, bundle, asOf = bundle?.as_of) {
   const text = normalize(question).slice(0, MAX_QUESTION);
   const low = text.toLowerCase();
   const lang = /[㐀-鿿]/.test(text) ? 'zh' : 'en';
@@ -326,38 +334,44 @@ export function parseQuestion(question, bundle) {
     if (s.kind === 'bridge' && !bridge.includes(s.id)) bridge.push(s.id);
     if (s.kind === 'price') price = true;
   }
-  // Dates and years. Amounts such as "2000亿" are not years.
+  // Dates and years, with where each was written (for "Meta in 2025 vs Google in 2024").
+  // Amounts such as "2000亿" are not years. Blanking keeps positions aligned with the question.
+  const blank = (str, m) => str.slice(0, m.index) + ' '.repeat(m[0].length) + str.slice(m.index + m[0].length);
   let rest = low;
-  const dates = [];
+  const dates = [], badDates = [];
   for (const m of low.matchAll(/(?<!\d)(20\d\d|19\d\d)\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?/g)) {
     const d = `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
     if (!Number.isNaN(Date.parse(d + 'T00:00:00Z')) && new Date(d + 'T00:00:00Z').toISOString().slice(0, 10) === d) dates.push(d);
-    rest = rest.replace(m[0], ' ');
+    else badDates.push(m[0].trim());
+    rest = blank(rest, m);
   }
-  const years = new Set();
+  const yearPos = new Map();
+  const addYear = (y, pos) => { if (!yearPos.has(y)) yearPos.set(y, pos); };
   let range = null;
   const rangeMatch = rest.match(/(?<!\d)(20\d\d|19\d\d)\s*(?:财年|年)?\s*(?:-|–|—|~|到|至|to|through|until|thru)\s*(?:fy\s*)?(20\d\d|\d{2})(?!\d)/);
   if (rangeMatch) {
     const a = Number(rangeMatch[1]), b0 = Number(rangeMatch[2]), b = b0 < 100 ? 2000 + b0 : b0;
-    if (b > a) { range = [a, b]; rest = rest.replace(rangeMatch[0], ' '); }
+    if (b > a) { range = [a, b]; rest = blank(rest, rangeMatch); }
   }
   const shortRange = !range && rest.match(/(?<![\d.])(1[2-9]|2\d)\s*(?:年|财年)?\s*(?:-|–|~|到|至)\s*(1[2-9]|2\d)\s*(?:年|财年)(?!期)/);
-  if (shortRange && Number(shortRange[2]) > Number(shortRange[1])) { range = [2000 + Number(shortRange[1]), 2000 + Number(shortRange[2])]; rest = rest.replace(shortRange[0], ' '); }
+  if (shortRange && Number(shortRange[2]) > Number(shortRange[1])) { range = [2000 + Number(shortRange[1]), 2000 + Number(shortRange[2])]; rest = blank(rest, shortRange); }
   const since = rest.match(/(?:since|从|自)\s*(?:fy\s*)?(20\d\d)(?!\d)\s*(?:年|财年)?\s*(?:以来|起|开始)?/);
-  if (since && !range) { range = [Number(since[1]), null]; rest = rest.replace(since[0], ' '); }
-  for (const m of rest.matchAll(/(?:fy|财年|fiscal\s*(?:year)?)\s*'?(\d{2})(?!\d)|(?<!\d)(\d{2})\s*财年/g)) years.add(2000 + Number(m[1] || m[2]));
-  rest = rest.replace(/(?:fy|财年|fiscal\s*(?:year)?)\s*'?(\d{2})(?!\d)|(?<!\d)(\d{2})\s*财年/g, ' ');
-  for (const m of rest.matchAll(/(?<![\d.近去前几这最])(1[2-9]|2\d)\s*年(?!期|内|来|以来|后|前|间|的时间)/g)) years.add(2000 + Number(m[1]));
-  for (const m of rest.matchAll(/(?<!\d)(20\d\d|19\d\d)(?!\d)(?!\s*(?:亿|万|千|百|b\b|bn|billion|million|m\b|%|美元|元|usd|dollars|个|家|人|股))/g)) years.add(Number(m[1]));
-  if (!years.size && !range && companies.length && metrics.length) for (const m of rest.matchAll(/(?<=^|[\s,，。?？!！(（'])(1[2-9]|2\d)(?=$|[\s,，。?？!！)）])/g)) years.add(2000 + Number(m[1]));
-  const year = Number((bundle?.as_of || '2026').slice(0, 4));
-  let relative = null;
-  if (/前年|year before last/.test(low)) years.add(year - 2);
-  else if (/去年|上一年|上年度|last year|previous year|prior year/.test(low) && !/比去年|较去年|相比去年|和去年比|跟去年比|than last year|vs\.? last year|versus last year|compared (to|with) (the )?(last|prior|previous) year|from last year|over last year/.test(low)) years.add(year - 1);
+  if (since && !range) { range = [Number(since[1]), null]; rest = blank(rest, since); }
+  for (const m of rest.matchAll(/(?:fy|财年|fiscal\s*(?:year)?)\s*'?(\d{2})(?!\d)|(?<!\d)(\d{2})\s*财年/g)) { addYear(2000 + Number(m[1] || m[2]), m.index); rest = blank(rest, m); }
+  for (const m of rest.matchAll(/(?<![\d.近去前几这最])(1[2-9]|2\d)\s*年(?!期|内|来|以来|后|前|间|的时间)/g)) addYear(2000 + Number(m[1]), m.index);
+  for (const m of rest.matchAll(/(?<!\d)(20\d\d|19\d\d)(?!\d)(?!\s*(?:亿|万|千|百|b\b|bn|billion|million|m\b|%|美元|元|usd|dollars|个|家|人|股))/g)) addYear(Number(m[1]), m.index);
+  if (!yearPos.size && !range && companies.length && metrics.length) for (const m of rest.matchAll(/(?<=^|[\s,，。?？!！(（'])(1[2-9]|2\d)(?=$|[\s,，。?？!！)）])/g)) addYear(2000 + Number(m[1]), m.index);
+  // Relative years follow the information date, not the build date.
+  const year = Number((asOf || bundle?.as_of || '2026').slice(0, 4));
+  let relative = null, m;
+  if ((m = low.match(/前年|year before last/))) addYear(year - 2, m.index);
+  else if ((m = low.match(/去年|上一年|上年度|last year|previous year|prior year/)) && !/比去年|较去年|相比去年|和去年比|跟去年比|than last year|vs\.? last year|versus last year|compared (to|with) (the )?(last|prior|previous) year|from last year|over last year/.test(low)) addYear(year - 1, m.index);
+  const ago = low.match(/(\d{1,2}|[一两二三四五六七八九十])\s*(?:个)?(?:财年|年)前/) || low.match(/(\d{1,2}|a|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:fiscal\s+)?years?\s+ago/);
+  if (ago) addYear(year - (/\d/.test(ago[1]) ? Number(ago[1]) : ago[1] === 'a' || ago[1] === 'one' ? 1 : CN_NUM[ago[1]] || EN_NUM[ago[1]]), ago.index);
   if (/今年(?!以来)|本年度|this year(?! so far)|this fiscal year|本财年/.test(low)) relative = 'this_year';
   if (/上一财年|上个财年|上财年|最近一个财年|最新财年|最近财年|last fiscal year|most recent fiscal year|latest fiscal year|latest annual/.test(low)) relative = 'latest';
   let lastN = null;
-  const n1 = low.match(/(?<![比较和跟与对])(?:近|最近|过去|前)\s*(\d{1,2}|[一两二三四五六七八九十])\s*(?:个)?(?:财年|年)/);
+  const n1 = low.match(/(?<![比较和跟与对])(?:近|最近|过去|前)\s*(\d{1,2}|[一两二三四五六七八九十])\s*(?:个)?(?:财年|年)(?!前)/);
   const n2 = low.match(/(?:past|last|previous)\s+(\d{1,2}|two|three|four|five|six|seven|eight|nine|ten)\s+(?:fiscal\s+)?years/);
   if (n1) lastN = /\d/.test(n1[1]) ? Number(n1[1]) : CN_NUM[n1[1]];
   else if (n2) lastN = /\d/.test(n2[1]) ? Number(n2[1]) : EN_NUM[n2[1]];
@@ -366,8 +380,10 @@ export function parseQuestion(question, bundle) {
   let masked = low;
   for (const s of spans) masked = masked.slice(0, s.start) + ' '.repeat(s.end - s.start) + masked.slice(s.end);
   const maskedCue = new Set(['change', 'trend']);
+  const yearOrder = [...yearPos.entries()].sort((a, b) => a[1] - b[1]).map(([y]) => y);
   return {
-    text, low, lang, companies, others, metrics, unsupported, bridge, price, dates, years: [...years].sort(), range, relative, lastN,
+    text, low, masked, lang, companies, others, metrics, unsupported, bridge, price, spans, dates, badDates,
+    years: [...yearPos.keys()].sort(), yearOrder, range, relative, lastN,
     cues: Object.fromEntries(Object.entries(CUE).map(([k, re]) => [k, maskedCue.has(k) ? re.test(masked) : has(re)]))
   };
 }
@@ -397,7 +413,7 @@ export function answerQuestion(question, bundle, {date} = {}) {
   if (!bundle?.snapshots?.length || !bundle.companies?.length) throw new Error('An evidence bundle is required.');
   const asOf = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : bundle.as_of;
   const snapshot = selectSnapshot(bundle.snapshots, asOf);
-  const p = parseQuestion(question, bundle);
+  const p = parseQuestion(question, bundle, asOf);
   const r = base(p, bundle, asOf, snapshot);
   const lang = p.lang, c = p.cues;
   r.plan.tickers = [...p.companies];
@@ -458,23 +474,52 @@ export function answerQuestion(question, bundle, {date} = {}) {
       notes: t ? [ask(lang, `Read ${t}'s latest 10-K for this line; ask "link to ${t}'s 10-K" for the document.`, `这个数字请到 ${t} 最新 10-K 里查；可以问“${ZH_NAME[t]}的 10-K 链接”。`)] : [],
       offers: bal && t ? [lang === 'zh' ? `${ZH_NAME[t]}的${label(bal.replace('_balance', ''), 'zh')}（年初至今）` : `${t} ${bal.replace('_balance', '')} change this year`] : defaultOffers(lang, t || 'NVDA')});
   }
+  const ratesTopic = (c.rates || (c.rateWords && c.tenor)) && !p.companies.length;
+  if (p.badDates.length) return finish(r, {status: 'clarify', topic: 'clarify', summary: ask(lang,
+    `${p.badDates[0]} is not a valid calendar date.`, `${p.badDates[0]} 不是有效的日期。`), offers: defaultOffers(lang, p.companies[0] || 'NVDA')});
   if (c.forecast || c.stockMove) return finish(r, {status: 'refused', topic: 'forecast', summary: ask(lang,
     'FinScope does not forecast. It reports what companies have already filed. To explore a weaker year, use the Scenarios section, where you set the assumptions yourself and every result is labelled as yours.',
     'FinScope 不做预测，只报告公司已经提交的财报。想看看“更差的一年”会怎样，请用“情景”页：假设由你自己设定，结果都标明是你的假设。'), offers: defaultOffers(lang, p.companies[0] || 'NVDA')});
-
-  // Period checks: future or unfiled fiscal years and years before the bundle.
+  // Standalone quarters and half-years: the bundle keeps only the latest fiscal year-to-date checkpoint.
+  if (c.quarterSpecific && !ratesTopic) return finish(r, {status: 'not_in_bundle', topic: 'quarter_history', summary: ask(lang,
+    'Standalone quarters and half-years are not in this bundle. It keeps one interim figure per company: the latest fiscal year-to-date checkpoint from the most recent 10-Q, compared with the same period a year earlier.',
+    '证据包里没有单季度或半年度数据。每家公司只有一个中期数字：最新 10-Q 的财年初至今累计数，并与上年同期对比。'),
+    offers: (p.companies.length ? p.companies : ['NVDA']).slice(0, 2).map(t => lang === 'zh' ? `${ZH_NAME[t]}年初至今的营收` : `${t} year-to-date revenue`)});
   const index = annualIndex(bundle, asOf);
+  // Calendar years match fiscal years only for December year ends.
+  if (c.calendar && !ratesTopic) {
+    const off = (p.companies.length ? p.companies : TICKERS).filter(t => index[t].at(-1)?.row.period_end.slice(5, 7) !== '12');
+    if (off.length) return finish(r, {status: 'not_in_bundle', topic: 'calendar_year', summary: ask(lang,
+      `Calendar-year figures are not in this bundle for ${off.join(', ')}: their fiscal years do not end in December (${off.map(t => `${t} latest: ${periodText(index[t].at(-1).row, 'en')}`).join('; ')}). Ask by fiscal year instead.`,
+      `证据包里没有 ${off.join('、')} 的自然年数据：它们的财年不在十二月结束（${off.map(t => `${t} 最新：${periodText(index[t].at(-1).row, 'zh')}`).join('；')}）。请按财年提问。`),
+      offers: off.slice(0, 2).map(t => lang === 'zh' ? `${ZH_NAME[t]}最新财年的营收` : `${t} latest fiscal year revenue`)});
+  }
+  // A date in a figure question must be one of the company's fiscal year ends.
+  if (p.dates.length && !ratesTopic) {
+    const ts = p.companies;
+    if (!ts.length || ts.some(t => !index[t].some(e => e.row.period_end === p.dates[0]))) return finish(r, {status: 'clarify', topic: 'clarify', summary: ask(lang,
+      `${p.dates[0]} is not a fiscal year end${ts.length ? ` for ${ts.join(', ')}` : ''}. FinScope holds annual periods and one year-to-date checkpoint, so name a fiscal year${ts.length ? ` (${ts.map(t => `${t}'s latest ended ${index[t].at(-1).row.period_end}`).join('; ')})` : ''}.`,
+      `${p.dates[0]} 不是${ts.length ? ` ${ts.join('、')} 的` : ''}财年末。FinScope 只有年度数据和一个年初至今对比，请按财年提问${ts.length ? `（${ts.map(t => `${t} 最新财年截至 ${index[t].at(-1).row.period_end}`).join('；')}）` : ''}。`),
+      offers: defaultOffers(lang, ts[0] || 'NVDA')});
+    p.exactEnd = p.dates[0];
+    p.years = [Number(p.dates[0].slice(0, 4))];
+    p.yearOrder = [...p.years];
+  }
+
+  // Period checks: future or unfiled fiscal years and years before the bundle (rankings list them instead).
+  const rankLike = c.rank && (p.companies.length === 0 || p.companies.length >= 3 || /六家|all six|the six|these six|six companies/.test(p.low));
   const wanted = p.range ? null : p.years;
-  const tickers = p.companies.length ? p.companies : TICKERS;
-  if (wanted?.length && !c.rates && !(c.rateWords && c.tenor) && !p.dates.length) {
-    for (const t of tickers) {
+  const perCompanyYears = p.companies.length >= 2 && p.yearOrder.length === p.companies.length;
+  const pairs = perCompanyYears ? p.companies.map((t, i) => [t, [p.yearOrder[i]]]) : (p.companies.length ? p.companies : TICKERS).map(t => [t, wanted || []]);
+  if (wanted?.length && !ratesTopic && !rankLike && !p.exactEnd) {
+    for (const [t, ys] of pairs) {
       const ends = index[t].map(e => Number(e.row.period_end.slice(0, 4)));
-      const late = wanted.find(y => y > Math.max(...ends));
+      const late = ys.find(y => y > Math.max(...ends));
       if (late) return finish(r, {status: 'refused', topic: 'forecast', plan: {...r.plan, period: `FY${late}`}, summary: ask(lang,
         `${t}'s FY${late} has not been filed by ${asOf}, so it is not in this bundle, and FinScope does not forecast it. The latest filed annual period is ${periodText(index[t].at(-1).row, lang)}.`,
         `截至 ${asOf}，${t} 的 ${late} 财年还没有提交年报，不在证据包里，FinScope 也不做预测。最新已提交的年度是 ${periodText(index[t].at(-1).row, lang)}。`),
         offers: lang === 'zh' ? [`${ZH_NAME[t]}最新的营收是多少`, `${ZH_NAME[t]}今年以来的经营现金流`] : [`${t} latest revenue`, `${t} year-to-date operating cash flow`]});
-      const early = wanted.find(y => y < Math.min(...ends));
+      const early = ys.find(y => y < Math.min(...ends));
       if (early) return finish(r, {status: 'not_in_bundle', topic: 'out_of_range', plan: {...r.plan, period: `FY${early}`}, summary: ask(lang,
         `FY${early} is before the first ${t} annual period in this bundle (${periodText(index[t][0].row, lang)}).`,
         `${early} 财年早于证据包里 ${t} 的第一个年度（${periodText(index[t][0].row, lang)}）。`), offers: defaultOffers(lang, t)});
@@ -482,22 +527,35 @@ export function answerQuestion(question, bundle, {date} = {}) {
   }
 
   // Topics.
-  if ((c.rates || (c.rateWords && c.tenor)) && !p.companies.length) return ratesAnswer(r, p, bundle, asOf);
+  if (ratesTopic) return ratesAnswer(r, p, bundle, asOf);
   if (c.definition && !p.companies.length && (p.metrics.length || p.bridge.length || c.anomaly)) return definitionAnswer(r, p);
   if (c.anomaly) return withCompanies(r, p, 'anomaly', ts => anomalyAnswer(r, p, bundle, snapshot, ts, asOf), true);
   if (c.filingLink && !p.metrics.length || (c.filingDoc && !p.metrics.length && !c.ytd && !c.bridge && !c.cashSupport && !c.change && p.companies.length && !c.trend)) return withCompanies(r, p, 'filing', ts => filingAnswer(r, p, bundle, index, ts, asOf));
   const bridgeTopic = p.bridge.length || (c.bridge && (c.why || /working capital|营运资本|营运资金|运营资本|调节|桥|bridge|reconcil|拆解|分解|breakdown/.test(p.low)) && (p.metrics.some(m => ['operating_cash_flow', 'net_income', 'profit_cash_gap', 'cash'].includes(m)) || c.gap || /working capital|营运资本|营运资金|运营资本|bridge|桥|reconcil|调节/.test(p.low)));
-  if (bridgeTopic) return withCompanies(r, p, 'bridge', ts => bridgeAnswer(r, p, bundle, index, ts, asOf));
+  if (bridgeTopic) return p.companies.length >= 2 ? oneAtATime(r, p, 'bridge') : withCompanies(r, p, 'bridge', ts => bridgeAnswer(r, p, bundle, index, ts, asOf));
   if (c.cashSupport && p.companies.length <= 1 && !c.rank) return withCompanies(r, p, 'cash_support', ts => cashSupportAnswer(r, p, bundle, index, ts[0], asOf));
   const annualThisYear = p.companies.length && index[p.companies[0]].at(-1)?.row.period_end.slice(0, 4) === asOf.slice(0, 4);
   if (c.ytd || (p.relative === 'this_year' && !wanted?.length && !annualThisYear)) {
     if (p.years.length && p.years.some(y => y < Number(asOf.slice(0, 4)) - 1)) return finish(r, {status: 'not_in_bundle', topic: 'quarter_history', summary: ask(lang,
       'Standalone or older quarters are not in this bundle. It keeps one fiscal year-to-date checkpoint per company: the latest 10-Q, compared with the same period a year earlier.',
       '证据包里没有单季度或更早的季度数据。每家公司只保留一个年初至今对比：最新 10-Q 与上年同期。'), offers: defaultOffers(lang, p.companies[0] || 'NVDA')});
+    if (p.companies.length >= 2) return oneAtATime(r, p, 'ytd');
     return withCompanies(r, p, 'ytd', ts => ytdAnswer(r, p, bundle, index, ts, asOf));
   }
-  // Metric questions.
-  let metric = pickMetric(p);
+  // Metric questions: one figure, a defined combination, several figures for one company, or decline.
+  const sel = selectFigures(p);
+  if (sel.decline) return finish(r, {status: 'not_in_bundle', topic: 'unsupported_metric', summary: sel.decline === 'narrower'
+    ? ask(lang, 'A narrower version of this figure (with part of it excluded) is not in this bundle. FinScope states reported totals and its defined indicators only, and will not present the total as the narrower figure.', '证据包里没有扣除某部分之后的口径。FinScope 只陈述报告的总数和已定义的指标，不会把总数当作较窄的口径给出。')
+    : ask(lang, `FinScope does not compute that combination. It states each figure on its own, or one of its defined indicators: ${RATIOS.concat(DERIVED).map(k => label(k, 'en').toLowerCase()).join(', ')}.`, `FinScope 不计算这个组合。它可以分别给出每个数字，或给出已定义的指标：${RATIOS.concat(DERIVED).map(k => label(k, 'zh')).join('、')}。`),
+    offers: defaultOffers(lang, p.companies[0] || 'NVDA')});
+  if (sel.figures) {
+    if (p.companies.length === 1 && !c.trend && !c.change && !c.compare && !rankLike && p.yearOrder.length < 2 && !p.range && !p.lastN) return figuresAnswer(r, p, bundle, index, p.companies[0], sel.figures, asOf);
+    return finish(r, {status: 'clarify', topic: 'clarify', plan: {...r.plan, metrics: sel.figures}, summary: ask(lang,
+      'Ask about one figure at a time for comparisons, trends, changes and rankings, so that each number answers what was asked. For one company, several figures for the same year can be listed together.',
+      '对比、走势、变化和排名请一次只问一个数字，这样每个数字都对应你的问题。同一家公司同一年的几个数字可以一起列出。'),
+      offers: sel.figures.slice(0, 2).map(k => lang === 'zh' ? `${p.companies.map(t => ZH_NAME[t]).join('和') || '英伟达'}的${label(k, 'zh')}` : `${p.companies.join(' and ') || 'NVDA'} ${label(k, 'en').toLowerCase()}`)});
+  }
+  let metric = sel.metric;
   if (!metric && c.cashSupport) metric = 'cash_conversion';
   if (!metric && c.change) metric = 'revenue';
   if (!metric && c.gap && /现金|cash/.test(p.low)) metric = 'profit_cash_gap';
@@ -508,9 +566,17 @@ export function answerQuestion(question, bundle, {date} = {}) {
       `想了解 ${p.companies.map(t => company(t, lang)).join('、')} 的哪方面？可以说一个数字（如经营现金流）、一个比率、一个财年，或者问它的利润有没有现金流支撑。`), offers: defaultOffers(lang, p.companies[0])});
     return finish(r, {status: 'clarify', topic: 'gibberish', summary: ask(lang, 'Which company and which figure? This box answers about AAPL, MSFT, NVDA, AMZN, GOOGL and META.', '请说明哪家公司、哪个数字。这个问答框回答 AAPL、MSFT、NVDA、AMZN、GOOGL、META 的问题。'), offers: defaultOffers(lang)});
   }
+  if (rankLike || (c.cashSupport && c.rank)) {
+    if (c.growthRank || c.change) {
+      if (!['revenue', 'revenue_growth'].includes(metric)) return finish(r, {status: 'not_in_bundle', topic: 'unsupported_metric', plan: {...r.plan, metric}, summary: ask(lang,
+        `Rankings by growth are available for revenue only (revenue growth). For ${label(metric, 'en').toLowerCase()}, ask one company's change, for example "NVDA ${label(metric, 'en').toLowerCase()} change".`,
+        `按增长排名只支持营收（营收增长率）。${label(metric, 'zh')}请问单家公司的变化，例如“英伟达${label(metric, 'zh')}比上年变化多少”。`), offers: lang === 'zh' ? ['哪家公司营收增长最快'] : ['Which company grew revenue fastest?']});
+      metric = 'revenue_growth';
+    }
+    r.plan.metric = metric;
+    return rankAnswer(r, p, bundle, index, metric, asOf);
+  }
   r.plan.metric = metric;
-  const rankLike = c.rank && (p.companies.length === 0 || p.companies.length >= 3 || /六家|all six|the six|these six|six companies/.test(p.low));
-  if (rankLike || (c.cashSupport && c.rank)) return rankAnswer(r, p, bundle, index, metric, asOf);
   if (p.companies.length >= 2) return compareAnswer(r, p, bundle, index, metric, p.companies, asOf);
   if (!p.companies.length) return finish(r, {status: 'clarify', topic: 'ambiguous', summary: ask(lang,
     `Which company? ${label(metric, 'en')} is available for AAPL, MSFT, NVDA, AMZN, GOOGL and META, or ask which of the six is highest.`,
@@ -523,15 +589,65 @@ export function answerQuestion(question, bundle, {date} = {}) {
   return metricAnswer(r, p, bundle, index, t, metric, asOf);
 }
 
-function pickMetric(p) {
-  const m = [...p.metrics];
-  if (p.cues.gap && m.includes('net_income') && (m.includes('operating_cash_flow') || m.includes('cash'))) return 'profit_cash_gap';
-  // "增长率" style growth on revenue is the revenue-growth ratio.
-  if (m.length > 1) {
-    const indicators = m.filter(k => !REPORTED.includes(k));
-    if (indicators.length) return indicators[0];
+const RATIO_PAIRS = {'net_income>revenue': 'net_margin', 'operating_income>revenue': 'operating_margin', 'operating_cash_flow>revenue': 'cash_margin', 'operating_cash_flow>net_income': 'cash_conversion', 'current_assets>current_liabilities': 'current_ratio', 'liabilities>assets': 'liabilities_assets', 'cash>current_liabilities': 'cash_coverage'};
+const EXCLUDE = /excluding|excl\.?|net of|without|不包括|不含|扣除|扣掉|剔除|除去/;
+// Which figure the question asks for. Two named figures are either a defined combination (by the words
+// between them), a list for one company, or declined — never the first one silently.
+function selectFigures(p) {
+  const c = p.cues, figSpans = [];
+  for (const s of p.spans) if (s.kind === 'metric' && !figSpans.some(f => f.id === s.id)) figSpans.push(s);
+  const ids = figSpans.map(s => s.id);
+  if (c.gap && ids.includes('net_income') && (ids.includes('operating_cash_flow') || ids.includes('cash'))) return {metric: 'profit_cash_gap'};
+  if (c.cashSupport && (p.companies.length >= 2 || c.rank)) return {metric: 'cash_conversion'};
+  if (ids.length >= 2) {
+    const [a, b] = figSpans;
+    const between = p.low.slice(a.end, b.start), window = p.low.slice(Math.max(0, a.start - 8), b.end);
+    const key = `${a.id}>${b.id}`, set = [a.id, b.id].sort().join('|');
+    if (/minus|减去|减掉|after (deducting|subtracting)/.test(between)) { const m = {'net_income>operating_cash_flow': 'profit_cash_gap', 'operating_cash_flow>capex': 'free_cash_flow'}[key]; return m ? {metric: m} : {decline: 'combination'}; }
+    if (EXCLUDE.test(window)) return set === 'capex|operating_cash_flow' ? {metric: 'free_cash_flow'} : {decline: 'combination'};
+    if (/divided by|÷|\/|as an? (%|percent|percentage|share|proportion) of|% of|percent of|percentage of|share of|占|除以|之比|比率|ratio of|relative to/.test(between) || /占.{0,4}比|比例/.test(window)) return RATIO_PAIRS[key] ? {metric: RATIO_PAIRS[key]} : {decline: 'combination'};
+    return {figures: ids};
   }
-  return m[0] || null;
+  if (ids.length === 1 && REPORTED.includes(ids[0])) {
+    if (EXCLUDE.test(p.low)) return {decline: 'narrower'};
+    if (/\bmargins?\b|\bratio\b|% of|percent(age)? of|as a share of|\bper (share|employee|user|unit|head)\b|占比|比例|比率|人均/.test(p.masked)) return {decline: 'combination'};
+  }
+  return {metric: ids[0] || null};
+}
+
+function oneAtATime(r, p, topic) {
+  const lang = p.lang;
+  return finish(r, {status: 'clarify', topic: 'clarify', summary: ask(lang,
+    `The ${topic === 'ytd' ? 'year-to-date checkpoint' : 'profit-to-cash bridge'} is shown one company at a time, because each company's fiscal period differs. Pick one:`,
+    `${topic === 'ytd' ? '年初至今对比' : '利润到现金的调节'}一次只显示一家公司，因为各家的财年期间不同。请选一家：`),
+    offers: p.companies.map(t => lang === 'zh' ? `${ZH_NAME[t]}：${p.text}` : `${t}: ${p.text}`)});
+}
+
+function figuresAnswer(r, p, bundle, index, t, figs, asOf) {
+  const lang = p.lang, entry = resolvePeriod(p, index, t);
+  if (!entry) return missingAnswer(r, p, t, figs[0], null, [figs[0]]);
+  const facts = [], calcs = [], rows = [], missing = [];
+  for (const k of figs) {
+    const res = indicator(bundle, t, entry, k, asOf, lang);
+    for (const f of res.facts) if (!facts.some(x => x.key === f.key && x.period_end === f.period_end && x.role === f.role)) facts.push(f);
+    if (res.calc) calcs.push(res.calc);
+    rows.push([label(k, lang), display(k, res.value, lang)]);
+    if (res.value === null) missing.push(label(k, lang));
+  }
+  if (missing.length === figs.length) return missingAnswer(r, p, t, figs[0], entry, figs);
+  return finish(r, {topic: 'figures', plan: {tickers: [t], metric: figs[0], metrics: figs, period: periodPlan(p, entry)}, facts, calculations: calcs,
+    table: {columns: [L(lang, 'Figure', '项目'), `${fy(entry.row)} · ${span(entry.row, lang)}`], rows},
+    summary: ask(lang, `${company(t, 'en')}, ${periodText(entry.row, 'en')}: ${rows.map(x => `${x[0]} ${x[1]}`).join('; ')}.`, `${company(t, 'zh')}，${periodText(entry.row, 'zh')}：${rows.map(x => `${x[0]} ${x[1]}`).join('；')}。`),
+    notes: [...(missing.length ? [ask(lang, `No standard-tag fact for: ${missing.join(', ')}.`, `没有标准标签事实：${missing.join('、')}。`)] : []), ...periodNotes(p, t, entry, figs)],
+    offers: defaultOffers(lang, t)});
+}
+
+function periodNotes(p, t, entry, keys) {
+  const lang = p.lang, notes = [];
+  const y = Number(entry.row.period_end.slice(0, 4));
+  if (t === 'NVDA') notes.push(ask(lang, `NVIDIA’s fiscal year ends in late January, so FY${y} mostly covers calendar ${y - 1}.`, `英伟达的财年在一月下旬结束，所以 ${y} 财年大致对应 ${y - 1} 自然年。`));
+  if (keys.includes('cash')) notes.push(ask(lang, 'Cash and cash equivalents only; marketable securities are not included.', '只含现金及现金等价物，不含有价证券。'));
+  return notes;
 }
 
 function withCompanies(r, p, topic, fn, allowAll = false) {
@@ -546,6 +662,7 @@ function withCompanies(r, p, topic, fn, allowAll = false) {
 function resolvePeriod(p, index, t) {
   const rows = index[t];
   if (!rows.length) return null;
+  if (p.exactEnd) return rows.find(e => e.row.period_end === p.exactEnd) || null;
   if (p.years.length) return rows.find(e => Number(e.row.period_end.slice(0, 4)) === p.years.at(-1)) || null;
   if (p.relative === 'this_year') return rows.find(e => e.row.period_end.slice(0, 4) === String(rows.at(-1).row.period_end.slice(0, 4))) || rows.at(-1);
   return rows.at(-1);
@@ -567,7 +684,7 @@ function metricAnswer(r, p, bundle, index, t, metric, asOf) {
   if (res.value === null) return missingAnswer(r, p, t, metric, entry, res.missing);
   const topic = REPORTED.includes(metric) ? 'metric' : 'ratio';
   const notes = [];
-  if (t === 'NVDA') notes.push(ask(lang, 'NVIDIA’s fiscal year ends in late January, so FY2026 mostly covers calendar 2025.', '英伟达的财年在一月下旬结束，所以 2026 财年大致对应 2025 自然年。'));
+  notes.push(...periodNotes(p, t, entry, [metric]));
   if (p.relative === 'this_year' && entry === index[t].at(-1)) notes.push(ask(lang, `“This year” is read as the latest filed fiscal year, ${fy(entry.row)}.`, `“今年”按最新已提交的财年 ${entry.row.period_end.slice(0, 4)} 财年理解。`));
   if (p.cues.why) notes.push(ask(lang, 'The figures do not state causes; read management’s discussion in the filing for the reasons.', '数字本身不说明原因；原因请读财报里的管理层讨论。'));
   if (metric === 'liabilities_assets' && /debt|债务/.test(p.low)) notes.push(ask(lang, 'This uses total liabilities, not debt alone.', '这里用的是总负债，不只是借款。'));
@@ -635,8 +752,11 @@ function changeAnswer(r, p, bundle, index, t, metric, asOf) {
 
 function compareAnswer(r, p, bundle, index, metric, tickers, asOf) {
   const lang = p.lang, facts = [], calcs = [], rows = [];
-  for (const t of tickers) {
-    const entry = resolvePeriod(p, index, t);
+  const perCompany = p.yearOrder.length >= 2 && p.yearOrder.length === tickers.length;
+  if (p.yearOrder.length >= 2 && !perCompany) return finish(r, {status: 'clarify', topic: 'clarify', summary: ask(lang,
+    'Name one fiscal year, or one year per company in the same order as the companies.', '请给一个财年，或按公司顺序给每家公司各一个财年。'), offers: defaultOffers(lang, tickers[0])});
+  for (const [i, t] of tickers.entries()) {
+    const entry = perCompany ? index[t].find(e => Number(e.row.period_end.slice(0, 4)) === p.yearOrder[i]) : resolvePeriod(p, index, t);
     if (!entry) { rows.push([t, '—', L(lang, 'not in bundle', '不在证据包里')]); continue; }
     const res = indicator(bundle, t, entry, metric, asOf, lang);
     facts.push(...res.facts);
@@ -646,7 +766,7 @@ function compareAnswer(r, p, bundle, index, metric, tickers, asOf) {
   const shown = rows.filter(x => Number.isFinite(x[3]));
   if (!shown.length) return missingAnswer(r, p, tickers[0], metric, resolvePeriod(p, index, tickers[0]), [metric]);
   const missing = rows.filter(x => !Number.isFinite(x[3])).map(x => x[0]);
-  return finish(r, {topic: 'compare', plan: {tickers: [...tickers], metric, period: p.years.length ? `FY${p.years.at(-1)}` : 'latest'}, facts, calculations: calcs,
+  return finish(r, {topic: 'compare', plan: {tickers: [...tickers], metric, period: perCompany ? p.yearOrder.map(y => `FY${y}`).join(',') : p.years.length ? `FY${p.years.at(-1)}` : 'latest'}, facts, calculations: calcs,
     table: {columns: [L(lang, 'Company', '公司'), L(lang, 'Fiscal period', '财年期间'), label(metric, lang)], rows: rows.map(x => x.slice(0, 3))},
     summary: ask(lang,
       `${label(metric, 'en')}: ${shown.map(x => `${x[0]} ${x[2]}`).join(' · ')}.${missing.length ? ` Not available for ${missing.join(', ')} (no standard-tag fact).` : ''}`,
@@ -657,9 +777,10 @@ function compareAnswer(r, p, bundle, index, metric, tickers, asOf) {
 
 function rankAnswer(r, p, bundle, index, metric, asOf) {
   const lang = p.lang, facts = [], calcs = [], rows = [];
+  const notFiled = [];
   for (const t of TICKERS) {
     const entry = resolvePeriod(p, index, t);
-    if (!entry) continue;
+    if (!entry) { notFiled.push(t); continue; }
     const res = indicator(bundle, t, entry, metric, asOf, lang);
     facts.push(...res.facts);
     if (res.calc) calcs.push(res.calc);
@@ -668,7 +789,9 @@ function rankAnswer(r, p, bundle, index, metric, asOf) {
   const ok = rows.filter(x => Number.isFinite(x.value)), low = p.cues.low;
   ok.sort((a, b) => low ? a.value - b.value : b.value - a.value);
   const missing = rows.filter(x => !Number.isFinite(x.value)).map(x => x.t);
-  if (!ok.length) return missingAnswer(r, p, TICKERS[0], metric, null, [metric]);
+  if (!ok.length) return notFiled.length === TICKERS.length
+    ? finish(r, {status: 'not_in_bundle', topic: 'out_of_range', plan: {...r.plan, metric}, summary: ask(lang, `None of the six has an annual period for FY${p.years.at(-1)} in this bundle by ${asOf}.`, `截至 ${asOf}，六家公司在证据包里都没有 ${p.years.at(-1)} 财年的年度数据。`), offers: defaultOffers(lang)})
+    : missingAnswer(r, p, TICKERS[0], metric, null, [metric]);
   const top = ok[0];
   let extra = '';
   if (metric === 'profit_cash_gap') {
@@ -683,8 +806,8 @@ function rankAnswer(r, p, bundle, index, metric, asOf) {
     summary: ask(lang,
       `${low ? 'Lowest' : 'Highest'} ${label(metric, 'en').toLowerCase()} among the six: ${company(top.t, 'en')} at ${display(metric, top.value, 'en')} (${fy(top.entry.row)}).${extra}`,
       `六家公司中${label(metric, 'zh')}${metric === 'profit_cash_gap' ? (low ? '最小' : '最大') : (low ? '最低' : '最高')}的是${company(top.t, 'zh')}：${display(metric, top.value, 'zh')}（${top.entry.row.period_end.slice(0, 4)} 财年）。${extra}`),
-    notes: [ask(lang, `Each company’s own ${p.years.length ? 'named' : 'latest'} fiscal year; calendars differ. ${metric === 'profit_cash_gap' ? 'Gap = net income − operating cash flow, in dollars; the accrual ratio scales it by assets. ' : ''}A descriptive ordering, not a judgement of quality or investment merit.${missing.length ? ` Unavailable: ${missing.join(', ')}.` : ''}`,
-      `每家公司用自己的${p.years.length ? '指定' : '最新'}财年，财年日历不同。${metric === 'profit_cash_gap' ? '差距 = 净利润 − 经营现金流（美元）；应计比率按资产规模缩放。' : ''}这只是描述性排序，不评价质量或投资价值。${missing.length ? `无法给出：${missing.join('、')}。` : ''}`)],
+    notes: [ask(lang, `Each company’s own ${p.years.length ? 'named' : 'latest'} fiscal year; calendars differ. ${metric === 'profit_cash_gap' ? 'Gap = net income − operating cash flow, in dollars; the accrual ratio scales it by assets. ' : ''}A descriptive ordering, not a judgement of quality or investment merit.${missing.length ? ` Unavailable: ${missing.join(', ')}.` : ''}${notFiled.length ? ` Not filed for FY${p.years.at(-1)} by ${asOf}: ${notFiled.join(', ')}.` : ''}`,
+      `每家公司用自己的${p.years.length ? '指定' : '最新'}财年，财年日历不同。${metric === 'profit_cash_gap' ? '差距 = 净利润 − 经营现金流（美元）；应计比率按资产规模缩放。' : ''}这只是描述性排序，不评价质量或投资价值。${missing.length ? `无法给出：${missing.join('、')}。` : ''}${notFiled.length ? `截至 ${asOf} 尚未提交 ${p.years.at(-1)} 财年年报：${notFiled.join('、')}。` : ''}`)],
     offers: lang === 'zh' ? [`${ZH_NAME[top.t]}的利润有现金流支撑吗`] : [`Is ${top.t}'s profit backed by operating cash?`]});
 }
 
@@ -792,8 +915,19 @@ function bridgeAnswer(r, p, bundle, index, tickers, asOf) {
     offers: lang === 'zh' ? [`${ZH_NAME[t]}的利润有现金流支撑吗`] : [`Is ${t}'s profit backed by operating cash?`]});
 }
 
-function anomalyAnswer(r, p, bundle, snapshot, tickers, asOf) {
-  const lang = p.lang, ai = snapshot.ai;
+function anomalyAnswer(r, p, bundle, latestSnapshot, tickers, asOf) {
+  const lang = p.lang;
+  let snapshot = latestSnapshot;
+  // A named fiscal year: the saved snapshot whose score was for that year's profile.
+  if (p.years.length) {
+    const y = p.years.at(-1), t = p.companies[0];
+    const hit = p.companies.length === 1 && [...bundle.snapshots].reverse().find(s => s.as_of <= asOf && s.ai?.status === 'available' && s.ai.scores[t]?.period_end.slice(0, 4) === String(y));
+    if (!hit) return finish(r, {status: 'not_in_bundle', topic: 'anomaly', plan: {...r.plan, period: `FY${y}`}, summary: ask(lang,
+      p.companies.length === 1 ? `No saved AI triage score for ${t}'s FY${y} profile in this bundle.` : 'Earlier AI triage scores are shown one company at a time; name one company and a fiscal year.',
+      p.companies.length === 1 ? `证据包里没有 ${t} ${y} 财年画像的 AI 分诊分数。` : '较早的 AI 分诊分数一次只显示一家公司；请指定一家公司和一个财年。'), offers: defaultOffers(lang, t || 'NVDA')});
+    snapshot = hit;
+  }
+  const ai = snapshot.ai;
   const featureLabel = k => label(k === 'cash_margin' ? 'cash_margin' : k, lang);
   if (!ai || ai.status !== 'available') return finish(r, {status: 'not_in_bundle', topic: 'anomaly', summary: ask(lang, `AI triage is unavailable for the snapshot of ${snapshot.as_of}.`, `${snapshot.as_of} 快照没有 AI 分诊结果。`), offers: defaultOffers(lang)});
   const list = tickers.length === TICKERS.length && !p.companies.length ? TICKERS : tickers;
@@ -808,19 +942,32 @@ function anomalyAnswer(r, p, bundle, snapshot, tickers, asOf) {
   const tr = ai.training;
   const one = list.length === 1 ? ai.scores[list[0]] : null;
   const sorted = list.filter(t => ai.scores[t]).sort((a, b) => ai.scores[b].percentile - ai.scores[a].percentile);
-  return finish(r, {topic: 'anomaly', plan: {tickers: [...p.companies], metric: null, period: 'latest'},
+  return finish(r, {topic: 'anomaly', plan: {tickers: [...p.companies], metric: null, period: p.years.length && snapshot !== latestSnapshot ? `FY${p.years.at(-1)}` : 'latest'},
     facts, calculations: [{label: L(lang, 'Percentile', '百分位'), formula: L(lang, '100 × share of training scores ≤ this score; score = −IsolationForest.score_samples', '100 × 训练分数中不高于该分数的比例；分数 = −IsolationForest.score_samples'), result: one ? `${one.percentile} / 100` : sorted.map(t => `${t} ${ai.scores[t].percentile}`).join(' · ')}],
     table: {columns: [L(lang, 'Company', '公司'), L(lang, 'Period end', '期末'), L(lang, 'Percentile', '百分位'), L(lang, 'Ratios furthest from training medians', '偏离训练中位数最多的比率')], rows},
     summary: one
-      ? ask(lang, `AI triage (dashed ink): ${company(list[0], 'en')}'s latest annual profile (period ended ${one.period_end}) sits at the ${one.percentile}th percentile of ${tr.samples} earlier company-years — higher means less typical. Furthest from the training medians: ${one.context_deviations.map(d => featureLabel(d.feature).toLowerCase()).join(', ')}.`,
-        `AI 分诊（虚线墨）：${company(list[0], 'zh')}最新年度画像（期末 ${one.period_end}）在 ${tr.samples} 个更早的公司年度样本中处于第 ${one.percentile} 百分位——越高越不像历史常态。偏离训练中位数最多的是：${one.context_deviations.map(d => featureLabel(d.feature)).join('、')}。`)
+      ? ask(lang, `AI triage (dashed ink, snapshot ${snapshot.as_of}): ${company(list[0], 'en')}'s ${snapshot === latestSnapshot ? 'latest ' : ''}annual profile (period ended ${one.period_end}) sits at the ${one.percentile}th percentile of ${tr.samples} earlier company-years — higher means less typical. Furthest from the training medians: ${one.context_deviations.map(d => featureLabel(d.feature).toLowerCase()).join(', ')}.`,
+        `AI 分诊（虚线墨，快照 ${snapshot.as_of}）：${company(list[0], 'zh')}${snapshot === latestSnapshot ? '最新' : ''}年度画像（期末 ${one.period_end}）在 ${tr.samples} 个更早的公司年度样本中处于第 ${one.percentile} 百分位——越高越不像历史常态。偏离训练中位数最多的是：${one.context_deviations.map(d => featureLabel(d.feature)).join('、')}。`)
       : ask(lang, `AI triage percentiles (snapshot ${snapshot.as_of}): ${sorted.map(t => `${t} ${ai.scores[t].percentile}`).join(' · ')}. Higher means less typical of ${tr.samples} earlier company-years.`, `AI 分诊百分位（快照 ${snapshot.as_of}）：${sorted.map(t => `${t} ${ai.scores[t].percentile}`).join(' · ')}。越高越不像 ${tr.samples} 个更早公司年度样本的常态。`),
     notes: [ask(lang, `Isolation Forest, ${tr.trees} trees, seed ${tr.seed}, trained on periods ending before ${tr.period_end_before}. An investigation cue, not a fraud, default or return signal, and not advice. An unusual profile can also mean unusually strong results.`, `Isolation Forest，${tr.trees} 棵树，seed ${tr.seed}，训练样本为 ${tr.period_end_before} 之前结束的期间。这是调查线索，不是造假、违约或收益信号，也不是建议。不寻常也可能意味着业绩异常强。`)],
     offers: lang === 'zh' ? ['什么是异常分数', `${ZH_NAME[list[0]] || '英伟达'}的应计比率`] : ['What does the anomaly percentile mean?', `${list[0]} accrual ratio`]});
 }
 
 function filingAnswer(r, p, bundle, index, tickers, asOf) {
-  const lang = p.lang, t = tickers[0], entry = index[t].at(-1), check = latestCheckpoint(bundle, t, asOf);
+  const lang = p.lang, t = tickers[0], check = latestCheckpoint(bundle, t, asOf);
+  if (p.years.length) {
+    // The original annual report for that fiscal year: the first saved snapshot that holds the period.
+    const y = String(p.years.at(-1));
+    let row = null;
+    for (const snap of bundle.snapshots) { if (snap.as_of > asOf || row) break; row = snap.companies[t]?.find(x => x.period_end.slice(0, 4) === y) || null; }
+    if (!row) return finish(r, {status: 'not_in_bundle', topic: 'filing', plan: {...r.plan, tickers: [t], period: `FY${y}`}, summary: ask(lang, `No ${t} annual report for FY${y} in this bundle.`, `证据包里没有 ${t} ${y} 财年的年报。`), offers: defaultOffers(lang, t)});
+    const original = row.metrics.revenue || Object.values(row.metrics).find(Boolean);
+    return finish(r, {topic: 'filing', plan: {tickers: [t], metric: null, period: `FY${y}`}, facts: [fact(t, 'revenue', original, lang, {label: L(lang, `${original.form} · ${fy(row)}`, `${original.form} · ${y} 财年`)})],
+      summary: ask(lang, `${company(t, 'en')}'s annual report for ${periodText(row, 'en')} is the ${original.form} filed ${original.filed} (accession ${original.accession}). The link below opens it on sec.gov.`,
+        `${company(t, 'zh')} ${periodText(row, 'zh')}的年报是 ${original.filed} 提交的 ${original.form}（accession ${original.accession}）。下方链接直接打开 sec.gov 上的文件。`),
+      notes: [ask(lang, 'This is the report first filed for that year; later reports may restate its figures.', '这是该年度首次提交的年报；之后的报告可能重述其中的数字。')], offers: defaultOffers(lang, t)});
+  }
+  const entry = index[t].at(-1);
   const annual = entry.row.metrics.revenue || Object.values(entry.row.metrics).find(Boolean);
   const facts = [fact(t, 'revenue', annual, lang, {label: L(lang, `Latest 10-K · ${fy(entry.row)}`, `最新 10-K · ${entry.row.period_end.slice(0, 4)} 财年`)})];
   const q = check?.current?.metrics?.revenue;
@@ -832,25 +979,63 @@ function filingAnswer(r, p, bundle, index, tickers, asOf) {
     offers: lang === 'zh' ? [`${ZH_NAME[t]}的利润有现金流支撑吗`] : [`Is ${t}'s profit backed by operating cash?`]});
 }
 
+const TENOR_NAMES = {'3m': ['3-month', '3 个月'], '2y': ['2-year', '2 年期'], '5y': ['5-year', '5 年期'], '10y': ['10-year', '10 年期'], '30y': ['30-year', '30 年期']};
+const CN_TENOR = {一: 1, 二: 2, 两: 2, 三: 3, 五: 5, 六: 6, 七: 7, 十: 10, 二十: 20, 三十: 30};
+// Tenors written in the question, e.g. "10-year", "10y", "十年期", "3个月". Unknown tenors are kept so they can be declined.
+function askedTenors(low) {
+  const found = [];
+  for (const m of low.matchAll(/(?<![\d.])(\d{1,2}|二十|三十|十|一|二|两|三|五|六|七)\s*(?:个)?\s*(年期|-?years?\b|y\b|个月|月期|-?months?\b|m\b)/g)) {
+    const n = /\d/.test(m[1]) ? Number(m[1]) : CN_TENOR[m[1]];
+    const unit = /月|month|^m$/.test(m[2].replace(/^-/, '')) ? 'm' : 'y';
+    found.push(`${n}${unit}`);
+  }
+  if (/t-bill/.test(low)) found.push('3m');
+  return [...new Set(found)];
+}
+function rateFact(lang, bundle, k, obs, extra = {}) {
+  const src = bundle.sources?.[`treasury-${obs.date.slice(0, 4)}`];
+  return {ticker: null, key: `treasury_${k}`, label: `${L(lang, 'Treasury par yield', '美国国债收益率')} ${TENOR_NAMES[k][lang === 'zh' ? 1 : 0]}`, value: obs[k], display: Number.isFinite(obs[k]) ? `${obs[k].toFixed(2)}%` : L(lang, 'unavailable', '无'), unit: '%', period_start: null, period_end: obs.date, form: 'Treasury daily par yield curve', tag: k, filed: obs.date, accession: null, url: src?.url ?? 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve', filing_index_url: null, ...extra};
+}
 function ratesAnswer(r, p, bundle, asOf) {
   const lang = p.lang;
+  const tenors = askedTenors(p.low.replace(/(20\d\d)[-/.年]\d{1,2}[-/.月]\d{1,2}日?/g, ' '));
+  const unknown = tenors.filter(k => !TENOR_NAMES[k]);
+  if (unknown.length) return finish(r, {status: 'not_in_bundle', topic: 'rates', summary: ask(lang,
+    `The bundle keeps five Treasury tenors: 3-month, 2-year, 5-year, 10-year and 30-year. ${unknown.join(', ')} is not among them.`,
+    `证据包只保留五个期限的国债收益率：3 个月、2 年、5 年、10 年和 30 年，没有 ${unknown.join('、')}。`), offers: lang === 'zh' ? ['10 年期美债收益率现在多少'] : ['What is the 10-year Treasury yield?']});
+  const keys = tenors.length ? tenors : Object.keys(TENOR_NAMES);
+  const names = k => TENOR_NAMES[k][lang === 'zh' ? 1 : 0];
+  const note = ask(lang, 'Daily official observations (CC0), not live quotes. Rate context only; not a forecast.', '每日官方观测值（CC0），不是实时报价，仅作利率背景，不是预测。');
+  // A year without a date: summarise that year's observations rather than state today's.
+  if (!p.dates.length && p.years.length) {
+    const y = String(p.years.at(-1));
+    const obs = (bundle.rates || []).filter(x => x.date.startsWith(y) && x.date <= asOf);
+    if (!obs.length) return finish(r, {status: 'not_in_bundle', topic: 'rates', plan: {tickers: [], metric: null, period: y}, summary: ask(lang, `No Treasury observations for ${y} by ${asOf}; the bundle runs ${bundle.rates[0].date} to ${bundle.rates.at(-1).date}.`, `截至 ${asOf} 没有 ${y} 年的国债收益率观测；证据包覆盖 ${bundle.rates[0].date} 至 ${bundle.rates.at(-1).date}。`), offers: defaultOffers(lang)});
+    const facts = [], rows = [];
+    for (const k of keys) {
+      const valid = obs.filter(x => Number.isFinite(x[k]));
+      if (!valid.length) { rows.push([names(k), '—', '—', '—', '—']); continue; }
+      const first = valid[0], last = valid.at(-1);
+      const lowObs = valid.reduce((m, x) => x[k] < m[k] ? x : m), highObs = valid.reduce((m, x) => x[k] > m[k] ? x : m);
+      for (const [o, role] of [[first, 'first'], [last, 'last'], [lowObs, 'low'], [highObs, 'high']]) facts.push(rateFact(lang, bundle, k, o, {role}));
+      rows.push([names(k), `${first[k].toFixed(2)}% (${first.date})`, `${last[k].toFixed(2)}% (${last.date})`, `${lowObs[k].toFixed(2)}% (${lowObs.date})`, `${highObs[k].toFixed(2)}% (${highObs.date})`]);
+    }
+    return finish(r, {topic: 'rates', plan: {tickers: [], metric: null, period: y}, facts,
+      table: {columns: [L(lang, 'Tenor', '期限'), L(lang, 'First', '年初'), L(lang, 'Last', '年末'), L(lang, 'Low', '最低'), L(lang, 'High', '最高')], rows},
+      summary: ask(lang, `US Treasury par yields in ${y} (${obs.length} daily observations${obs.at(-1).date < `${y}-12-31` ? ` through ${obs.at(-1).date}` : ''}): ${rows.map(x => `${x[0]} from ${x[1]} to ${x[2]}`).join('; ')}.`,
+        `${y} 年美国国债收益率（${obs.length} 个每日观测${obs.at(-1).date < `${y}-12-31` ? `，截至 ${obs.at(-1).date}` : ''}）：${rows.map(x => `${x[0]}从 ${x[1]} 到 ${x[2]}`).join('；')}。`),
+      notes: [note, ask(lang, 'A year has many observations; the table shows the first, last, lowest and highest, each with its date.', '一年有很多个观测值；表中列出年初、年末、最低和最高，各附日期。')], offers: lang === 'zh' ? ['数据更新到什么时候'] : ['How recent is the data?']});
+  }
   const target = p.dates[0] || asOf;
   const obs = (bundle.rates || []).filter(x => x.date <= target && x.date <= asOf).at(-1);
   if (!obs) return finish(r, {status: 'not_in_bundle', topic: 'rates', summary: ask(lang, `No Treasury observation on or before ${target}; the bundle starts ${bundle.rates?.[0]?.date}.`, `${target} 当天或之前没有国债收益率观测；证据包从 ${bundle.rates?.[0]?.date} 开始。`), offers: defaultOffers(lang)});
-  const tenors = [['3m', /(?<!\d)(3|三)\s*(个月|月期|-?month|m\b)|t-bill/], ['2y', /(?<![\d十])(2|两|二)\s*(年期|-?year|y\b|年)/], ['5y', /(?<![\d十])(5|五)\s*(年期|-?year|y\b|年)/], ['10y', /(?<![\d三])(10|十)\s*(年期|-?year|y\b|年)/], ['30y', /(?<!\d)(30|三十)\s*(年期|-?year|y\b|年)/]];
-  const low = p.low.replace(/(20\d\d)[-/.年]\d{1,2}[-/.月]\d{1,2}日?/g, ' ');
-  const asked = tenors.filter(([, re]) => re.test(low)).map(([k]) => k);
-  const keys = asked.length ? asked : ['3m', '2y', '5y', '10y', '30y'];
-  const year = obs.date.slice(0, 4), src = bundle.sources?.[`treasury-${year}`];
-  const names = {'3m': ['3-month', '3 个月'], '2y': ['2-year', '2 年期'], '5y': ['5-year', '5 年期'], '10y': ['10-year', '10 年期'], '30y': ['30-year', '30 年期']};
-  const facts = keys.map(k => ({ticker: null, key: `treasury_${k}`, label: `${L(lang, 'Treasury par yield', '美国国债收益率')} ${names[k][lang === 'zh' ? 1 : 0]}`, value: obs[k], display: Number.isFinite(obs[k]) ? `${obs[k].toFixed(2)}%` : L(lang, 'unavailable', '无'), unit: '%', period_start: null, period_end: obs.date, form: 'Treasury daily par yield curve', tag: k, filed: obs.date, accession: null, url: src?.url ?? 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve', filing_index_url: null}));
+  const facts = keys.map(k => rateFact(lang, bundle, k, obs));
   const exactDay = obs.date === target;
   return finish(r, {topic: 'rates', plan: {tickers: [], metric: null, period: p.dates[0] || 'latest'}, facts,
-    table: {columns: [L(lang, 'Tenor', '期限'), L(lang, 'Yield', '收益率')], rows: keys.map(k => [names[k][lang === 'zh' ? 1 : 0], Number.isFinite(obs[k]) ? `${obs[k].toFixed(2)}%` : L(lang, 'unavailable', '无')])},
-    summary: ask(lang, `US Treasury par yields on ${obs.date}${exactDay ? '' : ` (latest observation on or before ${target})`}: ${keys.map(k => `${names[k][0]} ${Number.isFinite(obs[k]) ? obs[k].toFixed(2) + '%' : 'unavailable'}`).join(', ')}.`,
-      `${obs.date}${exactDay ? '' : `（${target} 当天或之前的最近观测）`}美国国债收益率：${keys.map(k => `${names[k][1]} ${Number.isFinite(obs[k]) ? obs[k].toFixed(2) + '%' : '无'}`).join('，')}。`),
-    notes: [ask(lang, 'Daily official observations (CC0), not live quotes. Rate context only; not a forecast.', '每日官方观测值（CC0），不是实时报价，仅作利率背景，不是预测。')],
-    offers: lang === 'zh' ? ['数据更新到什么时候'] : ['How recent is the data?']});
+    table: {columns: [L(lang, 'Tenor', '期限'), L(lang, 'Yield', '收益率')], rows: keys.map(k => [names(k), Number.isFinite(obs[k]) ? `${obs[k].toFixed(2)}%` : L(lang, 'unavailable', '无')])},
+    summary: ask(lang, `US Treasury par yields on ${obs.date}${exactDay ? '' : ` (latest observation on or before ${target})`}: ${keys.map(k => `${TENOR_NAMES[k][0]} ${Number.isFinite(obs[k]) ? obs[k].toFixed(2) + '%' : 'unavailable'}`).join(', ')}.`,
+      `${obs.date}${exactDay ? '' : `（${target} 当天或之前的最近观测）`}美国国债收益率：${keys.map(k => `${TENOR_NAMES[k][1]} ${Number.isFinite(obs[k]) ? obs[k].toFixed(2) + '%' : '无'}`).join('，')}。`),
+    notes: [note], offers: lang === 'zh' ? ['数据更新到什么时候'] : ['How recent is the data?']});
 }
 
 function definitionAnswer(r, p) {

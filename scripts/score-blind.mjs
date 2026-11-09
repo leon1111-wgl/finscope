@@ -18,7 +18,7 @@ import {answerQuestion} from '../web/ask-engine.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STATUS = {answered: 'answer', not_in_bundle: 'not_in_bundle', refused: 'refuse', clarify: 'clarify'};
 const IDS = new Set(['revenue', 'net_income', 'operating_income', 'operating_cash_flow', 'assets', 'liabilities', 'current_assets', 'current_liabilities', 'cash', 'capex', 'operating_margin', 'net_margin', 'cash_margin', 'current_ratio', 'liabilities_assets', 'cash_coverage', 'accruals', 'revenue_growth', 'cash_conversion', 'free_cash_flow', 'profit_cash_gap', 'anomaly_score']);
-const NUMBER_TOPICS = new Set(['metric', 'ratio', 'trend', 'change', 'compare', 'rank']);
+const NUMBER_TOPICS = new Set(['metric', 'ratio', 'trend', 'change', 'compare', 'rank', 'figures']);
 let bundle;
 const latestFY = t => `FY${bundle.snapshots.at(-1).companies[t].at(-1).period_end.slice(0, 4)}`;
 
