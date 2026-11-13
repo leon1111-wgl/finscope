@@ -4,7 +4,7 @@ name: Universe probe
 on:
   push:
     branches: [universe-2026-11]
-    paths: [scripts/probes/universe_probe.py, .github/workflows/universe-probe.yml]
+    paths: [scripts/probes/universe_probe.py, scripts/probes/tag_probe.py, .github/workflows/universe-probe.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,4 +19,4 @@ jobs:
           python-version: '3.12'
       - env:
           SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
-        run: python scripts/probes/universe_probe.py
+        run: python scripts/probes/tag_probe.py
