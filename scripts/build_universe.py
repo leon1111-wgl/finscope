@@ -132,9 +132,35 @@ def index_entry(shard, rank, curated):
         aliases |= {a.lower() for a in en}
         zh += [z for z in cn if z not in zh]
     latest = shard['periods'][-1] if shard['periods'] else None
-    return {'c': shard['cik'], 't': tickers, 'n': shard['name'], 'a': sorted(aliases), 'z': zh, 's': shard['sic'],
+    curated_en = {a.lower() for t in tickers for a in curated.get(t, ([], []))[0]}
+    # Derived one-word names (Target, Block, Ball) match only when written with a capital; curated names always match.
+    single = sorted(a for a in aliases if ' ' not in a and a not in curated_en)
+    entry = {'c': shard['cik'], 't': tickers, 'n': shard['name'], 'a': sorted(aliases), 'z': zh, 's': shard['sic'],
             'd': shard['sic_description'], 'v': shard['division'], 'tp': shard['template'], 'fye': shard['fiscal_year_end'],
             'fy': latest['fy'] if latest else None, 'e': latest['end'] if latest else None, 'r': rank}
+    if single:
+        entry['lw'] = single
+    if any(t in names.LOWER_OK for t in tickers):
+        entry['l'] = 1
+    return entry
+
+
+COMPOSED = {
+    'sga': 'SellingGeneralAndAdministrativeExpense; else SellingAndMarketingExpense or SellingExpense, plus GeneralAndAdministrativeExpense, from the same filing',
+    'liabilities': 'Liabilities; else LiabilitiesAndStockholdersEquity minus total equity (including noncontrolling interest) and temporary equity, from the same filing',
+    'cash_sti': 'CashCashEquivalentsAndShortTermInvestments; else CashAndCashEquivalentsAtCarryingValue plus ShortTermInvestments, MarketableSecuritiesCurrent or AvailableForSaleSecuritiesDebtSecuritiesCurrent (cash only when none is tagged), from the same filing',
+    'total_debt': 'DebtLongtermAndShorttermCombinedAmount; else LongTermDebt plus ShortTermBorrowings or CommercialPaper; else LongTermDebtNoncurrent or LongTermDebtAndCapitalLeaseObligations plus DebtCurrent, or plus LongTermDebtCurrent and ShortTermBorrowings or CommercialPaper; an untagged current part counts as zero; all parts from one filing',
+    'revenue': 'In the chain order, except that a larger total Revenues in the same filing beats contract revenue alone',
+}
+
+
+def catalog():
+    out = {}
+    for metric, (kind, unit, statement, chain, templates) in universe.METRICS.items():
+        out[metric] = {'kind': kind, 'unit': unit, 'statement': statement, 'chain': chain, 'templates': sorted(templates)}
+        if metric in COMPOSED:
+            out[metric]['rule'] = COMPOSED[metric]
+    return out
 
 
 SCREEN_INPUTS = ('revenue', 'net_income', 'operating_cash_flow', 'capex', 'assets')
@@ -226,15 +252,22 @@ def main():
             members.append((cik, sub))
     print(f'large accelerated filers with a recent 10-K: {len(members)}', flush=True)
 
+    failures = []
+
     def build(member):
         cik, sub = member
         facts = sec.get(f'https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json')
         if not facts or not facts.get('facts', {}).get('us-gaap'):
             return cik, None, 'no US-GAAP XBRL facts'
-        shard = universe.company_shard(facts, sub)
-        if not shard['periods']:
-            return cik, None, 'no annual USD period in a 10-K'
-        validate_shard(shard)
+        try:
+            shard = universe.company_shard(facts, sub)
+            if not shard['periods']:
+                return cik, None, 'no annual USD period in a 10-K'
+            validate_shard(shard)
+        except Exception as exc:  # one malformed company must not stop the universe; it is counted and named
+            print(f'excluded CIK {cik}: {type(exc).__name__}: {exc}', flush=True)
+            failures.append({'cik': cik, 'name': sub.get('name'), 'error': f'{type(exc).__name__}: {exc}'[:200]})
+            return cik, None, 'failed validation'
         return cik, shard, None
 
     with ThreadPoolExecutor(args.workers) as pool:
@@ -271,7 +304,7 @@ def main():
     data_as_of = max((p['filed'] for s in shards for p in s['periods']), default=None)
     index = {'schema': 'finscope.universe.index/1', 'built': today.isoformat(), 'data_as_of': data_as_of, 'count': len(entries),
              'selection': 'SEC large accelerated filers with a 10-K filed in the last 15 months and a ticker on NYSE or Nasdaq',
-             'outside': names.OUTSIDE, 'companies': entries}
+             'outside': names.OUTSIDE, 'catalog': catalog(), 'companies': entries}
     write_if_changed(OUT / 'index.json', stable(index) + '\n')
     write_if_changed(OUT / 'screen.json', stable({'schema': 'finscope.universe.screen/1', 'built': today.isoformat(), 'rows': screen}) + '\n')
     sizes = sorted((OUT / 'c' / f"{s['cik']}.json").stat().st_size for s in shards)
@@ -279,7 +312,7 @@ def main():
         'schema': 'finscope.universe.manifest/1', 'built': today.isoformat(), 'built_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'companies': len(shards), 'templates': {t: sum(1 for s in shards if s['template'] == t) for t in universe.TEMPLATES},
         'funnel': {'listed_ciks': len(listed), 'float_candidates': len(candidates), 'large_accelerated_with_recent_10k': len(members), 'built': len(shards)},
-        'excluded': excluded, 'shards_changed': changed, 'shards_removed': removed,
+        'excluded': excluded, 'validation_failures': sorted(failures, key=lambda f: f['cik']), 'shards_changed': changed, 'shards_removed': removed,
         'bytes': {'index': (OUT / 'index.json').stat().st_size, 'screen': (OUT / 'screen.json').stat().st_size,
                   'shards_total': sum(sizes), 'shard_median': sizes[len(sizes) // 2] if sizes else 0, 'shard_max': sizes[-1] if sizes else 0},
         'sec': {'requests': sec.requests, 'compressed_bytes': sec.bytes, 'rate_limit_per_second': RATE, 'seconds': round(time.monotonic() - started)},
@@ -288,6 +321,7 @@ def main():
     }
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=1) + '\n')
     assert manifest['bytes']['shards_total'] < 200_000_000, 'Universe shards exceed the 200 MB budget'
+    assert len(failures) <= max(10, len(members) // 100), f'Too many companies failed validation: {len(failures)}'
     print(json.dumps(manifest, indent=1))
 
 

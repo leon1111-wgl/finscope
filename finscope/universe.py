@@ -181,14 +181,19 @@ def fiscal_periods(payload):
         year = int(p['end'][:4])
         label = p['fy_reported']
         p['fy'], p['fy_source'] = (label, 'dei') if label in (year, year - 1) else (year, 'end_year')
-    for a, b in zip(ordered, ordered[1:]):
-        if b['fy'] <= a['fy']:
-            b['fy'], b['fy_source'] = int(b['end'][:4]), 'end_year'
-    seen = Counter(p['fy'] for p in ordered)
+    # Labels must increase strictly. A later period that repeats a label takes its end year when that is free;
+    # otherwise (two annual periods in one label year, after a change of fiscal year end) the later period wins and
+    # the earlier one is recorded as replaced, never shown under a duplicate label.
+    kept = []
     for p in ordered:
-        if seen[p['fy']] > 1:
-            p['fy'], p['fy_source'] = int(p['end'][:4]), 'end_year'
-    return ordered
+        if kept and p['fy'] <= kept[-1]['fy']:
+            if int(p['end'][:4]) > kept[-1]['fy']:
+                p['fy'], p['fy_source'] = int(p['end'][:4]), 'end_year'
+            else:
+                gone = kept.pop()
+                p.setdefault('replaces', []).append({'end': gone['end'], 'start': gone['start'], 'fy': gone['fy']})
+        kept.append(p)
+    return kept
 
 
 def _period_facts(payload, tags, unit, kind, period):
@@ -472,6 +477,9 @@ def company_shard(payload, submissions, ticker_rows=None):
         gap = _gap_days(a, b)
         if gap > 7:
             quality.append({'kind': 'fiscal_gap', 'fy': [b['fy']], 'text': f"{gap - 1} days between FY{a['fy']} (ended {a['end']}) and FY{b['fy']} (started {b['start']}) are not covered by an annual period (a transition period or a missing 10-K)."})
+    for p in periods:
+        for gone in p.get('replaces', []):
+            quality.append({'kind': 'fiscal_shift', 'fy': [p['fy']], 'text': f"Two annual periods carry the label FY{p['fy']}: the year ended {gone['end']} is not shown; the year ended {p['end']} is."})
     relabelled = [p for p in periods if p['fy_source'] == 'end_year' and p['fy_reported'] is not None]
     if relabelled:
         quality.append({'kind': 'label', 'fy': [p['fy'] for p in relabelled],

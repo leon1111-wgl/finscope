@@ -128,3 +128,13 @@ def test_name_aliases():
     assert 'home depot' in name_aliases('HOME DEPOT, INC.')
     assert 'horton d r' in name_aliases('HORTON D R INC /DE/')
     assert 'apple' in name_aliases('Apple Inc.')
+
+
+def test_two_periods_with_one_label_never_share_it():
+    rows = [('Revenues', 'USD', 10, '2022-07-01', '2023-06-30', '2023-08-20', '10-K', 'J-1', 2023),
+            ('Revenues', 'USD', 12, '2023-01-01', '2023-12-31', '2024-02-20', '10-K', 'D-1', 2023)]
+    periods = fiscal_periods(payload(rows))
+    assert [p['end'] for p in periods] == ['2023-12-31'] and periods[0]['replaces'][0]['end'] == '2023-06-30'
+    shard = company_shard(payload(rows), SUB)
+    assert len({p['fy'] for p in shard['periods']}) == len(shard['periods'])
+    assert any(q['kind'] == 'fiscal_shift' and 'not shown' in q['text'] for q in shard['quality'])

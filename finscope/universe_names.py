@@ -225,3 +225,9 @@ OUTSIDE = {
                       'nintendo', '任天堂', 'hermes', '爱马仕', 'louis vuitton', '路易威登'],
     'private': ['openai', 'bytedance', '字节跳动', 'tiktok', '抖音', 'spacex', 'stripe', 'anthropic', 'shein', '希音', 'twitter', '推特', 'x corp'],
 }
+
+# Tickers a visitor may type in lower case (jpm, wmt, ko). Every other ticker matches only in capitals, because
+# many tickers are ordinary words or abbreviations (all, low, now, cost, gm, pm, ms, ci).
+NOT_LOWER = {'ALL', 'LOW', 'NOW', 'ON', 'SO', 'DE', 'MA', 'MO', 'ICE', 'EL', 'CAT', 'COST', 'DOW', 'GM', 'PM', 'BA', 'DD', 'CB', 'CI', 'CL', 'MS',
+             'SNOW', 'COIN', 'HOOD', 'ZM', 'EA', 'BK', 'BX', 'DG', 'GD', 'GE', 'HD', 'KR', 'MET', 'MU', 'ADP', 'ADI', 'BD', 'UPS', 'CME', 'IBM'}
+LOWER_OK = {t for t in CURATED if len(t) >= 2 and t not in NOT_LOWER}
