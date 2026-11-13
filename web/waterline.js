@@ -11,9 +11,12 @@ const value = (row, key) => row?.metrics?.[key]?.value;
 export function waterlineYears(rows) {
   return rows.map(r => {
     const ni = value(r, 'net_income'), ocf = value(r, 'operating_cash_flow');
-    return {period_end: r.period_end, ni, ocf, above: Number.isFinite(ni) && Number.isFinite(ocf) && ni > ocf};
+    return {period_end: r.period_end, fy: r.fy ?? null, ni, ocf, above: Number.isFinite(ni) && Number.isFinite(ocf) && ni > ocf};
   });
 }
+
+// The axis names a year by the row's fiscal-year label when it has one (the universe's FY labels), else by its end year.
+const yearOf = yr => String(yr.fy ?? String(yr.period_end).slice(0, 4));
 
 // A 1 / 2 / 2.5 / 5 step, with just enough decimals for its tick labels to stay distinct.
 function niceStep(span) {
@@ -46,7 +49,7 @@ export function waterlineSVG(rows, {width = 640, height = 280, selected = rows.l
   years.forEach((yr, i) => {
     const x0 = m.l + i * col, inner = col * .7, xs = x0 + (col - inner) / 2, mid = x0 + col / 2;
     const on = i === selected;
-    svg += `<g class="wl-col${on ? ' is-selected' : ''}" data-wl-year="${i}"><title>${e(yr.period_end)}: net income ${money(yr.ni)}; operating cash flow ${money(yr.ocf)}</title>`;
+    svg += `<g class="wl-col${on ? ' is-selected' : ''}" data-wl-year="${i}"><title>${yr.fy != null ? `FY${e(yr.fy)}, ended ` : ''}${e(yr.period_end)}: net income ${money(yr.ni)}; operating cash flow ${money(yr.ocf)}</title>`;
     if (on) svg += `<rect class="wl-band" x="${x0 + 2}" y="${m.t - 18}" width="${col - 4}" height="${H - m.b - m.t + 18}" rx="3"/>`;
     else svg += `<rect class="wl-hit" x="${x0}" y="${m.t}" width="${col}" height="${H - m.t - m.b}"/>`;
     if (Number.isFinite(yr.ocf)) {
@@ -59,7 +62,7 @@ export function waterlineSVG(rows, {width = 640, height = 280, selected = rows.l
       svg += `<line class="wl-profit" x1="${xs - 3}" x2="${xs + inner + 3}" y1="${at}" y2="${at}"/><circle class="wl-dot" cx="${mid}" cy="${at}" r="${on ? 4.5 : 3.5}"/>`;
       if (on) svg += `<text class="wl-value" x="${mid}" y="${Math.max(12, Math.min(at, Number.isFinite(yr.ocf) ? y(yr.ocf / 1e9) : at) - 9)}" text-anchor="middle">${short(yr.ni / 1e9)}</text>`;
     }
-    svg += `<text class="wl-year-label" x="${mid}" y="${H - m.b + 20}" text-anchor="middle">${e(String(yr.period_end).slice(0, 4))}</text>`;
+    svg += `<text class="wl-year-label" x="${mid}" y="${H - m.b + 20}" text-anchor="middle">${e(yearOf(yr))}</text>`;
     if (on) svg += `<path class="wl-pointer" d="M${mid - 6} ${H - 4} L${mid + 6} ${H - 4} L${mid} ${H - 11} Z"/>`;
     svg += '</g>';
   });
@@ -71,7 +74,7 @@ export function traceMarkup(row, ticker = '') {
   const ni = row.metrics?.net_income, ocf = row.metrics?.operating_cash_flow;
   const gap = Number.isFinite(ni?.value) && Number.isFinite(ocf?.value) ? ocf.value - ni.value : null;
   const line = (name, f) => `<div class="wl-line"><span class="wl-line-name">${name}</span><strong class="wl-fig">${money(f?.value)}</strong><span class="wl-line-source">${f ? `${evidenceLink(f)}<span class="wl-filed">${e(f.form || 'Filing')} · filed ${e(f.filed || '—')}</span>` : 'No matching standard USD fact'}</span></div>`;
-  return `<p class="wl-trace-head">The filing lines behind ${e(ticker)} · fiscal year ended ${e(row.period_end)}</p><div class="wl-lines">${line('Net income', ni)}${line('Operating cash flow', ocf)}${gap === null ? '' : `<div class="wl-line wl-total${gap < 0 ? ' is-flag' : ''}"><span class="wl-line-name">Cash minus profit</span><strong class="wl-fig">${gap < 0 ? '−' : '+'}${money(Math.abs(gap))}</strong><span class="wl-line-source">${gap < 0 ? 'Net income ran ahead of operating cash flow. That is a reason to read the cash-flow statement, not a verdict.' : 'Operating cash flow covered net income this year.'}</span></div>`}</div>`;
+  return `<p class="wl-trace-head">The filing lines behind ${e(ticker)} · ${row.fy != null ? `FY${e(row.fy)}, ` : ''}fiscal year ended ${e(row.period_end)}</p><div class="wl-lines">${line('Net income', ni)}${line('Operating cash flow', ocf)}${gap === null ? '' : `<div class="wl-line wl-total${gap < 0 ? ' is-flag' : ''}"><span class="wl-line-name">Cash minus profit</span><strong class="wl-fig">${gap < 0 ? '−' : '+'}${money(Math.abs(gap))}</strong><span class="wl-line-source">${gap < 0 ? 'Net income ran ahead of operating cash flow. That is a reason to read the cash-flow statement, not a verdict.' : 'Operating cash flow covered net income this year.'}</span></div>`}</div>`;
 }
 
 // Year buttons and the trace live region persist across selections, so focus stays on the
@@ -83,7 +86,7 @@ export function renderWaterline(target, rows, {ticker = '', selected = rows.leng
   const width = target.clientWidth || 640;
   target.innerHTML = `<div class="wl-chart">${waterlineSVG(rows, {width, height, selected: index, id, ticker})}</div>
     <div class="wl-legend" aria-hidden="true"><span><i class="wl-key wl-key-water"></i>Operating cash flow (the water line)</span><span><i class="wl-key wl-key-profit"></i>Net income</span><span><i class="wl-key wl-key-gap"></i>Profit above cash</span></div>
-    <div class="wl-years" role="group" aria-label="Trace a fiscal year to its filing">${years.map((yr, i) => `<button type="button" class="wl-year" data-wl-year="${i}" aria-pressed="${i === index}">${e(String(yr.period_end).slice(0, 4))}${yr.above ? '<span class="wl-flag" aria-hidden="true"></span><span class="sr-only"> (profit above cash)</span>' : ''}</button>`).join('')}</div>
+    <div class="wl-years" role="group" aria-label="Trace a fiscal year to its filing">${years.map((yr, i) => `<button type="button" class="wl-year" data-wl-year="${i}" aria-pressed="${i === index}">${e(yearOf(yr))}${yr.above ? '<span class="wl-flag" aria-hidden="true"></span><span class="sr-only"> (profit above cash)</span>' : ''}</button>`).join('')}</div>
     <div class="wl-trace" aria-live="polite">${traceMarkup(rows[index], ticker)}</div>`;
   target.dataset.width = String(width);
   const chart = target.querySelector('.wl-chart'), trace = target.querySelector('.wl-trace');

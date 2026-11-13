@@ -2,15 +2,15 @@
 
 **Earnings Quality & Financial Resilience** · By [Leon Wang](https://leon1111-wgl.github.io/)
 
-[Use it online](https://leon1111-wgl.github.io/finscope/) · [Code](https://github.com/leon1111-wgl/finscope) · [Ask the ledger](docs/ASK.md) · [Changelog](CHANGELOG.md) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
+[Use it online](https://leon1111-wgl.github.io/finscope/) · [Code](https://github.com/leon1111-wgl/finscope) · [The company universe](docs/UNIVERSE.md) · [Ask the ledger](docs/ASK.md) · [Changelog](CHANGELOG.md) · [Worked case](docs/CASE_STUDY.md) · [Product rationale](docs/PRODUCT.md) · [Model card](docs/RESEARCH_MODEL.md) · [Forecasting lab](https://leon1111-wgl.github.io/finscope/lab.html)
 
-读美股公司的财报（SEC 10-K / 10-Q），看利润有没有现金流支撑。
+读美股公司的财报（SEC 10-K / 10-Q），看利润有没有现金流支撑。约 1,900 家美国大型加速申报公司，任选一家：十年标准化财务、每个数字一键回到 SEC 文件、同业比较、全集筛选、新文件提醒。
 
-**Keywords / 关键词**: earnings quality · SEC EDGAR / XBRL · net income vs operating cash flow · grounded numeric QA with cited sources · Isolation Forest anomaly triage · stress scenarios · research brief export · 财报分析 · 利润质量
+**Keywords / 关键词**: earnings quality · SEC EDGAR / XBRL · standardized financials with source links · earnings-quality screen · filing watch · net income vs operating cash flow · grounded numeric QA with cited sources · Isolation Forest anomaly triage · stress scenarios · research brief export · 财报分析 · 利润质量
 
 Official SEC filings and Treasury data with source dates; not a live-price terminal. The anomaly score is an investigation cue, not investment advice. The forecasting lab uses fictional data.
 
-Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked financial review they can share.
+Earnings have grown. Does that growth have cash-flow support? What would a weaker operating year change? FinScope helps students, independent researchers and junior analysts turn those questions into a source-linked financial review they can share, for a company they choose: since 0.3.0 the universe is every US large accelerated filer with XBRL 10-Ks (about 1,900 companies, rebuilt weekly from SEC data on GitHub Actions; see [the company universe](docs/UNIVERSE.md)).
 
 **Open the website, select Open the ledger, choose a company, test an assumption and download a brief. Or type your own question, in Chinese or English, into Ask the ledger. No account, installation or API key is needed to use the public workspace.**
 
@@ -20,23 +20,26 @@ The intro page asks the question the project is built around (does the profit ho
 
 | Step | Practical output |
 | --- | --- |
+| Look up any company | Ten years of standardized annual figures for any of about 1,900 US large accelerated filers, each cell linked to its 10-K, with the XBRL tag order and data-quality notes; a CSV with a source on every row |
+| Compare and screen | Up to eight companies side by side on their own fiscal years; cash conversion, accruals and FCF margin across the universe with sector-peer percentiles; CSV exports with sources. No ratings |
+| Watch new filings | New 10-K, 10-Q and 8-K filings for your watchlist, fetched by your browser from the SEC; nothing else leaves the page |
 | Ask your own question | An instant answer in Chinese or English from fixed rules over the evidence, with every figure's 10-K/10-Q line, or an honest refusal (no advice, forecasts or substitute figures) |
 | Watch official updates | Recent SEC announcements and daily Treasury yields, with collection times and original source links |
 | Review the evidence | Annual profit/cash trends, liquidity ratios, exact SEC facts and filing links |
 | Check what changed | Newer fiscal YTD revenue, profit and operating cash flow versus the same period last year |
 | Explain the cash gap | Selected non-cash and working-capital adjustments, visible remainder, source links and a downloadable waterfall |
-| Compare companies | Six financial profiles, a full-precision CSV and a companion JSON with source evidence |
+| Compare the six | The six deep-ledger profiles on an information date, a full-precision CSV and a companion JSON with source evidence |
 | Inspect AI triage | Historical-profile anomaly percentile plus underlying ratios and training boundaries |
 | Test assumptions | Browser calculations for revenue, margin, refinancing costs and collection delays |
 | Take your brief | Editable Markdown, source-rich JSON, print/PDF and a shareable research view |
 
-The public universe is **AAPL, MSFT, NVDA, AMZN, GOOGL and META**. Official Treasury observations provide rate context, with a separate hypothetical bond sensitivity calculator. The workspace uses real annual disclosures plus matched interim checkpoints; it is not a live-price terminal.
+The **universe** is every SEC large accelerated filer with XBRL 10-Ks (annual figures, latest ten fiscal years; banks, insurers and REITs on their own templates). The **deep ledger** covers **AAPL, MSFT, NVDA, AMZN, GOOGL and META** with matched interim checkpoints, a cash-flow bridge, AI triage, earlier information dates and scenarios. Official Treasury observations provide rate context, with a separate hypothetical bond sensitivity calculator. It is not a live-price terminal.
 
 ## Ask your own question
 
-Type a question on the intro page or open the **Ask** tab: "NVDA 的利润有现金流支撑吗", "MSFT 2024 年经营现金流是多少", "compare AMZN and META cash conversion", "哪家公司利润和现金差距最大". Fixed rules read the question (no language model, nothing leaves the page) and the program states each number with its filing, XBRL tag and period, the formula for any ratio, and which engine answered. Buy/sell questions, forecasts, share prices, companies outside the six and figures the bundle does not hold (EPS, gross margin, debt…) are refused by name rather than answered with a different number.
+Type a question on the intro page or open the **Ask** tab: "好市多的利润有现金流支撑吗", "Compare KO, PEP and MDLZ gross margin", "摩根大通近五年的净利息收入", "Which tag is Walmart revenue from?", "NVDA 的利润有现金流支撑吗". Fixed rules read the question (no language model, nothing leaves the page) and the program states each number with its filing, XBRL tag and period, the formula for any ratio, and which engine answered. Buy/sell questions, forecasts, share prices, companies outside the universe (foreign filers on Form 20-F, private companies) and figures the data does not hold (segments, EBITDA, FFO, quarters outside the six) are refused by name rather than answered with a different number.
 
-The same engine runs from the command line: `node scripts/ask.mjs questions.json` prints each answer, its engine and its sources as JSON. On a blind set of 145 SYNTHETIC questions written by another model before the rules existed, the first run answered 127 correctly, 7 wrongly and abstained on 8 (3 partial); 47 of 48 questions that must not be answered were refused. [How it works and how it was tested](docs/ASK.md) · [Frontier review](docs/FRONTIER_REVIEW.md).
+The same engine runs from the command line: `node scripts/ask.mjs questions.json` prints each answer, its engine and its sources as JSON. On the 0.3.0 blind set of 212 SYNTHETIC questions about the universe, written by another model from a scope note before the rules were tuned, the first run (commit `9a2f1e3`) answered 171 of 211 correctly, 22 wrongly and abstained on 18; all 53 questions that must not be answered were refused. Wrong answers were fixed as classes afterwards (that rerun is not blind). Figures are checked separately against the SEC Financial Statement Data Sets for the same filing: 798 of 798 verifiable sampled cells in the latest two fiscal years match, and 679 of 679 in older years after the review's fixes; three pre-registered criteria are still missed (fiscal labels, statement placement and 54 identity exceptions in 31,569), as [the changelog](CHANGELOG.md) details. [How it works and how it was tested](docs/ASK.md) · [Frontier review](docs/FRONTIER_REVIEW.md).
 
 ## The project story
 

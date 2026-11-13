@@ -1,0 +1,85 @@
+"""The accuracy checker's own rules on synthetic Financial Statement Data Set rows (no network)."""
+import importlib.util
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location('accuracy_check', Path(__file__).resolve().parents[1] / 'scripts' / 'accuracy_check.py')
+ac = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(ac)
+
+
+def row(tag, ddate, qtrs, value, uom='USD', coreg='', segments=''):
+    return {'adsh': 'A', 'tag': tag, 'ddate': ddate, 'qtrs': qtrs, 'uom': uom, 'coreg': coreg, 'segments': segments, 'value': str(value)}
+
+
+def cell(figure='revenue', value=100.0, end='2025-09-27', parts=None, via='primary', filed='2025-11-01'):
+    return {'figure': figure, 'value': value, 'period_end': end, 'accession': 'A', 'filed': filed, 'via': via,
+            'parts': parts or [{'tag': 'Revenues', 'v': value, 'sign': 1}]}
+
+
+def test_month_end_rounding_and_quarters():
+    assert ac.month_end('2025-09-27') == '20250930'
+    assert ac.month_end('2025-01-03') == '20241231'
+    assert ac.month_end('2024-02-14') == '20240131'
+    assert ac.quarter_of('2026-02-27') == '2026q1'
+
+
+def test_outcomes():
+    num = {'A': [row('Revenues', '20250930', '4', 100), row('Revenues', '20250930', '4', 999, segments='Geo=US'), row('Revenues', '20240930', '4', 90)]}
+    pre = {'A': [{'stmt': 'IS', 'tag': 'Revenues'}]}
+    out = ac.judge(cell(), num, pre, '2026-09-30')
+    assert out['outcome'] == 'match' and out['on_expected_statement']
+    assert ac.judge(cell(value=-100.0, parts=[{'tag': 'Revenues', 'v': -100.0, 'sign': 1}]), num, pre, '2026-09-30')['outcome'] == 'sign'
+    assert ac.judge(cell(value=0.1, parts=[{'tag': 'Revenues', 'v': 0.1, 'sign': 1}]), num, pre, '2026-09-30')['outcome'] == 'scale'
+    assert ac.judge(cell(value=101.0, parts=[{'tag': 'Revenues', 'v': 101.0, 'sign': 1}]), num, pre, '2026-09-30')['outcome'] == 'wrong value'
+    assert ac.judge(cell(end='2023-09-30'), num, pre, '2026-09-30')['outcome'] == 'period mismatch'
+    exact_dates = {'A': [row('Revenues', '20250927', '4', 100)]}
+    assert ac.judge(cell(), exact_dates, pre, '2026-09-30')['outcome'] == 'match', 'an unrounded period end is accepted too'
+    assert ac.judge(cell(parts=[{'tag': 'Other', 'v': 100.0, 'sign': 1}]), num, pre, '2026-09-30')['reason'] == 'tag absent'
+    dup = {'A': num['A'] + [row('Revenues', '20250930', '4', 101)]}
+    assert ac.judge(cell(), dup, pre, '2026-09-30')['outcome'] == 'duplicate context'
+    assert ac.judge(cell(filed='2026-10-20'), {}, pre, '2026-09-30')['reason'] == 'publication lag'
+    assert ac.judge(cell(filed='2026-05-20'), {}, pre, '2026-09-30')['reason'] == 'accession absent'
+    off = ac.judge(cell(), num, {'A': [{'stmt': 'BS', 'tag': 'Revenues'}]}, '2026-09-30')
+    assert off['on_expected_statement'] is False
+
+
+def test_composed_cells_check_every_part():
+    num = {'A': [row('LongTermDebt', '20250930', '0', 800), row('ShortTermBorrowings', '20250930', '0', 50)]}
+    parts = [{'tag': 'LongTermDebt', 'v': 800.0, 'sign': 1}, {'tag': 'ShortTermBorrowings', 'v': 50.0, 'sign': 1}]
+    assert ac.judge(cell('total_debt', 850.0, parts=parts, via='derived'), num, {}, '2026-09-30')['outcome'] == 'match'
+    parts[1]['v'] = 60.0
+    assert ac.judge(cell('total_debt', 860.0, parts=parts, via='derived'), num, {}, '2026-09-30')['outcome'] == 'wrong value'
+
+
+def test_per_share_units_match_however_they_are_spelled():
+    for spelled in ('USD/shares', 'USD/share', 'usd/shares', 'USD per share', 'USD'):
+        num = {'A': [row('EarningsPerShareDiluted', '20250930', '4', 7.46, uom=spelled)]}
+        c = cell('eps_diluted', 7.46, parts=[{'tag': 'EarningsPerShareDiluted', 'v': 7.46, 'sign': 1}])
+        assert ac.judge(c, num, {}, '2026-09-30')['outcome'] == 'match', spelled
+    num = {'A': [row('EarningsPerShareDiluted', '20250930', '4', 7.46, uom='pure')]}
+    c = cell('eps_diluted', 7.46, parts=[{'tag': 'EarningsPerShareDiluted', 'v': 7.46, 'sign': 1}])
+    assert ac.judge(c, num, {}, '2026-09-30')['outcome'] == 'unit mismatch'
+
+
+def test_eps_uses_its_own_unit_and_tolerance():
+    num = {'A': [row('EarningsPerShareDiluted', '20250930', '4', 7.46, uom='USD/shares')]}
+    c = cell('eps_diluted', 7.46, parts=[{'tag': 'EarningsPerShareDiluted', 'v': 7.46, 'sign': 1}])
+    assert ac.judge(c, num, {'A': [{'stmt': 'IS', 'tag': 'EarningsPerShareDiluted'}]}, '2026-09-30')['outcome'] == 'match'
+
+
+def test_labels_only_rerun_reads_current_shards_against_the_earlier_reference(tmp_path=None):
+    import json, tempfile
+    tmp = Path(tmp_path or tempfile.mkdtemp())
+    (tmp / 'c').mkdir(parents=True, exist_ok=True)
+    (tmp / 'c' / '7.json').write_text(json.dumps({'periods': [{'fy': 2024, 'fy_reported': 2024, 'end': '2024-12-31'}, {'fy': 2025, 'fy_reported': 2024, 'end': '2025-12-31'}]}))
+    old = {'protocol': 'p', 'reference': 'r', 'quarters': [], 'code_commit': 'a', 'data_commit': 'b',
+           'cells': [{'cik': 7, 'fy': 2023, 'period_end': '2024-12-31'}, {'cik': 7, 'fy': 2024, 'period_end': '2025-12-31'}],
+           'fiscal_labels': [{'cik': 7, 'fy': 2023, 'reference_fy': '2024', 'outcome': 'fiscal mislabel'},
+                             {'cik': 7, 'fy': 2024, 'reference_fy': '2024', 'outcome': 'match'},
+                             {'cik': 7, 'fy': 2099, 'outcome': 'unverifiable', 'reason': 'publication lag'}]}
+    (tmp / 'old.json').write_text(json.dumps(old))
+    (tmp / 'c' / '7.json').write_text((tmp / 'c' / '7.json').read_text())
+    result = ac.labels_rerun(tmp / 'old.json', universe=tmp)
+    assert (result['checked'], result['match'], result['changed_labels']) == (2, 1, 2)
+    # The year ended 2025-12-31: its filing's reference fy is the mistyped 2024; FinScope now shows FY2025 and says why.
+    assert result['mislabels'] == [{'cik': 7, 'fy': 2025, 'fy_before': 2024, 'own_label': 2024, 'period_end': '2025-12-31', 'reference_fy': '2024'}]

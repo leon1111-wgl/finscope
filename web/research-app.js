@@ -3,7 +3,8 @@ import {initOfficialUpdates} from './official-updates.js?v=20261020-facts2';
 import {buildComparison, comparisonCSV} from './comparison-export.js';
 import {CALCULATION_VERSION, MAX_BRIEF_BYTES, validDate, selectionFromBrief, selectionFromURL, approveSelection, researchQuery} from './research-state.js';
 import {evidenceLink} from './evidence-links.js';
-import {answerQuestion, MAX_QUESTION} from './ask-engine.js?v=20261109-profit';
+import {answerQuestion, planQuestion, MAX_QUESTION} from './ask-engine.js?v=20261114-universe';
+import {createUniverseUI} from './universe-ui.js?v=20261114-universe';
 import {
   bridgeMarkup,
   cashBridgeSVG
@@ -61,6 +62,29 @@ let assumptions = {
   collectionDays: 0
 };
 const params = new URLSearchParams(location.search);
+let renderedVersion = -1;
+const uni = createUniverseUI({
+  $, e,
+  download: (text, type, filename) => downloadFile(text, type, filename),
+  status: message => { $('#status').textContent = message; },
+  render: () => { if (ready && !pendingRestore) render(); },
+  openCompanyDeep: (ticker, view) => {
+    if (!ready || pendingRestore) return;
+    if (ticker && ticker !== company.ticker && bundle.companies.some(c => c.ticker === ticker)) {
+      if (!validScenarioDraft()) return;
+      $('#company').value = ticker;
+      if (view) page = view;
+      useSelection();
+    } else if (view && view !== page) show(view);
+  }
+});
+const uniContext = () => uni.state.index ? {index: uni.state.index, shards: uni.state.shards, screen: uni.state.screen} : undefined;
+function downloadFile(text, type, filename) {
+  const url = URL.createObjectURL(new Blob([text], {type})), a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  $('#status').textContent = `Download prepared: ${filename}. Every value carries its XBRL tag, accession and filing link.`;
+}
 const panel = (title, body, kind = '') => `<section class="panel${kind ? ' ' + kind : ''}"><h3>${title}</h3>${body}</section>`;
 const kpi = (label, value, detail) => `<div class="kpi"><span>${label}</span><strong>${value}</strong><small>${detail}</small></div>`;
 const table = (heads, rows) => `<div class="table-wrap" tabindex="0" role="region" aria-label="${e(heads.join(', '))}"><table><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -69,7 +93,9 @@ const factsTable = metrics => table(['Reported metric', 'USD billions', 'Period 
 function updateURL() {
   // The intro keeps a clean address; the research query is written once the console is open.
   if (!ready || pendingRestore || shell?.mode() === 'intro') return;
-  const query = researchQuery({ticker: company.ticker, date: selectedDate, view: page, assumptions}, bundle.dataset_sha256);
+  let query = researchQuery({ticker: company.ticker, date: selectedDate, view: page, assumptions}, bundle.dataset_sha256);
+  const co = uni.state.entry?.t?.[0];
+  if (co && co !== company.ticker) query += `&co=${encodeURIComponent(co)}`;
   history.replaceState(null, '', `${location.pathname}?${query}${location.hash}`);
 }
 
@@ -81,7 +107,7 @@ function setResearchSelection(ticker, day) {
   traceYear = null;
   $('#company').value = ticker;
   $('#as-of').value = day;
-  $('#scope').textContent = `${company.name} · Annual period ended ${row.period_end} · Financial snapshot ${snapshot.as_of} (on or before your selected date) · Latest selected annual filing ${row.known_at}.`;
+  $('#scope').textContent = `Deep ledger: ${company.name} · Annual period ended ${row.period_end} · Financial snapshot ${snapshot.as_of} (on or before your selected date) · Latest selected annual filing ${row.known_at}.`;
 }
 
 function lockResearch(locked) {
@@ -172,6 +198,8 @@ function useSelection() {
     return;
   }
   setResearchSelection($('#company').value, day);
+  const entry = uni.entryByTicker(company.ticker);
+  if (entry) uni.pick(entry, {deep: false});
   $('#status').textContent = '';
   render();
 }
@@ -196,7 +224,7 @@ function interimMarkup(selection, includeSources = true) {
     ${includeSources ? `<details><summary>Trace the matched YTD facts and formulas</summary><h4>Current YTD · ${period(c.current)}</h4>${factsTable(c.current.metrics)}${c.prior ? `<h4>Prior YTD · ${period(c.prior)}</h4>${factsTable(c.prior.metrics)}` : '<p>Prior matching revenue period unavailable; no growth comparison is made.</p>'}<p>Each flow must match both the fiscal start and end. Prior-year duration may differ by up to eight days to allow a 53-week fiscal calendar. Cash-margin change = (current cash flow / current revenue − prior cash flow / prior revenue) × 100. Operating-margin change uses operating income instead of cash flow.</p><p><a href="https://www.ecfr.gov/current/title-17/chapter-II/part-210/section-210.10-01" target="_blank" rel="noopener noreferrer">Why interim cash-flow comparisons use fiscal YTD ↗</a></p></details>` : `<p class="note">Interim source filings: ${[...new Map([c.current,c.prior].filter(Boolean).flatMap(p=>Object.values(p.metrics).filter(Boolean)).map(f=>[f.url,f])).values()].map(f=>`<a href="${e(f.url)}">${e(f.form)} · ${f.filed} · ${e(f.accession)}</a>`).join('; ')}. Exact metric-to-source mappings are in both downloads.</p>`}${bridgeMarkup(c.current,c.prior,company.ticker,!includeSources)}`;
 }
 
-const ASK_EXAMPLES = ['NVDA 的利润有现金流支撑吗', '哪家公司利润和现金差距最大', 'MSFT 2024 年经营现金流是多少', '苹果的应收账款变化', 'Compare AMZN and META cash conversion', 'Should I buy NVDA now?'];
+const ASK_EXAMPLES = ['好市多的利润有现金流支撑吗', 'Compare KO, PEP and MDLZ gross margin', '摩根大通近五年的净利息收入', 'JPM 的毛利率是多少', 'Which tag is Walmart revenue from?', 'NVDA 的利润有现金流支撑吗', 'Should I buy NVDA now?'];
 const ASK_STATUS = {answered: 'Answered', not_in_bundle: 'Not in this bundle', refused: 'Declined', clarify: 'Needs more detail'};
 const chips = (list, label) => `<div class="ask-chips" role="group" aria-label="${e(label)}">${list.map(q => `<button type="button" class="chip" data-ask="${e(q)}">${e(q)}</button>`).join('')}</div>`;
 function sourceLink(f) {
@@ -219,28 +247,39 @@ function answerMarkup(a) {
   ${a.table ? table(a.table.columns.map(e), a.table.rows.map(r => r.map(e))) : ''}
   ${a.calculations.length ? `<h4 lang="en">How the program calculated it</h4><ul class="calc-list">${a.calculations.map(c => `<li><strong>${e(c.label)}</strong> = ${e(c.formula)} → <span class="calc-result">${e(c.result)}</span></li>`).join('')}</ul>` : ''}
   ${facts.length ? `<details class="answer-sources"${facts.length <= 8 ? ' open' : ''}><summary lang="en">Source lines (${facts.length}) · every stated figure, with its SEC filing</summary>${table(['Figure', 'Company', 'Value', 'Period', 'Filed', 'Evidence'], facts)}</details>` : ''}
+  ${a.screen ? `<p class="answer-action"><a href="${e(screenHref(a.screen))}" data-screen="${e(JSON.stringify(a.screen))}">${a.lang === 'zh' ? '打开筛选页' : 'Open the Screen'}${a.screen.label ? ` · ${e(a.screen.label)}` : ''} →</a></p>` : ''}
   ${a.notes.length ? `<ul class="answer-notes">${a.notes.map(n => `<li>${noteMarkup(n)}</li>`).join('')}</ul>` : ''}
   ${a.offers.length ? `<div class="ask-offers"><span lang="en">Try next</span>${chips(a.offers, 'Suggested questions')}</div>` : ''}
   <p class="engine-note">${e(a.engine.label)} · information date ${e(a.info_date)} · snapshot ${e(a.snapshot_date)}${a.dataset_sha256 ? ` · dataset ${e(a.dataset_sha256.slice(0, 12))}` : ''}</p>
 </article>`;
 }
 function askView() {
-  if (askQuestion && (!askAnswer || askAnswer.info_date !== selectedDate)) askAnswer = answerQuestion(askQuestion, bundle, {date: selectedDate});
-  return `<p class="eyebrow">ASK THE LEDGER / RULES, NOT A MODEL</p><h2>Ask a question of your own.</h2><p class="muted">Ask in Chinese or English about AAPL, MSFT, NVDA, AMZN, GOOGL or META. Fixed rules read the saved SEC evidence in your browser and state every number with the filing line it came from. No language model, no API key, and nothing you type leaves this page. It gives no investment advice or forecasts, and says so when the evidence does not hold what you asked.</p>
+  if (askQuestion && (!askAnswer || askAnswer.info_date !== selectedDate)) askAnswer = answerQuestion(askQuestion, bundle, {date: selectedDate, universe: uniContext()});
+  const count = uni.state.index?.count;
+  return `<p class="eyebrow">ASK THE LEDGER / RULES, NOT A MODEL</p><h2>Ask a question of your own. <span class="zh" lang="zh-Hans">问账本</span></h2><p class="muted">Ask in Chinese or English about ${count ? `any of ${count.toLocaleString('en-US')} US companies (SEC large accelerated filers) or the six deep-ledger companies` : 'AAPL, MSFT, NVDA, AMZN, GOOGL or META'}. Fixed rules read the saved SEC data in your browser and state every number with the filing line it came from. No language model, no API key, and nothing you type leaves this page. It gives no investment advice or forecasts, and says so when the data does not hold what you asked.</p>${uni.state.indexError ? `<p class="error">The company universe could not be loaded (${e(uni.state.indexError)}), so answers cover only the six deep-ledger companies.</p>` : ''}
   <form id="ask-form" class="ask-form" role="search" aria-labelledby="ask-label"><label id="ask-label" for="ask-input">Your question</label><div class="ask-row"><input id="ask-input" type="search" maxlength="${MAX_QUESTION}" autocomplete="off" enterkeyhint="search" value="${e(askQuestion)}" placeholder="NVDA 的利润有现金流支撑吗？" required><button class="primary" type="submit">Ask</button></div><p class="note">Answers use evidence filed by your information date, ${e(selectedDate)}. Change it above to ask about an earlier view.</p></form>
   ${chips(ASK_EXAMPLES, 'Example questions')}
   <p id="ask-live" class="sr-only" role="status" aria-live="polite"></p>
   <div id="ask-answer" class="ask-answer">${askAnswer ? answerMarkup(askAnswer) : ''}</div>
-  <details class="ask-scope"><summary>What this box can and cannot answer</summary><p>It answers: one figure or ratio for a fiscal year; trends and year-over-year changes; side-by-side comparisons and which of the six is highest; whether profit is backed by operating cash; the latest fiscal year-to-date checkpoint and its profit-to-cash bridge; the AI triage percentile; Treasury yields; filing links; definitions; and how recent the data is.</p><p>It does not answer: buy, sell or hold questions, price targets, forecasts or unfiled years, share prices and valuation, companies outside the six, or figures the bundle does not hold (for example EPS, gross margin, debt, segments or dividends). It will not substitute a different figure.</p><p>The question is read by fixed rules with a closed vocabulary, so unfamiliar wording gets “needs more detail” rather than a guess. <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/ASK.md">How it works and how it was tested ↗</a></p></details>`;
+  <details class="ask-scope"><summary>What this box can and cannot answer</summary><p>For any universe company: one figure or ratio for a fiscal year (revenue, margins, R&amp;D, SG&amp;A, interest, tax, net income, diluted EPS, cash flows, capex, free cash flow, dividends, buybacks, cash, debt, equity, ROE and more, plus bank, insurance and REIT lines); trends over up to ten years; year-over-year changes; up to eight companies side by side; whether profit is backed by operating cash; a company's percentile among sector peers on cash conversion, the accrual ratio or FCF margin; which XBRL tag and filing a figure came from; data-quality notes; the latest 10-K link. For the six deep-ledger companies also: the fiscal year-to-date checkpoint and its profit-to-cash bridge, the AI triage percentile, rankings among the six and earlier information dates; and Treasury yields.</p><p>It does not answer: buy, sell or hold questions, price targets, forecasts or unfiled years, share prices and valuation, quarterly figures outside the six, segments, EBITDA or non-GAAP figures, or companies outside the universe (for example foreign companies that file 20-F). A figure that is not reported, or not meaningful for the company's template (gross margin for a bank), is said to be missing; it is never replaced by a different figure.</p><p>The question is read by fixed rules with a closed vocabulary, so unfamiliar wording gets “needs more detail” rather than a guess. <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/ASK.md">How it works and how it was tested ↗</a></p></details>`;
 }
-function runAsk(text, {focusAnswer = false} = {}) {
+let askSequence = 0;
+async function runAsk(text, {focusAnswer = false} = {}) {
   const question = String(text ?? '').trim().slice(0, MAX_QUESTION);
   const input = $('#ask-input');
   if (!question) { $('#status').textContent = 'Type a question first.'; input?.focus(); return; }
   if (!validScenarioDraft()) return;
   askQuestion = question;
+  const sequence = ++askSequence;
   try {
-    askAnswer = answerQuestion(question, bundle, {date: selectedDate});
+    await uni.ensureIndex();
+    const plan = planQuestion(question, bundle, {universe: uniContext()});
+    if (plan.ciks.length || plan.screen) {
+      $('#status').textContent = 'Loading the companies’ saved SEC data…';
+      await uni.askContext(plan.ciks, plan.screen);
+    }
+    if (sequence !== askSequence) return;
+    askAnswer = answerQuestion(question, bundle, {date: selectedDate, universe: uniContext()});
   } catch (error) {
     askAnswer = null;
     $('#status').textContent = `The question could not be answered: ${error.message}`;
@@ -263,8 +302,15 @@ function notePendingQuestion() {
   const note = $('#pending-question');
   if (note) note.textContent = pendingQuestion === null ? '' : `Your question “${pendingQuestion}” is kept and will be answered once the evidence loads.`;
 }
+const screenHref = f => `?${new URLSearchParams(Object.entries({view: 'screen', peer: f.peer, template: f.template, sort: f.sort, dir: f.dir}).filter(([, v]) => v))}`;
 function bindAskChips(scope = document) {
   scope.querySelectorAll('[data-ask]').forEach(b => b.addEventListener('click', () => runAsk(b.dataset.ask, {focusAnswer: true})));
+  scope.querySelectorAll('a[data-screen]').forEach(a => a.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+    event.preventDefault();
+    uni.openScreen(JSON.parse(a.dataset.screen));
+    show('screen');
+  }));
 }
 
 function review() {
@@ -272,7 +318,7 @@ function review() {
     ai = snapshot.ai.scores[company.ticker],
     train = snapshot.ai.training;
   const historyRows = snapshot.companies[company.ticker];
-  return `<p class="eyebrow">01 / UNDERSTAND BEFORE YOU SCORE</p><h2>${e(company.ticker)}: is profit turning into cash?</h2><p class="muted">Start with the reported numbers. Then use the model to decide where a closer reading may help.</p>
+  return `<p class="eyebrow">02 / DEEP LEDGER · UNDERSTAND BEFORE YOU SCORE</p><h2>${e(company.ticker)}: is profit turning into cash?</h2><p class="muted">Start with the reported numbers. Then use the model to decide where a closer reading may help.</p>
   <div class="kpis">${kpi('Annual revenue',money(row.metrics.revenue?.value),`Period ended ${row.period_end}`)}${kpi('Net income',money(row.metrics.net_income?.value),'Profit after reported expenses')}${kpi('Operating cash flow',money(row.metrics.operating_cash_flow?.value),'Cash generated by operations')}${kpi('Current ratio',ratio(r.current_ratio),'Current assets ÷ current liabilities')}</div>
   ${panel('Has the picture changed since the annual report?',interimMarkup(selectInterim(bundle,company.ticker,selectedDate,row)))}
   <div class="grid">${panel('Profit and cash over time',`<p class="note">A company can book profit before collecting cash. Each column is a fiscal year’s operating cash; the mark across it is net income. Hatching shows profit above cash. The chart helps you notice the gap; the filing explains its cause.</p><div id="profit-chart" class="waterline"></div><details><summary>Read the exact annual values</summary>${table(['Fiscal period end','Revenue','Net income','Operating cash flow'],historyRows.map(r=>[r.period_end,money(r.metrics.revenue?.value),money(r.metrics.net_income?.value),money(r.metrics.operating_cash_flow?.value)]))}</details>`)}
@@ -282,6 +328,13 @@ function review() {
   <div class="actions"><button class="primary" data-go="compare">Next: compare companies →</button><button data-go="stress">Test a downside scenario</button></div>`;
 }
 
+// Evidence is the six-company deep ledger; when Financials shows another company, say which company this is.
+function reviewOrNote() {
+  const entry = uni.state.entry;
+  const note = entry && entry.t[0] !== company.ticker ? `<p class="deep-note" role="note"><strong>Deep ledger · ${e(company.ticker)}.</strong> The year-to-date checkpoint, cash-flow bridge, AI triage, scenarios and brief are built for six companies (AAPL, MSFT, NVDA, AMZN, GOOGL, META). ${e(entry.n)}’s standardized financials are on <button type="button" class="link-button" data-go="company">Financials</button>.</p>` : '';
+  return note + review();
+}
+
 function compare() {
   const comparison = buildComparison(bundle, selectedDate);
   const rows = comparison.companies.map(c => {
@@ -289,14 +342,14 @@ function compare() {
       a = c.anomaly;
     return [`<button class="table-button" data-company="${c.ticker}">${c.ticker} ↗</button>`, r.period_end, pct(r.ratios.operating_margin), pct(r.ratios.cash_margin), ratio(r.ratios.current_ratio), pct(r.ratios.liabilities_assets), a ? `${a.percentile} / 100` : 'Unavailable'];
   });
-  return `<p class="eyebrow">02 / FIND CONTEXT</p><h2>Similar questions. Different businesses.</h2><p class="muted">Compare six selected technology and platform businesses. Their fiscal calendars, business models and capital needs differ.</p><div class="actions"><button class="primary" id="export-comparison-csv">Download comparison (.csv)</button><button id="export-comparison-json">Download comparison evidence (.json)</button></div><p class="note">CSV keeps full numeric precision: margins are decimals (0.20 means 20%); cash-margin changes are percentage points. Empty numeric cells mean unavailable. Save the JSON alongside it for exact facts, filing links and model boundaries. These files contain reported profiles, without your corporate stress assumptions.</p>${panel('Financial profiles',table(['Company','Period ended','Operating margin','Cash margin','Current ratio','Liabilities / assets','Anomaly percentile'],rows)+`<p class="note">This is a comparison set, not a sector benchmark or a ranking of investment quality. Some companies have newer fiscal periods. A high anomaly score can reflect exceptional growth or structural differences.</p>`)}${panel('Newer interim coverage',`<p class="note">Choose a company to inspect matched YTD inputs. Fiscal periods differ, so these changes are context rather than a league table.</p>${table(['Company','Newer YTD period','Cash-margin change'],comparison.companies.map(c=>{const i=c.interim;const v=i.checkpoint;return [`<button class="table-button" data-company="${c.ticker}">${c.ticker} ↗</button>`,v?`${v.current.period_start} → ${v.current.period_end}`:i.status==='covered_by_annual'?'Covered by annual accounts':'Unavailable',Number.isFinite(v?.cash_margin_change_pp)?v.cash_margin_change_pp.toFixed(2)+' pp':'—'];}))}`)}${panel('How to use the comparison',`<div class="timeline"><div><strong>1. Start with the business</strong><p>A retailer, a chip designer and a software vendor have different inventory and working-capital needs.</p></div><div><strong>2. Compare the cash margin</strong><p>Ask how much operating cash is generated per dollar of revenue. Then inspect changes over time.</p></div><div><strong>3. Read the maturity note</strong><p>A current ratio gives a snapshot. Debt terms and cash generation determine when funds are needed.</p></div><div><strong>4. Follow the anomaly</strong><p>Use the score to prioritize reading. Confirm the reason in the filing and record uncertainty.</p></div></div>`)}<div class="actions"><button data-go="review">← Back to evidence</button><button class="primary" data-go="stress">Next: test assumptions →</button></div>`;
+  return `<p class="eyebrow">THE SIX DEEP-LEDGER COMPANIES · ON YOUR INFORMATION DATE</p><h2>Similar questions. Different businesses.</h2><p class="muted">Compare six selected technology and platform businesses. Their fiscal calendars, business models and capital needs differ.</p><div class="actions"><button class="primary" id="export-comparison-csv">Download comparison (.csv)</button><button id="export-comparison-json">Download comparison evidence (.json)</button></div><p class="note">CSV keeps full numeric precision: margins are decimals (0.20 means 20%); cash-margin changes are percentage points. Empty numeric cells mean unavailable. Save the JSON alongside it for exact facts, filing links and model boundaries. These files contain reported profiles, without your corporate stress assumptions.</p>${panel('Financial profiles',table(['Company','Period ended','Operating margin','Cash margin','Current ratio','Liabilities / assets','Anomaly percentile'],rows)+`<p class="note">This is a comparison set, not a sector benchmark or a ranking of investment quality. Some companies have newer fiscal periods. A high anomaly score can reflect exceptional growth or structural differences.</p>`)}${panel('Newer interim coverage',`<p class="note">Choose a company to inspect matched YTD inputs. Fiscal periods differ, so these changes are context rather than a league table.</p>${table(['Company','Newer YTD period','Cash-margin change'],comparison.companies.map(c=>{const i=c.interim;const v=i.checkpoint;return [`<button class="table-button" data-company="${c.ticker}">${c.ticker} ↗</button>`,v?`${v.current.period_start} → ${v.current.period_end}`:i.status==='covered_by_annual'?'Covered by annual accounts':'Unavailable',Number.isFinite(v?.cash_margin_change_pp)?v.cash_margin_change_pp.toFixed(2)+' pp':'—'];}))}`)}${panel('How to use the comparison',`<div class="timeline"><div><strong>1. Start with the business</strong><p>A retailer, a chip designer and a software vendor have different inventory and working-capital needs.</p></div><div><strong>2. Compare the cash margin</strong><p>Ask how much operating cash is generated per dollar of revenue. Then inspect changes over time.</p></div><div><strong>3. Read the maturity note</strong><p>A current ratio gives a snapshot. Debt terms and cash generation determine when funds are needed.</p></div><div><strong>4. Follow the anomaly</strong><p>Use the score to prioritize reading. Confirm the reason in the filing and record uncertainty.</p></div></div>`)}<div class="actions"><button data-go="review">← Back to evidence</button><button class="primary" data-go="stress">Next: test assumptions →</button></div>`;
 }
 const input = (key, label, min, max, step, help) => `<label>${label}<input type="number" data-assumption="${key}" value="${assumptions[key]}" min="${min}" max="${max}" step="any" required><span class="field-help">${help}</span></label>`;
 
 function stress() {
   const rates = bundle.rates.filter(r => r.date <= selectedDate),
     latest = rates.at(-1);
-  return `<p class="eyebrow">03 / MAKE THE ASSUMPTIONS EXPLICIT</p><h2>What if the next year is weaker?</h2><p class="muted">Change one assumption at a time. Calculations run here in your browser. Inputs describe your scenario; they are not company guidance.</p>
+  return `<p class="eyebrow">06 / DEEP LEDGER · MAKE THE ASSUMPTIONS EXPLICIT</p><h2>What if the next year is weaker?</h2><p class="muted">Change one assumption at a time. Calculations run here in your browser. Inputs describe your scenario; they are not company guidance.</p>
   <div class="grid equal">${panel('Operating and funding scenario',`<p class="ink-tag ink-tag-pencil">Your assumptions · written in pencil, never mixed with reported facts</p><form id="scenario-form" class="fields">${input('revenuePercent','Revenue change (%)',-100,100,1,'Relative to the reported annual revenue.')}${input('marginPoints','Operating-margin change (percentage points)',-50,50,.5,'−2 moves a 20% margin to 18%.')}${input('refinanceBillions','Assumed refinancing exposure (USD billions)',0,1000,1,'Enter an exposure you want to test; not an extracted debt balance.')}${input('rateBps','Incremental financing rate (basis points)',-500,1000,25,'100 basis points = 1 percentage point.')}${input('collectionDays','Extra collection time (days)',0,180,1,'Approximate extra cash tied up in receivables.')}<div class="full actions"><button type="button" id="downside">Try a downside case</button><button type="button" id="reset-scenario">Reset to reported baseline</button></div></form>`)}${panel('Scenario result',`<div id="scenario-results" aria-live="polite"></div><details><summary>Read the formulas and assumptions</summary><div class="formula">R′ = R × (1 + revenue change / 100)<br>Operating income′ = R′ × (operating margin + margin change / 100)<br>Extra interest = assumed exposure × rate shock / 10,000<br>Profit proxy = operating income′ − extra interest<br>Extra cash tied up = R′ / 365 × extra collection days</div><p class="note">Exposure is converted from billions to USD. The profit proxy omits existing interest, taxes and other income. The cash proxy subtracts only delayed collections from reported cash. It is not a full cash-flow forecast or a solvency test. No interactions, financing actions or tax offsets are modeled.</p></details>`)}</div>
   ${panel('A rate shock needs context',latest?`<p>Official Treasury curve observed <strong>${latest.date}</strong>. Rates are percentages per year. This is the latest observation at or before your information date, separate from the annual filing snapshot.</p><div class="kpis">${kpi('3-month Treasury',Number.isFinite(latest['3m'])?latest['3m'].toFixed(2)+'%':'Unavailable','Short-term reference')}${kpi('2-year Treasury',Number.isFinite(latest['2y'])?latest['2y'].toFixed(2)+'%':'Unavailable','Rate expectations context')}${kpi('10-year Treasury',Number.isFinite(latest['10y'])?latest['10y'].toFixed(2)+'%':'Unavailable','Longer-term reference')}${kpi('10-year minus 2-year',Number.isFinite(latest['10y'])&&Number.isFinite(latest['2y'])?((latest['10y']-latest['2y'])*100).toFixed(0)+' bp':'Unavailable','Curve slope')}</div><p class="note">Treasury rates are reference yields, not company borrowing rates. Credit spreads, maturity and hedges matter. <a href="https://home.treasury.gov/treasury-daily-interest-rate-xml-feed" target="_blank" rel="noopener noreferrer">Official source ↗</a></p>`:'<p>No Treasury observation is available for this date.</p>')}
   ${panel('Optional: price a hypothetical bond',`<p class="note">An additional rate-sensitivity check. A fixed-rate bond pays semiannual coupons; this simplified model uses a flat yield, no accrued interest and no credit or option effects.</p><form id="bond-form" class="fields"><label>Coupon (% annually)<input name="couponPercent" type="number" min="0" max="30" step=".25" value="4" required></label><label>Maturity (years)<input name="years" type="number" min=".5" max="50" step=".5" value="10" required></label><label>Starting annual yield (%)<input name="yieldPercent" type="number" min="0" max="30" step=".01" value="${latest?.['10y']??4}" required><span class="field-help">Defaults to the selected 10-year Treasury observation when available.</span></label><label>Yield shock (basis points)<input name="shockBps" type="number" min="-500" max="1000" step="25" value="100" required></label></form><div id="bond-results" aria-live="polite"></div><div class="formula">Price = Σ coupon / (1 + yield / 2)ᵗ + face value / (1 + yield / 2)ᴺ<br>N = 2 × years; face value = $100; coupon per period = face × annual coupon rate / 2.</div><p class="note">This separate bond exercise is not included in the company brief. The exported brief contains the corporate scenario and observed Treasury context.</p>`)}
@@ -309,12 +362,12 @@ function currentBrief() {
 
 function brief() {
   const b = currentBrief();
-  return `<div class="no-print"><p class="eyebrow">04 / A RESULT YOU CAN TAKE AWAY</p><h2>Your research brief, with an audit trail.</h2><p class="muted">Use this as an initial review memo, a classroom case or a handoff to another analyst. Add your own conclusion after reading the linked disclosures.</p><div class="actions"><button class="primary" id="export-md">Download brief (.md)</button><button id="export-json">Download evidence (.json)</button><button id="print-brief">Print / save PDF</button><button id="copy-link">Copy this research view</button></div></div>
+  return `<div class="no-print"><p class="eyebrow">07 / DEEP LEDGER · A RESULT YOU CAN TAKE AWAY</p><h2>Your research brief, with an audit trail.</h2><p class="muted">Use this as an initial review memo, a classroom case or a handoff to another analyst. Add your own conclusion after reading the linked disclosures.</p><div class="actions"><button class="primary" id="export-md">Download brief (.md)</button><button id="export-json">Download evidence (.json)</button><button id="print-brief">Print / save PDF</button><button id="copy-link">Copy this research view</button></div></div>
   <article class="panel brief-paper"><p class="eyebrow">FINSCOPE RESEARCH BRIEF / LEON WANG</p><h2>${e(company.ticker)} · earnings quality and financial resilience</h2><dl><dt>Research question</dt><dd>Does reported profit have cash-flow support, and what changes under a weaker operating scenario?</dd><dt>Information date</dt><dd>${b.requested_date} · financial snapshot ${b.snapshot_date}</dd><dt>Annual period end</dt><dd>${b.annual_period}</dd><dt>Dataset version</dt><dd><code>${b.dataset_sha256}</code></dd><dt>Snapshot built</dt><dd>${e(bundle.generated_at)}</dd></dl><h3>1. What the accounts report</h3>${factsTable(b.facts)}<h4>Ratios and prior-year inputs</h4>${table(['Ratio','Value'],Object.entries(b.ratios).map(([k,v])=>[names[k]||k,ratioFormat(k,v)]))}${b.prior_annual_period?`<p class="note">Growth and average-assets denominators use prior period ${b.prior_annual_period.period_end}. Prior revenue: ${money(b.prior_annual_period.metrics.revenue?.value)}; prior assets: ${money(b.prior_annual_period.metrics.assets?.value)}. Their sourced facts and formulas are included in both downloads.</p>`:''}<h3>Newer interim checkpoint</h3>${interimMarkup(b.interim,false)}<h3>2. What deserves follow-up</h3><ul class="question-list">${b.follow_up.map(q=>`<li>${q}</li>`).join('')}</ul><p>${b.anomaly?`Anomaly percentile: <strong>${b.anomaly.percentile}/100</strong>, using ${b.training.samples} earlier company-years. This measures unusualness, not financial distress. Training period ends are strictly before ${b.training.period_end_before}. Latest training filing: ${b.training.latest_filed}.`:'No eligible anomaly score for this selection.'}</p><h3>3. What you assumed</h3>${table(['Assumption','Input'],[['Revenue change',assumptions.revenuePercent+'%'],['Margin change',assumptions.marginPoints+' percentage points'],['Refinancing exposure','$'+assumptions.refinanceBillions+'B (assumed)'],['Incremental financing rate',assumptions.rateBps+' basis points'],['Collection delay',assumptions.collectionDays+' days']])}<h3>4. What changes under those assumptions</h3>${scenarioMarkup(b.scenario,b.scenario_error)}<p class="note">Scenario operating income = reported revenue × (1 + revenue change) × (reported margin + margin-point change). Extra interest = assumed refinancing exposure × rate shock. Cash tied up = scenario revenue / 365 × extra collection days. The profit proxy excludes existing interest and taxes; the cash proxy excludes all other cash movements.</p><h3>5. What this review cannot establish</h3><ul class="question-list">${b.limitations.map(l=>`<li>${e(l)}</li>`).join('')}</ul><h3>6. Your next step</h3><p>Open the latest quarterly filing and annual management discussion. Check the cash-flow bridge and debt maturities. Write whether the evidence supports your initial claim, what remains uncertain, and what additional source would resolve it.</p><p class="note">The downloadable Markdown and JSON include annual and interim sourced facts, prior-period inputs, ratio formulas, model inputs, selected Treasury observation and source retrieval hashes.</p></article>`;
 }
 
 function method() {
-  return `<p class="eyebrow">THE PRODUCT STORY / THE ENGINEERING</p><h2>From an interesting chart to a usable review.</h2><div class="grid equal">${panel('The missing step',`<p>The original FinScope lab made model timing and experiments inspectable. Its fictional scenario could teach a method, but it could not answer a real-company financial question or produce a ready-to-share company review.</p><p>The new workspace fills that gap: reported evidence, interpretation prompts, explicit scenarios and a portable memo belong to the same workflow.</p>`)}${panel('Who can use it today?',`<p><strong>Students:</strong> practice a source-backed financial review with real accounts.</p><p><strong>Independent researchers:</strong> make a first pass across six selected companies.</p><p><strong>Junior analysts:</strong> prepare an initial evidence pack and stress assumptions before deeper diligence.</p><p class="note">This curated universe is small. It does not cover banks, the whole market, real-time prices or every quarterly development.</p>`)}</div>${panel('What we designed',`<div class="timeline"><div><strong>01 · Evidence</strong><p>Period-matched SEC facts. Filing-date filters. Visible missing values and source links.</p></div><div><strong>02 · AI triage</strong><p>Unsupervised Isolation Forest compares six ratios with earlier company-years.</p></div><div><strong>03 · Scenarios</strong><p>Browser calculations connect operating assumptions, financing costs and cash needs.</p></div><div><strong>04 · A deliverable</strong><p>Markdown, JSON and print capture facts, assumptions, formulas and source records.</p></div></div>`)}${panel('Why this is AI + finance',`<p>Financial reasoning defines six comparable ratios. An Isolation Forest uses random partitions to identify profiles that are easier to isolate from the training history. Training-only median imputation handles a limited number of missing features. The model scores current profiles against earlier fiscal periods.</p><p>A deterministic percentile places the anomaly score within the training score distribution. It is a descriptive in-sample reference, not an out-of-sample accuracy estimate. There are no labeled distress outcomes, so the project makes no fraud-detection, default-prediction or return claims.</p><p>Simple ratios remain visible beside the model. Descriptive deviations from training medians help a reader inspect the numbers; they do not claim to explain the forest’s decisions.</p><p><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">scikit-learn implementation ↗</a> · <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/RESEARCH_MODEL.md">Model card and limitations ↗</a></p>`)}${panel('Time, revisions and changing markets',`<p>Historical choices use the nearest saved annual-filing snapshot at or before your date. Each fact must have been filed by that snapshot. Annual flows share a fiscal start and end; balance facts share the period end. A separate interim selection uses the information date to find newer fiscal YTD evidence. It compares matched YTD periods, keeps missing values visible and never feeds partial-year flows into the annual model. Later filings cannot enter an earlier snapshot. SEC submissions metadata matches source accessions to their primary filing documents. If no safe primary document is available, the filing index or original directory remains visible. These links identify documents, not verified paragraph anchors.</p><p>However, the current SEC API is not a historical raw-data archive. This is filing-day reconstruction, not proof of exact historical information availability. Fiscal calendars differ. The six surviving companies create selection bias. Accounting changes, business-model shifts and nonstationarity can all raise anomaly scores.</p><p>The scheduled build refreshes source data and validates it before deployment. Failed builds leave the last good site available. The banner reports real source dates and warns when the build is older than four days.</p><p><a href="https://www.sec.gov/search-filings/edgar-application-programming-interfaces">Official SEC API ↗</a> · <a href="https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates">Treasury data and CC0 license ↗</a></p>`)}${panel('Ask the ledger: rules, not a model',`<p>The Ask tab reads a typed question, in Chinese or English, with a closed vocabulary of companies, figures, periods and topics. The program then answers from this evidence bundle: every number is a tagged SEC fact or a stated formula over such facts, shown with its filing line. It declines investment advice, forecasts and fraud verdicts, and says “not in this bundle” for share prices, other companies and figures it does not hold, rather than answering with a different number. Unfamiliar wording gets a request for more detail, not a guess.</p><p>On a blind set of 145 SYNTHETIC questions written by another model before the rules existed, the first run (commit <code>ac0afc4</code>) answered 127 correctly, 3 partly and 7 wrongly, and abstained on 8; 47 of 48 questions that must not be answered were declined. These numbers measure how well the rules read questions, not financial accuracy. <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/ASK.md">How it works and how it was tested ↗</a></p>`)}${panel('Original engineering, clear foundations',`<p>Leon Wang’s contribution is the integrated research workflow: fiscal-period matching, historical selection, evidence provenance, training-boundary checks, transparent stress math and a reproducible brief. It uses established open-source estimators and public official datasets. The contribution is the useful system and its validation, not a new financial theory or a renamed model.</p><div class="actions"><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/CASE_STUDY.md">Read the worked case ↗</a><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/PRODUCT.md">Product rationale ↗</a><a class="button" href="./lab.html">Open the synthetic forecasting lab ↗</a></div>`)}`;
+  return `<p class="eyebrow">THE PRODUCT STORY / THE ENGINEERING</p><h2>From an interesting chart to a usable review.</h2><div class="grid equal">${panel('The missing step',`<p>The original FinScope lab made model timing and experiments inspectable. Its fictional scenario could teach a method, but it could not answer a real-company financial question or produce a ready-to-share company review.</p><p>The new workspace fills that gap: reported evidence, interpretation prompts, explicit scenarios and a portable memo belong to the same workflow.</p>`)}${panel('Who can use it today?',`<p><strong>Students:</strong> practice a source-backed financial review with real accounts.</p><p><strong>Independent researchers:</strong> pull ten years of standardized figures for a company of their own, compare it with up to seven others and screen its sector, every number one click from its filing.</p><p><strong>Junior analysts:</strong> prepare an initial evidence pack with a CSV that keeps the source of every cell, watch new filings, and stress assumptions for the six deep-ledger companies.</p><p class="note">The universe is US large accelerated filers with XBRL 10-Ks: annual figures only. It does not cover foreign filers on Form 20-F, smaller companies, quarterly figures outside the six, segments, real-time prices or forecasts.</p>`)}</div>${panel('The universe: how it is built and checked',`<p>Every week a GitHub Actions job reads SEC Submissions and CompanyFacts for every company that reports itself as a large accelerated filer and files 10-Ks with XBRL (${uni.state.index ? uni.state.index.count.toLocaleString('en-US') : 'about 1,900'} companies in the current build), at most 8 requests per second under a declared user agent. For each figure a documented chain of XBRL tags is read: the best tag any 10-K reports for a period wins, then the latest filing with that tag; a missing value stays missing; implausible totals are withheld; and every value keeps its tag, accession and filing link. Banks, insurers and REITs get their own templates. Fallback tags, compositions, restatements, conflicting values and fiscal-year changes are written into each company's data-quality notes.</p><p>Accuracy is measured, not assumed: a salted random sample of figures is compared with the SEC's Financial Statement Data Sets for the same filing, by a protocol committed before the first run. <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/UNIVERSE.md">How the universe is built ↗</a> · <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/validation/ACCURACY_PROTOCOL.md">Accuracy protocol ↗</a></p>`)}${panel('What we designed',`<div class="timeline"><div><strong>01 · Evidence</strong><p>Period-matched SEC facts. Filing-date filters. Visible missing values and source links.</p></div><div><strong>02 · AI triage</strong><p>Unsupervised Isolation Forest compares six ratios with earlier company-years.</p></div><div><strong>03 · Scenarios</strong><p>Browser calculations connect operating assumptions, financing costs and cash needs.</p></div><div><strong>04 · A deliverable</strong><p>Markdown, JSON and print capture facts, assumptions, formulas and source records.</p></div></div>`)}${panel('Why this is AI + finance',`<p>Financial reasoning defines six comparable ratios. An Isolation Forest uses random partitions to identify profiles that are easier to isolate from the training history. Training-only median imputation handles a limited number of missing features. The model scores current profiles against earlier fiscal periods.</p><p>A deterministic percentile places the anomaly score within the training score distribution. It is a descriptive in-sample reference, not an out-of-sample accuracy estimate. There are no labeled distress outcomes, so the project makes no fraud-detection, default-prediction or return claims.</p><p>Simple ratios remain visible beside the model. Descriptive deviations from training medians help a reader inspect the numbers; they do not claim to explain the forest’s decisions.</p><p><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">scikit-learn implementation ↗</a> · <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/RESEARCH_MODEL.md">Model card and limitations ↗</a></p>`)}${panel('Time, revisions and changing markets',`<p>Historical choices use the nearest saved annual-filing snapshot at or before your date. Each fact must have been filed by that snapshot. Annual flows share a fiscal start and end; balance facts share the period end. A separate interim selection uses the information date to find newer fiscal YTD evidence. It compares matched YTD periods, keeps missing values visible and never feeds partial-year flows into the annual model. Later filings cannot enter an earlier snapshot. SEC submissions metadata matches source accessions to their primary filing documents. If no safe primary document is available, the filing index or original directory remains visible. These links identify documents, not verified paragraph anchors.</p><p>However, the current SEC API is not a historical raw-data archive. This is filing-day reconstruction, not proof of exact historical information availability. Fiscal calendars differ. The six surviving companies create selection bias. Accounting changes, business-model shifts and nonstationarity can all raise anomaly scores.</p><p>The scheduled build refreshes source data and validates it before deployment. Failed builds leave the last good site available. The banner reports real source dates and warns when the build is older than four days.</p><p><a href="https://www.sec.gov/search-filings/edgar-application-programming-interfaces">Official SEC API ↗</a> · <a href="https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates">Treasury data and CC0 license ↗</a></p>`)}${panel('Ask the ledger: rules, not a model',`<p>The Ask tab reads a typed question, in Chinese or English, with a closed vocabulary of figures, periods and topics, and finds any company in the universe by ticker, name or common Chinese name. The program then answers from the saved data: every number is a tagged SEC fact or a stated formula over such facts, shown with its filing line. It declines investment advice, forecasts and fraud verdicts, and says “not in this bundle” for share prices, other companies and figures it does not hold, rather than answering with a different number. Unfamiliar wording gets a request for more detail, not a guess.</p><p>On a second blind set of 212 SYNTHETIC questions about the universe, written by another model from a scope note before the rules were tuned, the first run (commit <code>9a2f1e3</code>) answered 171 of 211 correctly, 22 wrongly and abstained on 18; all 53 questions that must not be answered were declined. Wrong answers were then fixed as classes, so later reruns are not blind. These numbers measure how well the rules read questions; figure accuracy is checked separately against the SEC Financial Statement Data Sets for the same filing (798 of 798 verifiable sampled cells in the latest two years and 679 of 679 in older years match; three pre-registered criteria are still missed, listed in the changelog). <a href="https://github.com/leon1111-wgl/finscope/blob/main/docs/ASK.md">How it works and how it was tested ↗</a></p>`)}${panel('Original engineering, clear foundations',`<p>Leon Wang’s contribution is the integrated research workflow: fiscal-period matching, historical selection, evidence provenance, training-boundary checks, transparent stress math and a reproducible brief. It uses established open-source estimators and public official datasets. The contribution is the useful system and its validation, not a new financial theory or a renamed model.</p><div class="actions"><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/CASE_STUDY.md">Read the worked case ↗</a><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/PRODUCT.md">Product rationale ↗</a><a class="button" href="./lab.html">Open the synthetic forecasting lab ↗</a></div>`)}`;
 }
 
 function scenarioMarkup(result, error) {
@@ -396,14 +449,24 @@ function render() {
     else b.removeAttribute('aria-current');
   });
   revealCurrentStep();
+  renderedVersion = uni.state.version;
+  // Re-rendering a view keeps the visitor's place: the focused control (by id, or by its data attribute) is focused again.
+  const focused = document.activeElement && $('#content').contains(document.activeElement) ? document.activeElement : null;
+  const focusKey = focused ? (focused.id ? `#${focused.id}` : ['data-sort', 'data-years', 'data-remove', 'data-open', 'data-unwatch'].map(a => focused.hasAttribute(a) ? `[${a}="${focused.getAttribute(a)}"]` : null).find(Boolean) || (focused.name ? `[name="${focused.name}"]` : null)) : null;
   $('#content').innerHTML = ({
     ask: askView,
-    review,
-    compare,
+    company: uni.views.company,
+    review: reviewOrNote,
+    compare: () => `${uni.views.compare()}<div class="six-profiles">${compare()}</div>`,
+    screen: uni.views.screen,
+    watch: uni.views.watch,
     stress,
     brief,
     method
   } [page] || review)();
+  uni.bind($('#content'), page);
+  if (focusKey) { try { $('#content').querySelector(focusKey)?.focus({preventScroll: true}); } catch { /* the control is gone */ } }
+  if (['company', 'compare', 'screen', 'watch', 'ask'].includes(page)) uni.prepare(page).then(changed => { if (changed && renderedVersion !== uni.state.version && ready && !pendingRestore) render(); });
   $('#ask-form')?.addEventListener('submit', ev => { ev.preventDefault(); runAsk($('#ask-input').value); });
   bindAskChips($('#content'));
   if (pendingQuestion !== null && page === 'ask') { const q = pendingQuestion; pendingQuestion = null; runAsk(q, {focusAnswer: true}); }
@@ -496,7 +559,9 @@ async function init() {
   $('#status').classList.remove('sr-only');
   if (retrying) { $('#status').tabIndex = -1; $('#status').focus(); }
   try {
+    const universeReady = uni.ensureIndex();
     bundle = await loadResearchEvidence();
+    await universeReady;
     $('#company').innerHTML = bundle.companies.map(c => `<option value="${c.ticker}">${c.ticker} · ${e(c.name)}</option>`).join('');
     const dateInput = $('#as-of');
     dateInput.min = bundle.snapshots[0].as_of;
@@ -505,7 +570,8 @@ async function init() {
     renderIntro(document, bundle);
     const age = Math.floor((Date.now() - Date.parse(bundle.generated_at)) / 86400000),
       lastRate = bundle.rates.at(-1).date;
-    $('#freshness').innerHTML = `<strong>Official-source snapshot</strong> · Built ${e(bundle.generated_at.slice(0,10))} UTC · Treasury observations through ${lastRate} · Six companies · Annual + interim evidence${age>4?` · Refresh overdue: build is ${age} days old.`:''}`;
+    const uIndex = uni.state.index;
+    $('#freshness').innerHTML = `<strong>Official-source snapshot</strong> · Deep ledger built ${e(bundle.generated_at.slice(0,10))} UTC · Treasury observations through ${lastRate} · ${uIndex ? `Universe: ${uIndex.count.toLocaleString('en-US')} companies, built ${e(uIndex.built)}, filings through ${e(uIndex.data_as_of)}` : 'Company universe unavailable'}${age>4?` · Refresh overdue: build is ${age} days old.`:''}`;
     if (age > 4) $('#freshness').classList.add('stale');
     $('#company').disabled = false;
     dateInput.disabled = false;
@@ -531,9 +597,18 @@ async function init() {
     ready = true;
     lockResearch(false);
     $('#status').textContent = '';
+    const startCo = (params.get('co') && uni.entryByTicker(params.get('co'))) || uni.entryByTicker(params.get('company') || company.ticker);
+    if (startCo) uni.pick(startCo, {deep: false});
     let saved, linkError;
-    try { saved = selectionFromURL(params, bundle); } catch (error) { linkError = error.message; }
-    if (linkError) previewSavedSelection(null, linkError, 'link');
+    // A company link (?co=KO) or a view link (?view=screen, optionally with Screen's filter and sort) carries no deep-ledger inputs.
+    const keys = [...params.keys()], uniView = ['company', 'compare', 'screen', 'watch', 'ask'].includes(params.get('view'));
+    const universeLink = (params.has('co') && keys.every(k => ['co', 'view'].includes(k)) && (uniView || !params.has('view'))) ||
+      (uniView && keys.every(k => ['co', 'view', ...(params.get('view') === 'screen' ? ['peer', 'template', 'sort', 'dir'] : [])].includes(k)));
+    if (universeLink && params.get('view') === 'screen') uni.openScreen(Object.fromEntries(['peer', 'template', 'sort', 'dir'].map(k => [k, params.get(k) || ''])));
+    if (universeLink) { page = params.get('view') || 'company'; render(); }
+    else try { saved = selectionFromURL(params, bundle); } catch (error) { linkError = error.message; }
+    if (universeLink) { /* rendered above */ }
+    else if (linkError) previewSavedSelection(null, linkError, 'link');
     else if (saved && saved.versionStatus !== 'match') previewSavedSelection(saved, null, 'link');
     else if (saved) {
       applySavedSelection(saved);

@@ -1,6 +1,23 @@
 # Ask the ledger
 
-A visitor types a question of their own, in Chinese or English, and gets an answer in the page at once. No language model runs, there is no API key, and nothing the visitor types leaves the browser. Fixed rules read the question and the program answers from the same evidence bundle the rest of the workspace uses (`web/data/research.json`). Every number is stated by the program with the SEC fact behind it.
+A visitor types a question of their own, in Chinese or English, about **any company in the FinScope universe** (about 1,900 US large accelerated filers, see [UNIVERSE.md](UNIVERSE.md)) or the six deep-ledger companies, and gets an answer in the page at once. No language model runs, there is no API key, and nothing the visitor types leaves the browser. Fixed rules read the question; the program answers from the saved data the rest of the workspace uses (`web/data/research.json` for the deep ledger, `web/data/universe/` for the universe) and states every number with the SEC fact behind it.
+
+## 0.3.0: the universe path
+
+Since 0.3.0 the box has two data sources and one set of rules:
+
+- **Universe path** (`web/universe-ask.js`): any question that names a universe company outside the six, asks for a figure added in 0.3.0 (gross margin, R&D, SG&A, interest, tax, diluted EPS, diluted shares, dividends, buybacks, cash and short-term investments, equity, total debt, ROE, ROA, debt to equity, interest coverage, FCF margin, shareholder payout, bank, insurance and REIT lines), asks which XBRL tag a figure came from, asks for data-quality notes, or asks where a company stands among its sector peers. The page loads the shards of the companies named (and the screen for a sector question) before answering. **A ranking that names no company** (现金转化最差的是哪家, 半导体公司里…, which retailer…, among X companies, X stocks) also goes here: ranking a sector or the whole universe is the Screen page's job, so the answer states no figure and carries a link that opens Screen with the sector filter (a fixed word list maps common sectors to SIC codes: semiconductors 3674, software 7372, pharmaceuticals 2834, retail division G, REITs, …) and the sort the question asked for; banks and insurers are named as outside the Screen.
+- **Deep path** (`web/ask-engine.js`, unchanged rules): the six companies' 0.2.0 figures, the year-to-date checkpoint and cash bridge, AI triage, rankings among the six (only when the question names them or says 六家, all six, 深度账本 or deep ledger; without the universe loaded, every unnamed ranking), Treasury yields and earlier information dates. A six-company figure the deep ledger lacks (NVIDIA's capex has no standard tag) goes to the universe path, which reads the documented fallback tag and says so.
+
+Refusals come first and are shared: advice, forecasts, fraud verdicts, prices, write requests and off-topic questions are declined before either path runs. A company outside the universe gets the reason when it is known (it files 20-F as a foreign private issuer, it is not US-listed, it is private) and otherwise "no company with that ticker or name is in the universe".
+
+**Companies.** Tickers in capitals anywhere, except tickers that are everyday abbreviations or currency codes (IT, ON, SO, PM, AM, AI, A, EUR…), which need a cashtag (`$IT`), and except in text written entirely in capitals; lower-case tickers only for a curated list of well-known ones (`jpm`, `wmt`, `ko`), because many tickers are ordinary words (`cost`, `low`, `now`, `all`); a short or lower-case ticker inside a list of tickers (`jpm bac wfc c gs ms`); `$TICKER` always; SEC names without their legal suffix (Coca-Cola, Home Depot); one-word names that are common words (Target, Block) only with a capital; and common Chinese names for about 190 of the largest companies (可口可乐, 摩根大通, 好市多). Up to eight companies per question.
+
+**Fiscal years.** "FY N" is the company's own fiscal year N as its 10-K labels it; the answer prints the period start and end. "Latest" is the latest filed year; "last N years" covers at most the ten FinScope keeps.
+
+**What a universe answer can be.** One figure or indicator; several figures for one company and year; a trend; a year-over-year change; two to eight companies side by side, each on its own fiscal year; whether profit is backed by operating cash (net income, operating cash flow, cash conversion, the accrual ratio, five years); a sector percentile for cash conversion, the accrual ratio or FCF margin; the tag, filing and chain behind a figure; the data-quality notes; the latest 10-K link; a definition; or, for a company named without a figure, an overview of its key figures. A figure the company does not report is *not reported* (with the tag chain read); one its template does not support (gross margin for a bank) is *not supported for this template*; neither is ever replaced by another figure. Rankings across a sector or the universe are on the Screen page; the box asks for named companies instead.
+
+**Information date.** Universe figures are the latest filings. At an earlier information date the universe path declines and says why, so an answer never uses a filing made after the date the visitor chose.
 
 This is tier 1 of the portfolio's demo pattern: instant, no download beyond the evidence the page already loads, for every visitor. There is no tier 2 (browser model) in FinScope; [FRONTIER_REVIEW.md](FRONTIER_REVIEW.md) explains why.
 
@@ -55,9 +72,9 @@ Figures: revenue, net income, operating income, operating cash flow, total asset
 | Forecasts, or a fiscal year not yet filed | Declined: points to the Scenarios tab, where assumptions are the visitor's own |
 | "Is this company committing fraud?" | Declined: no verdict; points to the accrual ratio, cash conversion and the AI percentile |
 | Share prices, market value, P/E | Not in this bundle |
-| A company outside the six | Not in this bundle, with the SEC EDGAR company search |
-| EPS, gross margin, R&D, segments, debt, dividends, buybacks, equity, investing or financing cash flow, a receivables or inventory balance | Not in this bundle, by name; never a substitute figure |
-| A figure whose standard tag is missing (AMZN total liabilities, NVDA and AMZN capital expenditure, and anything derived from them) | Not in this bundle; a missing value is never treated as zero |
+| A company outside the universe (a 20-F filer, a private or non-US company, a company that is not a large accelerated filer) | Not in the data, with the reason when known and the SEC EDGAR company search |
+| Segments, products or regions, EBITDA, non-GAAP figures (FFO, adjusted EPS), investing or financing cash flow, a receivables or inventory balance, shares outstanding at year end, the effective tax rate | Not in the data, by name; never a substitute figure |
+| A figure the company does not report under any tag FinScope reads, or one its template does not support (gross margin for a bank) | Not reported, or not supported for this template; a missing value is never treated as zero |
 | A fiscal year before the bundle's first period, a standalone quarter or half-year, a calendar year for a company whose fiscal year does not end in December, or a date that is not a fiscal year end | Not in this bundle, or a request for a fiscal year |
 | A narrower or broader scope: excluding a part, a region or product, cash plus marketable securities, per-share, CAGR, another currency | Not in this bundle |
 | A ranking by growth of anything but revenue | Not in this bundle |
@@ -82,11 +99,41 @@ Refusals are checked first (off-topic, advice, fraud verdicts, other companies, 
 ```bash
 node scripts/ask.mjs questions.json            # a JSON array of strings or {"id","q"} objects
 node scripts/ask.mjs questions.txt             # one question per line
-node scripts/ask.mjs --q "NVDA 的利润有现金流支撑吗"
+node scripts/ask.mjs --q "可口可乐 2024 年的毛利率"           # any company in the universe
+node scripts/ask.mjs --q "Compare JPM, BAC and WFC deposits"
 node scripts/ask.mjs questions.json --date 2024-06-30 --full   # an earlier information date; full tables
+node scripts/ask.mjs questions.json --no-universe              # the six-company deep ledger only (0.2.0 behaviour)
 ```
 
+It loads the universe shards from `web/data/universe/` for the companies each question names, exactly as the page loads them. Each source line in the output carries the figure, company, value and exact amount, period, fiscal year, form, XBRL tag (or the parts of a composed figure), how it was chosen (first choice, fallback, composed), filing date, accession and URL.
+
 ## How it was tested
+
+### 0.3.0: the second blind set (universe)
+
+212 SYNTHETIC questions written by a separate model (Sonnet) from [`tests/ask-blind-v3/BLIND_SCOPE.md`](../tests/ask-blind-v3/BLIND_SCOPE.md) only, without the code, rules or data. The scope and the scoring rules ([`SCORING.md`](../tests/ask-blind-v3/SCORING.md)) were committed at `f7142e6`, the set unread at `cdb3874`, and the scorer (`scripts/score-blind-v3.mjs`) at `53c33a4`, all before the first run. The scorer answers each question through the page's engine with the universe loaded from disk and judges the plan (companies, figure, period, topic), not the wording. Membership in the universe and whether a figure is held are resolved from the data by rules fixed in advance.
+
+| Run | Correct | Partial | Wrong | Abstained | Must-not-answer held |
+| --- | --- | --- | --- | --- | --- |
+| **Blind first run at `9a2f1e3`** (data `ec1f904`), as scored by the committed scorer | 171 | 0 | 22 | 18 | 53 / 53 |
+| Same answers, scorer corrected (see below) | 173 | 0 | 20 | 18 | 53 / 53 |
+| Seen rerun after the fix round (not blind) | 210 | 0 | 0 | 1 | 53 / 53 |
+
+211 questions are scored (one ambiguous question is reported separately). Should-answer questions in the first run: 114 of 152 correct, 21 wrong, 17 abstained. Colloquial wording was much weaker than plain wording (16 wrong and 17 abstained against 6 and 1). The first run is kept as [`docs/validation/ask-blind-v3-first-run-9a2f1e3.json`](validation/ask-blind-v3-first-run-9a2f1e3.json).
+
+**The scorer correction.** When the gold answer names two figures ("Costco revenue and net income"), the committed scorer compared the list with the box's first figure only, so two correct two-figure answers (c005, c101) were scored wrong. The correction compares the list with the box's list of figures; it changes no other outcome.
+
+**What the first run found, and the classes fixed** (fixed as classes, never as single sentences; tests in `tests/universe-coverage.json` and `tests/universe-ask.test.mjs`):
+- *Off-target (the worst class, 8 answers):* a company question with a figure word the box did not know fell back to an overview of other figures. An overview now needs overview wording or the bare company name; otherwise the box asks which figure and states none.
+- *Colloquial abbreviations:* ni, gp, rnd, rnd 率, divs, d/e, int coverage, non int income, cash conv, provision, net real estate.
+- *Lower-case tickers as the first word* before a figure or Chinese text (de roe 24, cb premiums 5y, all 负债率); ordinary first words (what, low, all before English) are still not tickers.
+- *Bare spans:* 5y, 3年, 这5年 now mean the last N fiscal years (2 to 10).
+- *Rankings among named companies:* three or more companies with a superlative (最高, highest; not 最新) are ranked.
+- *Smaller classes:* "去年" for a non-December fiscal year now means the fiscal year that mostly covers that calendar year; 賺 as a traditional character; scope and definition wordings (会啥, wat can u, meaning, …啥); dividends + buybacks as payout; data-quality wording (数据有什么质量问题).
+
+The remaining seen-rerun miss is "low gp n op inc latest": `low` (Lowe's) is too common an English word to read as a ticker at the start of an English question, so the box asks which company.
+
+### 0.2.0 checks, still in force
 
 All questions below are SYNTHETIC visitor questions. These numbers describe how well the rules read questions; they are not a measure of financial accuracy, which comes from the bundle and its own checks.
 
@@ -116,6 +163,8 @@ At `77c82f7` one more evaluative word beside profit ("谷歌和亚马逊谁的�
 **In the page.** jsdom tests cover the intro box, the Ask tab, escaping of the visitor's text, follow-up buttons, empty input and the information date. The release walk (`scripts/release-walk.mjs`, run in CI with screenshots as an artifact) asks real questions and refusals at 1440 and 375 px in both themes, with zero console errors, failed or cross-origin requests allowed.
 
 ## Limits
+
+- Universe answers use the latest filings only: at an earlier information date they decline. Annual figures only outside the six.
 
 - The vocabulary is closed. Unseen colloquial wording will mostly get *Needs more detail*; it should not get a different figure, but the blind set cannot prove a failure class is absent.
 - The topics are the bundle's: annual figures, one year-to-date checkpoint per company, a five-line cash bridge, the anomaly percentile and Treasury yields. Anything else is refused.
