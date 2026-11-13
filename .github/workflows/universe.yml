@@ -5,10 +5,6 @@ on:
   schedule:
     - cron: '41 6 * * 6'
   workflow_dispatch:
-  push:
-    # Iteration branch only: touching the marker rebuilds before the workflow exists on main. Removed at merge.
-    branches: [universe-2026-11]
-    paths: [.github/universe-rebuild]
 permissions:
   contents: write
   pages: write

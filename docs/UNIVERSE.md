@@ -110,4 +110,4 @@ A first visit downloads the deep-ledger bundle and the index, then one shard for
 
 ## Accuracy
 
-The pre-registered check against the SEC Financial Statement Data Sets is described in [validation/ACCURACY_PROTOCOL.md](validation/ACCURACY_PROTOCOL.md); its first run is reported in [CHANGELOG.md](../CHANGELOG.md) and the report is kept in `docs/validation/`.
+The pre-registered check against the SEC Financial Statement Data Sets is described in [validation/ACCURACY_PROTOCOL.md](validation/ACCURACY_PROTOCOL.md) with its Addendum A (older years and identity checks). Results, all kept in `docs/validation/`: latest two years, third run `1d38946`: 798/798 verifiable cells match; older years, Addendum A second run `b3e1025` on data `5e55a21`: 679/679. Not met: fiscal labels (78/80 and 63/67; MongoDB and Yext, where FinScope follows the companies' own naming), statement placement in older years (2.6% against 2%), and 54 identity exceptions in 31,569 checks. The first runs, which failed on checker faults, are kept and described in [CHANGELOG.md](../CHANGELOG.md).

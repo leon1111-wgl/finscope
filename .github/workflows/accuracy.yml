@@ -2,10 +2,6 @@ name: Universe accuracy check
 # The pre-registered check in docs/validation/ACCURACY_PROTOCOL.md: a salted sample of universe figures against the
 # SEC Financial Statement Data Sets for the same accession. The zips are downloaded here only; the report is an artifact.
 on:
-  push:
-    # Iteration branch only: touching the marker runs the check. Removed at merge; workflow_dispatch stays.
-    branches: [universe-2026-11]
-    paths: [.github/accuracy-run]
   workflow_dispatch:
 permissions:
   contents: read
