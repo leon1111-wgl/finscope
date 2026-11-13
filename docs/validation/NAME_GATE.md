@@ -38,3 +38,17 @@ These were found on a development run of the gate during the fixes, and correcte
 ## Baseline (before any fix; not the gate run)
 
 On `main` at `00fb51b` (data `c75dfa6`): correct 1,879, clarify_listed 0, wrong_company 7, false_outside 9, miss 99. Seven named probes failed: T Rowe Price (both), Best Buy, Weatherford, MoonLake, Q2 Holdings, Burlington. The main session's own count with title case only was wrong 6, false outside 9, about 33 misses. This gate also tries the acronym form, so it counts more misses.
+
+## First run on the fixed head
+
+`90a717e` (data `fb2b5a4`), report `name-gate-first-run-90a717e.json`. **Passed.**
+
+| Outcome | Companies |
+| --- | ---: |
+| correct | 1,990 |
+| clarify_listed (shared name, both listed) | 4 (First Bancorp: FBP, FBNC; Blue Owl Capital: OWL, OBDC) |
+| wrong_company | 0 |
+| false_outside | 0 |
+| miss | 0 |
+
+All twelve named probes hold. On the blind set v3 (seen rerun, not blind, `ask-blind-v3-seen-rerun-0.3.2.json`): 210 correct, 0 wrong, 1 abstained; must-not-answer 53/53. The 0.2.0 blind guard passes in CI.
