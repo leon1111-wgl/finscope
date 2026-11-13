@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Request with a browser Origin header and a CORS preflight
         env:
-          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: |
           for u in https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json https://data.sec.gov/submissions/CIK0000320193.json https://www.sec.gov/files/company_tickers.json; do
             {
