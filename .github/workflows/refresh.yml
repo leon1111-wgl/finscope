@@ -35,7 +35,7 @@ jobs:
       - run: node --test tests/*.test.mjs
       - name: Fetch and validate official evidence
         env:
-          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: python scripts/build_research.py
       - name: Archive the source evidence for this run
         uses: actions/upload-artifact@v4
