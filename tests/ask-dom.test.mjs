@@ -129,3 +129,32 @@ for (const [query, peer] of [['?view=screen', ''], ['?view=screen&peer=ind%3Asic
     assert.equal(ui.$('#screen-form select[name="peer"]').value, peer);
   });
 }
+
+test('every Screen sector option names its SIC group, not a bare code (0.3.1)', async t => {
+  const ui = await boot(t, '?view=screen');
+  for (let i = 0; i < 200 && !ui.$('#screen-form'); i++) await tick();
+  const options = [...ui.dom.window.document.querySelectorAll('#screen-form select[name="peer"] option')].filter(o => o.value);
+  assert.ok(options.length > 50);
+  const bare = options.filter(o => !/·\s*\S/.test(o.textContent)).map(o => o.textContent);
+  assert.deepEqual(bare, []);
+  const o36 = options.find(o => o.value === 'sic2:36');
+  assert.match(o36.textContent, /SIC 36xx · Electronic/);
+  assert.match(options.find(o => /^ind:sic3:/.test(o.value)).textContent, /^SIC \d{3}x · .*\(major group \d\d\)/);
+});
+
+test('every numbered section eyebrow carries its tab\'s number (0.3.1)', async t => {
+  const ui = await boot(t, '#workspace');
+  const tabs = [...ui.dom.window.document.querySelectorAll('.steps [data-page]')].map(b => [b.dataset.page, b.querySelector('.tab-no')?.textContent.trim()]).filter(([, n]) => /^\d\d$/.test(n));
+  assert.ok(tabs.length >= 8);
+  const wrong = [];
+  for (const [page, n] of tabs) {
+    ui.$(`.steps [data-page="${page}"]`).click();
+    for (let i = 0; i < 200 && ui.dom.window.document.body.dataset.page !== page; i++) await tick();
+    for (let i = 0; i < 50; i++) await tick();
+    const eyebrow = ui.$('#content .eyebrow')?.textContent.trim() || '';
+    const shown = eyebrow.match(/^(\d\d) \//)?.[1];
+    if (['company', 'review', 'compare', 'screen', 'watch', 'stress', 'brief'].includes(page) && !shown) wrong.push(`${page}: no number in "${eyebrow}"`);
+    if (shown && shown !== n) wrong.push(`${page}: tab ${n}, eyebrow ${shown}`);
+  }
+  assert.deepEqual(wrong, []);
+});

@@ -24,7 +24,7 @@
  "shards_changed": 1994,
  "shards_removed": 0,
  "bytes": {
-  "index": 516556,
+  "index": 520120,
   "screen": 813610,
   "shards_total": 70833003,
   "shard_median": 36838,
@@ -48,5 +48,12 @@
   "rule": "finscope/universe.py label_periods (majority of the company's own 10-K labels)",
   "companies_with_moved_labels": 10,
   "periods_moved": 95
+ },
+ "reindexed": {
+  "at": "2026-11-13",
+  "script": "scripts/reindex_universe.py",
+  "shown_ticker_changed": 5,
+  "search_names_added": 185,
+  "search_names_removed": 0
  }
 }

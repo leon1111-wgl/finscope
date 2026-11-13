@@ -276,6 +276,11 @@ export const PEER_MIN = 10;
 const DIVISION = {A: ['Agriculture, forestry and fishing', '农林牧渔'], B: ['Mining', '采矿'], C: ['Construction', '建筑'], D: ['Manufacturing', '制造业'], E: ['Transportation, communications and utilities', '交通、通信与公用事业'], F: ['Wholesale trade', '批发'], G: ['Retail trade', '零售'], H: ['Finance, insurance and real estate', '金融、保险与地产'], I: ['Services', '服务业'], J: ['Other', '其他']};
 
 // FCF margin is left out for REITs: their property spending is not in the capex tags (see TEMPLATE_WHY in universe-ask.js).
+// SIC major groups (two-digit codes), shortened from the SIC Manual (1987) as published by OSHA and used by SEC EDGAR.
+export const SIC_MAJOR = {'01': 'Agricultural production: crops', '02': 'Agricultural production: livestock', '07': 'Agricultural services', '08': 'Forestry', '09': 'Fishing, hunting and trapping', '10': 'Metal mining', '12': 'Coal mining', '13': 'Oil and gas extraction', '14': 'Nonmetallic minerals mining', '15': 'Building construction, general contractors', '16': 'Heavy construction', '17': 'Construction, special trade contractors', '20': 'Food and kindred products', '21': 'Tobacco products', '22': 'Textile mill products', '23': 'Apparel and other textile products', '24': 'Lumber and wood products', '25': 'Furniture and fixtures', '26': 'Paper and allied products', '27': 'Printing and publishing', '28': 'Chemicals and allied products', '29': 'Petroleum refining and related industries', '30': 'Rubber and plastics products', '31': 'Leather and leather products', '32': 'Stone, clay, glass and concrete products', '33': 'Primary metal industries', '34': 'Fabricated metal products', '35': 'Industrial and commercial machinery and computer equipment', '36': 'Electronic and other electrical equipment', '37': 'Transportation equipment', '38': 'Measuring, analyzing and controlling instruments; medical and optical goods', '39': 'Miscellaneous manufacturing', '40': 'Railroad transportation', '41': 'Local and interurban passenger transit', '42': 'Motor freight transportation and warehousing', '43': 'US Postal Service', '44': 'Water transportation', '45': 'Transportation by air', '46': 'Pipelines, except natural gas', '47': 'Transportation services', '48': 'Communications', '49': 'Electric, gas and sanitary services', '50': 'Wholesale trade: durable goods', '51': 'Wholesale trade: nondurable goods', '52': 'Building materials, hardware and garden supply stores', '53': 'General merchandise stores', '54': 'Food stores', '55': 'Automotive dealers and gasoline service stations', '56': 'Apparel and accessory stores', '57': 'Home furniture and furnishings stores', '58': 'Eating and drinking places', '59': 'Miscellaneous retail', '60': 'Depository institutions', '61': 'Nondepository credit institutions', '62': 'Security and commodity brokers and services', '63': 'Insurance carriers', '64': 'Insurance agents and brokers', '65': 'Real estate', '67': 'Holding and other investment offices', '70': 'Hotels and other lodging places', '72': 'Personal services', '73': 'Business services', '75': 'Automotive repair, services and parking', '76': 'Miscellaneous repair services', '78': 'Motion pictures', '79': 'Amusement and recreation services', '80': 'Health services', '81': 'Legal services', '82': 'Educational services', '83': 'Social services', '84': 'Museums, galleries and gardens', '86': 'Membership organizations', '87': 'Engineering, accounting, research and management services', '88': 'Private households', '89': 'Services, not elsewhere classified', '91': 'Executive, legislative and general government', '92': 'Justice, public order and safety', '93': 'Public finance and taxation', '94': 'Human resource programs', '95': 'Environmental quality and housing programs', '96': 'Economic programs', '97': 'National security and international affairs', '99': 'Nonclassifiable establishments'};
+// A code is a prefix of the four-digit (zero-padded) SIC: '36', '367' or '3674'.
+export const sicGroupName = code => SIC_MAJOR[String(code).slice(0, 2)] || '';
+
 export function screenValues(row, template = 'industrial') {
   const v = k => row[k]?.[0];
   const out = {cash_conversion: null, accruals: null, fcf_margin: null};
@@ -337,13 +342,14 @@ export function sectorLabel(peer, companies, lang = 'en') {
   const [tp, kind, code] = peer.split(':');
   if (kind === 'div') return `${lang === 'zh' ? 'SIC 门类' : 'SIC division'} ${code} · ${DIVISION[code]?.[lang === 'zh' ? 1 : 0] || ''}`;
   const sample = kind === 'sic4' && companies.find(c => String(c.s).padStart(4, '0') === code && c.d);
-  return `SIC ${code}${kind === 'sic4' ? '' : kind === 'sic3' ? 'x' : 'xx'}${sample ? ` · ${sample.d}` : ''}${tp === 'reit' ? ' (REITs)' : ''}`;
+  const desc = kind === 'sic4' ? (sample ? ` · ${sample.d}` : '') : kind === 'sic3' ? ` · ${sicGroupName(code)} (major group ${code.slice(0, 2)})` : ` · ${sicGroupName(code)}`;
+  return `SIC ${code}${kind === 'sic4' ? '' : kind === 'sic3' ? 'x' : 'xx'}${desc}${tp === 'reit' ? ' (REITs)' : ''}`;
 }
 function peerLabelPlain(peer, rows, lang) {
   const [kind, code] = peer.split(':');
   if (kind === 'div') return `${lang === 'zh' ? 'SIC 门类' : 'SIC division'} ${code} · ${DIVISION[code]?.[lang === 'zh' ? 1 : 0] || ''}`;
   const sample = rows.find(r => r.peer.endsWith(peer) && r.entry.d);
-  const desc = kind === 'sic4' && sample ? ` · ${sample.entry.d}` : '';
+  const desc = kind === 'sic4' ? (sample ? ` · ${sample.entry.d}` : '') : kind === 'sic3' ? ` · ${sicGroupName(code)} (major group ${code.slice(0, 2)})` : ` · ${sicGroupName(code)}`;
   return `SIC ${code}${kind === 'sic4' ? '' : kind === 'sic3' ? 'x' : 'xx'}${desc}`;
 }
 

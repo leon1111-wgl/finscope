@@ -610,8 +610,8 @@ def company_shard(payload, submissions, ticker_rows=None):
 SUFFIXES = re.compile(r"(,?\s+(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|lp|l\.p|n\.v|s\.a|sa|ag|se|nv|holdings?|group|the|trust|reit|bancorp(oration)?|financial|technologies|international|\/[a-z]{2}\/|\\[a-z]{2}\\))+\.?$")
 
 
-def name_aliases(name):
-    """Lower-case search names derived from the SEC company name; curated aliases are added separately."""
+def name_aliases(name, short=True):
+    """Lower-case search names derived from the SEC company name (with short=False, only the full forms); curated aliases are added separately."""
     low = re.sub(r'\s+', ' ', (name or '').lower().replace('&amp;', '&')).strip()
     low = re.sub(r'\s*/[a-z]{2}/\s*$|\s*\\[a-z]{2}\\\s*$', '', low)
     out = {low}
@@ -629,4 +629,46 @@ def name_aliases(name):
     out |= {a.replace('-', ' ') for a in list(out) if '-' in a}
     if base and re.fullmatch(r'[a-z]+ [a-z]+', base):
         out.add(base.replace(' ', '-'))
+    if short:
+        out |= short_names(base)
     return sorted(a for a in out if len(a) >= 3 and not re.search(r'[,.]-|-[,.]', a))
+
+
+# Short names: the leading words of a company name before descriptive trailing words ("Federal Realty" for Federal
+# Realty Investment Trust, "Roivant" for Roivant Sciences). A one-word short name is taken only from a two-word name
+# ending in a sector word and never when it is a common English word; the build drops any short name two companies share.
+DESCRIPTIVE = {'investment', 'investments', 'trust', 'sciences', 'science', 'biosciences', 'therapeutics', 'pharmaceuticals', 'pharmaceutical',
+               'technologies', 'technology', 'brands', 'enterprises', 'industries', 'international', 'worldwide', 'global', 'systems', 'solutions',
+               'resources', 'partners'}
+ONE_WORD_BEFORE = {'sciences', 'biosciences', 'lifesciences', 'therapeutics', 'biotherapeutics', 'pharmaceuticals', 'pharma', 'biopharma', 'technologies', 'brands',
+                   'global', 'international', 'worldwide'}
+JOINING = {'of', 'and', '&', 'the', 'for', 'de', 'la', 'in', 'on', 'at', 'to'}
+COMMON_WORDS = {'united', 'exact', 'american', 'america', 'general', 'national', 'first', 'global', 'international', 'advanced', 'applied', 'digital',
+                'universal', 'standard', 'public', 'select', 'premier', 'core', 'prime', 'summit', 'pioneer', 'liberty', 'new', 'best', 'great',
+                'royal', 'capital', 'energy', 'health', 'home', 'power', 'smart', 'true', 'clear', 'pure', 'north', 'south', 'east', 'west',
+                'central', 'pacific', 'atlantic', 'western', 'eastern', 'northern', 'southern', 'federal', 'mutual', 'alliance', 'insight',
+                'option', 'target', 'block', 'ball', 'natural', 'life', 'live', 'vital', 'precision', 'integrated', 'innovative', 'dynamic',
+                'medical', 'clinical', 'biological', 'molecular', 'genetic', 'cell', 'gene', 'next', 'open', 'total', 'quality', 'value',
+                'minerals', 'structure', 'array', 'relay', 'harmony', 'spectrum', 'rhythm', 'driven', 'cogent', 'catalyst', 'recursion',
+                'protagonist', 'xenon', 'viking', 'zebra', 'apogee', 'resource', 'resources', 'assets', 'world', 'gold', 'silver', 'jersey',
+                'york', 'texas', 'california', 'florida', 'carolina', 'mexico', 'england', 'hampshire', 'service', 'services', 'power',
+                'royalty', 'albany', 'edison'}
+
+
+def short_names(base):
+    words = base.split()
+    out = set()
+    w = list(words)
+    while len(w) > 2 and w[-1] in DESCRIPTIVE:
+        w.pop()
+        # A leftover legal word goes too ('service corp international' -> 'service'), and a short name of one word,
+        # ending in a descriptive or joining word, or made only of common words is not taken.
+        cut = list(w)
+        while cut and cut[-1] in ('corp', 'corporation', 'inc', 'co', 'company', 'ltd', 'plc', 'lp'):
+            cut.pop()
+        if (len(cut) >= 2 and cut[-1] not in DESCRIPTIVE | JOINING and not all(x in COMMON_WORDS for x in cut)
+                and all(re.fullmatch(r'[a-z][a-z\-]*', x) for x in cut)):
+            out.add(' '.join(cut))
+    if len(words) == 2 and words[1] in ONE_WORD_BEFORE and re.fullmatch(r'[a-z]{4,}', words[0]) and words[0] not in COMMON_WORDS:
+        out.add(words[0])
+    return out

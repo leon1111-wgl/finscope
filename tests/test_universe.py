@@ -319,3 +319,14 @@ def test_committed_universe_labels_follow_the_companies_own_filings():
         labels = [p['fy'] for p in shard['periods']]
         assert labels == sorted(set(labels)) and all('fy_reported' in p for p in shard['periods']), entry['t']
         assert not any('in which it starts' in q['text'] or 'count back one year' in q['text'] for q in shard['quality']), entry['t']
+
+
+def test_short_names_are_the_leading_words_before_descriptive_suffixes():
+    # Probe of 0.3.0: "Federal Realty" and "Roivant" found nothing.
+    assert 'federal realty' in name_aliases('FEDERAL REALTY INVESTMENT TRUST')
+    assert 'roivant' in name_aliases('Roivant Sciences Ltd.')
+    assert 'neurocrine' in name_aliases('NEUROCRINE BIOSCIENCES INC')
+    # A common English word is never a one-word short name; two-word prefixes never end in a joining word.
+    for name, bad in (('UNITED THERAPEUTICS Corp', 'united'), ('EXACT SCIENCES CORP', 'exact'), ('NORTHERN TRUST CORP', 'northern'),
+                      ('BANK OF AMERICA CORP /DE/', 'bank of'), ('FEDERAL REALTY INVESTMENT TRUST', 'federal'), ('BEST BUY CO INC', 'best')):
+        assert bad not in name_aliases(name), (name, bad)
