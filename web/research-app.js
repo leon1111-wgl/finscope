@@ -600,7 +600,6 @@ async function init() {
     const startCo = (params.get('co') && uni.entryByTicker(params.get('co'))) || uni.entryByTicker(params.get('company') || company.ticker);
     if (startCo) uni.pick(startCo, {deep: false});
     let saved, linkError;
-    // A company link (?co=KO, optionally with a universe view) needs no saved-version check: it carries no deep-ledger inputs.
     // A company link (?co=KO) or a view link (?view=screen, optionally with Screen's filter and sort) carries no deep-ledger inputs.
     const keys = [...params.keys()], uniView = ['company', 'compare', 'screen', 'watch', 'ask'].includes(params.get('view'));
     const universeLink = (params.has('co') && keys.every(k => ['co', 'view'].includes(k)) && (uniView || !params.has('view'))) ||
