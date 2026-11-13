@@ -330,3 +330,30 @@ def test_short_names_are_the_leading_words_before_descriptive_suffixes():
     for name, bad in (('UNITED THERAPEUTICS Corp', 'united'), ('EXACT SCIENCES CORP', 'exact'), ('NORTHERN TRUST CORP', 'northern'),
                       ('BANK OF AMERICA CORP /DE/', 'bank of'), ('FEDERAL REALTY INVESTMENT TRUST', 'federal'), ('BEST BUY CO INC', 'best')):
         assert bad not in name_aliases(name), (name, bad)
+
+
+def test_sec_state_and_new_suffixes_never_reach_search_names():
+    # 0.3.2 name gate: the alias kept the SEC suffix, so the natural name found nothing (or a shorter, wrong name won).
+    cases = {'VALERO ENERGY CORP/TX': ['valero energy', 'valero'], 'ONEOK INC /NEW/': ['oneok'], 'AMETEK INC/': ['ametek'],
+             'SOUTHERN COPPER CORP/': ['southern copper'], 'CANADIAN PACIFIC KANSAS CITY LTD/CN': ['canadian pacific kansas city'],
+             'IDEXX LABORATORIES INC /DE': ['idexx laboratories', 'idexx'], 'U S PHYSICAL THERAPY INC /NV': ['u s physical therapy'],
+             'Six Flags Entertainment Corporation/NEW': ['six flags entertainment'], 'SEALED AIR CORP/DE': ['sealed air'],
+             'Citizens Financial Group Inc/RI': ['citizens financial group', 'citizens financial'], 'F5, INC.': ['f5'],
+             # EDGAR writes people's names surname first: T. Rowe Price, D.R. Horton.
+             'PRICE T ROWE GROUP INC': ['t rowe price'], 'HORTON D R INC /DE/': ['d r horton', 'horton d r']}
+    for name, want in cases.items():
+        got = name_aliases(name)
+        assert all(w in got for w in want), (name, got)
+        assert not any('/' in a for a in got), (name, got)
+
+
+def test_a_company_without_a_ticker_records_the_filings_that_explain_it():
+    # 0.3.2: 55 companies had no ticker in SEC Submissions; the build now keeps delisting and merger filings as evidence.
+    sub = {**SUB, 'tickers': [], 'exchanges': [], 'filings': {'recent': {**SUB['filings']['recent'],
+           'accessionNumber': ['A-24', 'A-25', 'M-1', 'D-1', 'X-1'], 'form': ['10-K', '10-K', 'DEFM14A', '25-NSE', '8-K'],
+           'filingDate': ['2024-02-10', '2025-02-10', '2025-12-01', '2026-03-02', '2026-03-03'],
+           'primaryDocument': ['t-2023.htm', 't-2024.htm', 'm.htm', 'd.xml', 'x.htm'], 'reportDate': ['2023-12-31', '2024-12-31', '', '', '']}}}
+    shard = company_shard(payload(two_years()), sub)
+    assert [e['form'] for e in shard['listing']['evidence']] == ['25-NSE', 'DEFM14A']
+    assert shard['listing']['evidence'][0]['filed'] == '2026-03-02'
+    assert 'listing' not in company_shard(payload(two_years()), SUB)

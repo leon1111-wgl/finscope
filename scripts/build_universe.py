@@ -178,7 +178,7 @@ def index_entry(shard, rank, curated):
     return entry
 
 
-def index_entries(shards, rank, curated=None):
+def index_entries(shards, rank, curated=None, shared=None):
     """The search index's company entries, in rank order. A derived alias shared by two companies is ambiguous and is
     dropped from both; curated names stay. Used by the build and by scripts/reindex_universe.py (offline).
     A full name (from the SEC name itself) outranks a short name (its leading words): a short name that is another
@@ -203,6 +203,11 @@ def index_entries(shards, rank, curated=None):
             return strong[a] == {e['c']}
         # A short name: nobody else's name of any kind, and (one word) not the first word of another company's name.
         return owners[a] == {e['c']} and (' ' in a or first_words.get(a, set()) <= {e['c']})
+    # A full name of two words or more that two companies share is kept aside, so the box can ask which one is meant.
+    if shared is not None:
+        for a, ciks in strong.items():
+            if len(ciks) > 1 and ' ' in a and a not in kept:
+                shared[a] = sorted(ciks, key=lambda c: rank[c])
     for e in entries:
         e['a'] = [a for a in e['a'] if keep(e, a)]
         if 'lw' in e:
@@ -366,12 +371,13 @@ def main():
             if old.name not in keep:
                 old.unlink()
                 removed += 1
-    entries = index_entries(shards, rank)
+    shared = {}
+    entries = index_entries(shards, rank, shared=shared)
     screen = [row for row in (screen_row(s) for s in sorted(shards, key=lambda s: rank[s['cik']])) if row]
     data_as_of = max((p['filed'] for s in shards for p in s['periods']), default=None)
     index = {'schema': 'finscope.universe.index/1', 'built': today.isoformat(), 'data_as_of': data_as_of, 'count': len(entries),
              'selection': 'SEC large accelerated filers with a 10-K filed in the last 15 months and XBRL financial data',
-             'outside': names.OUTSIDE, 'catalog': catalog(), 'companies': entries}
+             'outside': names.OUTSIDE, 'shared': dict(sorted(shared.items())), 'catalog': catalog(), 'companies': entries}
     write_if_changed(OUT / 'index.json', stable(index) + '\n')
     write_if_changed(OUT / 'screen.json', stable({'schema': 'finscope.universe.screen/1', 'built': today.isoformat(), 'rows': screen}) + '\n')
     sizes = sorted((OUT / 'c' / f"{s['cik']}.json").stat().st_size for s in shards)
