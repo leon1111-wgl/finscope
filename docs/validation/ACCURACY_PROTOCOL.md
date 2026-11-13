@@ -37,3 +37,14 @@ The release passes if all of these hold:
 ## Failure classes reported
 
 Wrong value (same key, different number), sign, scale, period mismatch (no row for the period and duration, but rows for another), duplicate context (more than one distinct reference value for the same key), fiscal mislabel, concept off-statement, unverifiable (with the reason: publication lag, accession absent, tag absent).
+
+## Addendum A (2026-11-14): older fiscal years and identity checks
+
+Committed after the independent review and before the run it describes. The review found that for fiscal years two or more back, the selection rule could swap a figure for a broader concept carried by a later 10-K (equity including noncontrolling interests, cash including restricted cash), and that "cash and short-term investments" could fall back to cash alone. The sample above uses only the two latest fiscal years, where this almost never happens, so it could not detect the class. The addendum measures it after the fix.
+
+- **Sample:** the same salt and the same 40 companies; the **4th and 7th most recent fiscal years** in each shard (a company with fewer years contributes what it has).
+- **Figures:** the twelve above plus `cash_sti` (checked part by part like other composed cells).
+- **Reference, tolerance and pass bar:** unchanged (the same five criteria).
+- **Identity checks over the whole universe** (every company and every stated year, no reference needed): cash and short-term investments ≥ cash; total debt ≤ total liabilities; shareholders' equity ≤ total assets. The count of violations is reported; the bar is **zero**.
+- **Placement of composed parts** (total debt, cash and short-term investments) is reported for information: debt parts often live in the notes, which the data sets no longer hold.
+- The report names the code and data commits and is kept in `docs/validation/` whatever the result.

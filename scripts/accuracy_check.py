@@ -92,11 +92,14 @@ def read_rows(z, name, keep):
                 yield dict(zip(header, parts))
 
 
-def cells_for(shard):
+def cells_for(shard, older=False):
     out = []
-    for i in (len(shard['periods']) - 2, len(shard['periods']) - 1):
+    n = len(shard['periods'])
+    for i in ([n - 7, n - 4] if older else [n - 2, n - 1]):
+        if i < 0:
+            continue
         period = shard['periods'][i]
-        for metric in FIGURES:
+        for metric in FIGURES + (['cash_sti'] if older else []):
             base = {'cik': shard['cik'], 'ticker': (shard['tickers'] or [''])[0], 'template': shard['template'], 'fy': period['fy'], 'period_end': period['end'],
                     'period_start': period['start'], 'figure': metric, 'original_accession': period['accession'], 'original_filed': period['filed']}
             if metric not in shard['values']:
@@ -174,16 +177,36 @@ def judge(cell, num, pre, available_until):
     return outcome
 
 
+def identity_checks(index):
+    """Addendum A: cash + short-term investments >= cash, total debt <= liabilities, equity <= assets, over every stated year."""
+    rules = [('cash_sti', 'cash', '>='), ('total_debt', 'liabilities', '<='), ('equity', 'assets', '<=')]
+    checked, found = 0, []
+    for entry in index['companies']:
+        shard = json.loads((UNIVERSE / 'c' / f"{entry['c']}.json").read_text())
+        for a, b, op in rules:
+            if a not in shard['values'] or b not in shard['values']:
+                continue
+            for i, (x, y) in enumerate(zip(shard['values'][a], shard['values'][b])):
+                if not (x and y and 'v' in x and 'v' in y):
+                    continue
+                checked += 1
+                ok = x['v'] >= y['v'] - 0.5 if op == '>=' else x['v'] <= y['v'] * 1.001 + 0.5
+                if not ok:
+                    found.append({'cik': shard['cik'], 'ticker': (shard['tickers'] or [''])[0], 'fy': shard['periods'][i]['fy'], 'rule': f'{a} {op} {b}', 'values': [x['v'], y['v']]})
+    return {'checked': checked, 'violations': len(found), 'examples': found[:50]}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--out', default='accuracy.json')
+    parser.add_argument('--older', action='store_true', help='Addendum A: the 4th and 7th most recent fiscal years, plus identity checks')
     args = parser.parse_args()
     ua = os.environ.get('SEC_USER_AGENT', '')
     if '@' not in ua:
         raise SystemExit('SEC_USER_AGENT with a contact email is required (SEC fair-access policy).')
     index = json.loads((UNIVERSE / 'index.json').read_text())
     shards = sample(index)
-    cells = [c for s in shards for c in cells_for(s)]
+    cells = [c for s in shards for c in cells_for(s, args.older)]
     stated = [c for c in cells if 'outcome' not in c]
     wanted = {c['accession'] for c in stated} | {c['original_accession'] for c in cells}
     quarters = sorted({quarter_of(c['filed']) for c in stated} | {quarter_of(c['original_filed']) for c in cells})
@@ -253,7 +276,10 @@ def main():
         data_commit = subprocess.run(['git', 'log', '-1', '--format=%h', '--', 'web/data/universe/index.json'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     except OSError:
         commit = data_commit = None
-    report = {'protocol': 'docs/validation/ACCURACY_PROTOCOL.md', 'salt': SALT, 'units_seen': sorted(units_seen), 'run_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+    identity = identity_checks(index) if args.older else None
+    if identity is not None:
+        bar['identity_violations_zero'] = identity['violations'] == 0
+    report = {'protocol': 'docs/validation/ACCURACY_PROTOCOL.md' + (' (Addendum A)' if args.older else ''), 'salt': SALT, 'units_seen': sorted(units_seen), 'identity': identity, 'run_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
               'code_commit': commit, 'data_commit': data_commit, 'universe_built': index['built'], 'reference': BASE, 'quarters': downloaded,
               'reference_available_through': available_until, 'sample': [{'cik': s['cik'], 'ticker': (s['tickers'] or [''])[0], 'name': s['name'], 'template': s['template']} for s in shards],
               'summary': summary, 'pass_bar': bar, 'passed': all(bar.values()), 'cells': cells, 'fiscal_labels': labels}

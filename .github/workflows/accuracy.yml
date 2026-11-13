@@ -23,7 +23,7 @@ jobs:
       - name: Compare the sample with the Financial Statement Data Sets
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
-        run: python scripts/accuracy_check.py --out accuracy.json
+        run: python scripts/accuracy_check.py --out accuracy.json $( [ -f .github/accuracy-older ] && echo --older )
       - name: Summary
         if: always()
         run: |
