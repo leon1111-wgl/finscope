@@ -83,11 +83,39 @@ export function nameGate({label = 'name gate run', disk = universeFromDisk(path.
     passed: Object.values(bar).every(Boolean), probes, failures: rows.filter(r => !['correct', 'clarify_listed'].includes(r.outcome)), rows};
 }
 
+// The ticker gate (0.3.3, pre-registered in NAME_GATE.md): for every company with a ticker, "<first ticker> revenue" in
+// capitals must name that company, or ask which one while listing it among the candidates.
+export function tickerGate({label = 'ticker gate run', disk = universeFromDisk(path.join(root, 'web/data/universe')),
+  bundle = JSON.parse(fs.readFileSync(path.join(root, 'web/data/research.json'), 'utf8'))} = {}) {
+  const ask = q => answerQuestion(q, bundle, {universe: disk.contextFor(planQuestion(q, bundle, {universe: disk.base}))});
+  const rows = disk.index.companies.filter(e => !primary(e).startsWith('CIK')).map(e => {
+    const t = primary(e), a = ask(`${t} revenue`), got = a.plan?.tickers || [];
+    let outcome;
+    if (got.length === 1 && got[0] === t) outcome = 'correct';
+    else if (a.topic === 'out_of_universe' || (a.summary || '').includes(`${t} is not in the FinScope universe`)) outcome = 'false_outside';
+    else if (got.length && (!got.includes(t) || got.length > 1)) outcome = 'wrong_company';
+    else if (a.status === 'clarify' && (a.candidates || []).includes(t)) outcome = 'clarify_listed';
+    else outcome = 'miss';
+    return {cik: e.c, ticker: t, outcome, status: a.status, topic: a.topic, got, candidates: a.candidates || null, summary: (a.summary || '').slice(0, 200)};
+  });
+  const count = o => rows.filter(r => r.outcome === o).length;
+  const totals = {companies: rows.length, correct: count('correct'), clarify_listed: count('clarify_listed'), wrong_company: count('wrong_company'), false_outside: count('false_outside'), miss: count('miss')};
+  const bar = {wrong_company_zero: totals.wrong_company === 0, false_outside_zero: totals.false_outside === 0, every_clarify_names_the_company: totals.miss === 0};
+  let commit = null, dataCommit = null;
+  try {
+    commit = execSync('git rev-parse --short HEAD', {cwd: root}).toString().trim();
+    dataCommit = execSync('git log -1 --format=%h -- web/data/universe/index.json', {cwd: root}).toString().trim();
+  } catch { /* not a checkout */ }
+  return {label, protocol: 'docs/validation/NAME_GATE.md (ticker gate)', engine_commit: commit, universe_data_commit: dataCommit, totals, pass_bar: bar,
+    passed: Object.values(bar).every(Boolean), failures: rows.filter(r => !['correct', 'clarify_listed'].includes(r.outcome)), clarified: rows.filter(r => r.outcome === 'clarify_listed').map(r => r.ticker), rows};
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const opt = n => { const i = args.indexOf(n); return i < 0 ? null : args[i + 1]; };
-  const report = nameGate({label: opt('--label') || 'name gate run'});
+  const tickers = args.includes('--tickers');
+  const report = tickers ? tickerGate({label: opt('--label') || 'ticker gate run'}) : nameGate({label: opt('--label') || 'name gate run'});
   if (opt('--out')) fs.writeFileSync(opt('--out'), JSON.stringify(report, null, 1) + '\n');
-  const {rows: _, failures, probes, ...head} = report;
+  const {rows: _, failures, probes = [], clarified, ...head} = report;
   process.stdout.write(JSON.stringify({...head, probes_failed: probes.filter(p => !p.ok).map(p => `${p.q} → ${p.status}/${p.topic} ${p.got}`), failures: failures.length}, null, 1) + '\n');
 }

@@ -52,3 +52,26 @@ On `main` at `00fb51b` (data `c75dfa6`): correct 1,879, clarify_listed 0, wrong_
 | miss | 0 |
 
 All twelve named probes hold. On the blind set v3 (seen rerun, not blind, `ask-blind-v3-seen-rerun-0.3.2.json`): 210 correct, 0 wrong, 1 abstained; must-not-answer 53/53. The 0.2.0 blind guard passes in CI.
+
+# Ticker gate (pre-registered for 0.3.3)
+
+Written and committed before any 0.3.3 fix. The question: does a visitor who types their company's ticker get that company?
+
+**Procedure** (`node scripts/name-gate.mjs --tickers`). Take every company whose first listed ticker is a real ticker (1,939 of 1,994; the others show a CIK). Ask `"<first ticker> revenue"` with the ticker in capitals, and read which companies the answer's plan names. The outcomes:
+- `correct`: exactly this company;
+- `clarify_listed`: the box asks which one is meant and lists this company's ticker among the candidates, for a ticker that is also a common word or another company's name;
+- `wrong_company`: another company;
+- `false_outside`: the answer says this ticker is not in the universe;
+- `miss`: anything else, including a clarification that does not name this company.
+
+**Pass bar (fixed now).**
+- `wrong_company` = 0 and `false_outside` = 0.
+- `miss` = 0, so every clarification names its candidate.
+- The name gate stays at its 0.3.2 result (1,990 correct, 4 clarify_listed, 0 wrong, 0 false outside, 0 miss) and its twelve named probes hold.
+- Blind set v3 must-not-answer stays 53/53.
+
+**Baseline** (before any fix; not the gate run). On `main` at `d1d56b8`: correct 1,900, wrong_company 3, false_outside 2, miss 34.
+- Wrong company: APLE→AAPL (typo alias), COKE→KO (alias), HP→HPQ (alias).
+- False outside: MELI (wrongly listed as a 20-F filer), BYD (BYD Company of China).
+- Misses: common-word tickers such as PM, SO, IT, ON, A and the figure words CASH and FCF, answered with a generic "Which company?".
+This matches the main session's own count (39).
