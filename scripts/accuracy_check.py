@@ -111,6 +111,14 @@ def cells_for(shard):
     return out
 
 
+units_seen = set()
+
+
+def unit_matches(found, expected):
+    norm = lambda u: u.lower().replace(' ', '').replace('per', '/').replace('_', '/').rstrip('s')
+    return norm(found) == norm(expected) or (expected == 'USD' and found == 'USD')
+
+
 def judge(cell, num, pre, available_until):
     # The data sets document ddate as the period end rounded to the nearest month end; the exact date is accepted too.
     key_dates = {month_end(cell['period_end']), cell['period_end'].replace('-', '')}
@@ -123,7 +131,14 @@ def judge(cell, num, pre, available_until):
         return {'outcome': 'unverifiable', 'reason': 'publication lag' if lag else 'accession absent'}
     results = []
     for part in cell['parts']:
-        same_tag = [r for r in rows if r['tag'] == part['tag'] and r.get('coreg', '') == '' and r.get('segments', '') == '' and r['uom'] == uom]
+        # A tag is present when any undimensioned row carries it; the unit is then matched loosely, because the data sets
+        # spell per-share units differently from CompanyFacts (the first run required the exact string 'USD/shares').
+        tagged = [r for r in rows if r['tag'] == part['tag'] and r.get('coreg', '') == '' and r.get('segments', '') == '']
+        same_tag = [r for r in tagged if unit_matches(r['uom'], uom)]
+        units_seen.update(r['uom'] for r in tagged)
+        if tagged and not same_tag:
+            results.append(('unit mismatch', sorted({r['uom'] for r in tagged})))
+            continue
         exact = [r for r in same_tag if r['ddate'] in key_dates and r['qtrs'] == qtrs]
         values = sorted({float(r['value']) for r in exact if r['value'] != ''})
         if not same_tag:
@@ -236,7 +251,7 @@ def main():
         data_commit = subprocess.run(['git', 'log', '-1', '--format=%h', '--', 'web/data/universe/index.json'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     except OSError:
         commit = data_commit = None
-    report = {'protocol': 'docs/validation/ACCURACY_PROTOCOL.md', 'salt': SALT, 'run_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+    report = {'protocol': 'docs/validation/ACCURACY_PROTOCOL.md', 'salt': SALT, 'units_seen': sorted(units_seen), 'run_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
               'code_commit': commit, 'data_commit': data_commit, 'universe_built': index['built'], 'reference': BASE, 'quarters': downloaded,
               'reference_available_through': available_until, 'sample': [{'cik': s['cik'], 'ticker': (s['tickers'] or [''])[0], 'name': s['name'], 'template': s['template']} for s in shards],
               'summary': summary, 'pass_bar': bar, 'passed': all(bar.values()), 'cells': cells, 'fiscal_labels': labels}

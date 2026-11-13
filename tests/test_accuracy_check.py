@@ -51,6 +51,16 @@ def test_composed_cells_check_every_part():
     assert ac.judge(cell('total_debt', 860.0, parts=parts, via='derived'), num, {}, '2026-09-30')['outcome'] == 'wrong value'
 
 
+def test_per_share_units_match_however_they_are_spelled():
+    for spelled in ('USD/shares', 'USD/share', 'usd/shares', 'USD per share'):
+        num = {'A': [row('EarningsPerShareDiluted', '20250930', '4', 7.46, uom=spelled)]}
+        c = cell('eps_diluted', 7.46, parts=[{'tag': 'EarningsPerShareDiluted', 'v': 7.46, 'sign': 1}])
+        assert ac.judge(c, num, {}, '2026-09-30')['outcome'] == 'match', spelled
+    num = {'A': [row('EarningsPerShareDiluted', '20250930', '4', 7.46, uom='pure')]}
+    c = cell('eps_diluted', 7.46, parts=[{'tag': 'EarningsPerShareDiluted', 'v': 7.46, 'sign': 1}])
+    assert ac.judge(c, num, {}, '2026-09-30')['outcome'] == 'unit mismatch'
+
+
 def test_eps_uses_its_own_unit_and_tolerance():
     num = {'A': [row('EarningsPerShareDiluted', '20250930', '4', 7.46, uom='USD/shares')]}
     c = cell('eps_diluted', 7.46, parts=[{'tag': 'EarningsPerShareDiluted', 'v': 7.46, 'sign': 1}])
