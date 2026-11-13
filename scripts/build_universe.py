@@ -1,0 +1,295 @@
+"""Build the 0.3.0 universe on GitHub Actions: every SEC large accelerated filer with XBRL 10-Ks listed on NYSE or Nasdaq.
+
+    SEC_USER_AGENT="Name contact@example.com" python scripts/build_universe.py [--limit N] [--ciks 320193,21344]
+
+Selection, in order (docs/UNIVERSE.md):
+  1. www.sec.gov/files/company_tickers_exchange.json: companies with a ticker on NYSE or Nasdaq.
+  2. data.sec.gov frames of dei:EntityPublicFloat for the last eight quarter ends: keep a public float of at least
+     $560M (the level below which a large accelerated filer loses that status). This only narrows the requests.
+  3. Submissions: keep `category` starting with "Large accelerated filer" and a 10-K filed in the last 15 months.
+  4. CompanyFacts: keep companies with at least one annual USD period from a 10-K.
+Writes web/data/universe/{index,screen,manifest}.json and one shard per company under web/data/universe/c/.
+SEC fair access: one declared User-Agent, at most 8 requests per second across threads, retries with backoff.
+"""
+from __future__ import annotations
+
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date, datetime, timedelta, timezone
+import gzip
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import sys
+import threading
+import time
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load(name):
+    # Load the pure modules by path so the build needs no numpy/pandas (finscope/__init__ imports the lab).
+    spec = importlib.util.spec_from_file_location(name, ROOT / 'finscope' / f'{name}.py')
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+universe = _load('universe')
+names = _load('universe_names')
+OUT = ROOT / 'web' / 'data' / 'universe'
+SIX = {320193, 789019, 1045810, 1018724, 1652044, 1326801}
+FLOAT_FLOOR = 560_000_000
+RATE = 8.0
+
+
+class SEC:
+    def __init__(self, user_agent, rate=RATE):
+        if not user_agent or '@' not in user_agent:
+            raise SystemExit('SEC_USER_AGENT must name the requester with a contact email (SEC fair-access policy).')
+        self.ua, self.gap, self.lock, self.next = user_agent, 1.0 / rate, threading.Lock(), 0.0
+        self.requests = 0
+        self.bytes = 0
+
+    def _slot(self):
+        with self.lock:
+            now = time.monotonic()
+            wait = self.next - now
+            self.next = max(now, self.next) + self.gap
+        if wait > 0:
+            time.sleep(wait)
+
+    def get(self, url, attempts=5):
+        error = None
+        for attempt in range(attempts):
+            self._slot()
+            try:
+                req = Request(url, headers={'User-Agent': self.ua, 'Accept-Encoding': 'gzip', 'Accept': 'application/json'})
+                with urlopen(req, timeout=60) as response:
+                    raw = response.read()
+                    body = gzip.decompress(raw) if response.headers.get('Content-Encoding') == 'gzip' else raw
+                with self.lock:
+                    self.requests += 1
+                    self.bytes += len(raw)
+                return json.loads(body)
+            except HTTPError as exc:
+                error = exc
+                if exc.code == 404:
+                    return None
+                if exc.code not in (403, 429, 500, 502, 503, 504):
+                    raise
+            except (URLError, TimeoutError, ConnectionError, json.JSONDecodeError, gzip.BadGzipFile) as exc:
+                error = exc
+            time.sleep(min(60, 2 ** attempt + 1))
+        raise RuntimeError(f'SEC request failed after {attempts} attempts: {url}: {error}')
+
+
+def quarter_ends(today, count=8):
+    out, year, quarter = [], today.year, (today.month - 1) // 3 + 1
+    for _ in range(count):
+        quarter -= 1
+        if quarter == 0:
+            year, quarter = year - 1, 4
+        out.append(f'CY{year}Q{quarter}I')
+    return out
+
+
+def stable(data):
+    return json.dumps(data, ensure_ascii=False, separators=(',', ':'), allow_nan=False, sort_keys=False)
+
+
+def write_if_changed(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.read_text() == text:
+        return False
+    tmp = path.with_suffix('.tmp')
+    tmp.write_text(text)
+    os.replace(tmp, path)
+    return True
+
+
+def recent_10k(submissions, cutoff):
+    recent = submissions.get('filings', {}).get('recent', {})
+    return any(form in ('10-K', '10-K/A') and filed >= cutoff for form, filed in zip(recent.get('form', []), recent.get('filingDate', [])))
+
+
+def common_tickers(tickers):
+    plain = [t for t in tickers if '-P' not in t and not t.endswith(('-WT', '-WS', '-U', '-R'))]
+    return plain or list(tickers)
+
+
+def index_entry(shard, rank, curated):
+    tickers = common_tickers(shard['tickers'])
+    aliases = set(universe.name_aliases(shard['name']))
+    zh = []
+    for t in tickers:
+        en, cn = curated.get(t, ([], []))
+        aliases |= {a.lower() for a in en}
+        zh += [z for z in cn if z not in zh]
+    latest = shard['periods'][-1] if shard['periods'] else None
+    return {'c': shard['cik'], 't': tickers, 'n': shard['name'], 'a': sorted(aliases), 'z': zh, 's': shard['sic'],
+            'd': shard['sic_description'], 'v': shard['division'], 'tp': shard['template'], 'fye': shard['fiscal_year_end'],
+            'fy': latest['fy'] if latest else None, 'e': latest['end'] if latest else None, 'r': rank}
+
+
+SCREEN_INPUTS = ('revenue', 'net_income', 'operating_cash_flow', 'capex', 'assets')
+
+
+def screen_row(shard):
+    if shard['template'] not in ('industrial', 'reit') or not shard['periods']:
+        return None
+    last = len(shard['periods']) - 1
+    period = shard['periods'][last]
+    row = {'c': shard['cik'], 'fy': period['fy'], 'end': period['end']}
+    for key in SCREEN_INPUTS:
+        cell = shard['values'].get(key, [None])[last] if shard['values'].get(key) else None
+        row[key] = [cell['v'], cell['tag'], cell['accn']] if cell and 'v' in cell else None
+    prior = shard['values']['assets'][last - 1] if last >= 1 else None
+    gap = last >= 1 and 300 <= (date.fromisoformat(period['end']) - date.fromisoformat(shard['periods'][last - 1]['end'])).days <= 430
+    row['assets_prior'] = [prior['v'], prior['tag'], prior['accn']] if gap and prior and 'v' in prior else None
+    return row
+
+
+def validate_shard(shard):
+    assert shard['template'] in universe.TEMPLATES
+    ends = [p['end'] for p in shard['periods']]
+    assert ends == sorted(ends) and len(set(ends)) == len(ends)
+    assert len({p['fy'] for p in shard['periods']}) == len(ends)
+    for metric, row in shard['values'].items():
+        assert len(row) == len(ends), metric
+        for period, cell in zip(shard['periods'], row):
+            if not cell:
+                continue
+            assert cell['accn'] in shard['filings'], (metric, cell['accn'])
+            assert cell['filed'] >= period['end'], (metric, period)
+            if 'v' in cell:
+                assert isinstance(cell['v'], (int, float))
+            if cell.get('parts'):
+                total = sum(p['sign'] * p['v'] for p in cell['parts'])
+                assert abs(total - cell['v']) < 1, (metric, period)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--limit', type=int, help='Build only the N largest candidates (for a quick check)')
+    parser.add_argument('--ciks', help='Comma-separated CIKs to build instead of the selection (for a check)')
+    parser.add_argument('--workers', type=int, default=6)
+    args = parser.parse_args()
+    sec = SEC(os.environ.get('SEC_USER_AGENT', ''))
+    today = datetime.now(timezone.utc).date()
+    started = time.monotonic()
+
+    listing = sec.get('https://www.sec.gov/files/company_tickers_exchange.json')
+    listed = {}
+    for cik, name, ticker, exchange in listing['data']:
+        if exchange in ('NYSE', 'Nasdaq'):
+            listed.setdefault(int(cik), []).append(ticker)
+    floats = {}
+    for period in quarter_ends(today):
+        frame = sec.get(f'https://data.sec.gov/api/xbrl/frames/dei/EntityPublicFloat/USD/{period}.json')
+        for fact in (frame or {}).get('data', []):
+            if fact['end'] > floats.get(fact['cik'], ('', 0))[0]:
+                floats[fact['cik']] = (fact['end'], fact['val'])
+    if args.ciks:
+        candidates = [int(c) for c in args.ciks.split(',')]
+    else:
+        candidates = sorted((c for c in listed if floats.get(c, ('', 0))[1] >= FLOAT_FLOOR or c in SIX), key=lambda c: -floats.get(c, ('', 0))[1])
+        if args.limit:
+            candidates = candidates[:args.limit]
+    print(f'listed CIKs {len(listed)}; public-float candidates {len(candidates)}', flush=True)
+
+    cutoff = (today - timedelta(days=456)).isoformat()
+    excluded = {}
+
+    def screen_candidate(cik):
+        sub = sec.get(f'https://data.sec.gov/submissions/CIK{cik:010d}.json')
+        if not sub:
+            return cik, None, 'no submissions record'
+        if not str(sub.get('category', '')).startswith('Large accelerated filer'):
+            return cik, None, 'not a large accelerated filer'
+        if not recent_10k(sub, cutoff):
+            return cik, None, 'no 10-K filed in the last 15 months'
+        return cik, sub, None
+
+    with ThreadPoolExecutor(args.workers) as pool:
+        screened = list(pool.map(screen_candidate, candidates))
+    members = []
+    for cik, sub, reason in screened:
+        if reason:
+            excluded[reason] = excluded.get(reason, 0) + 1
+        else:
+            members.append((cik, sub))
+    print(f'large accelerated filers with a recent 10-K: {len(members)}', flush=True)
+
+    def build(member):
+        cik, sub = member
+        facts = sec.get(f'https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json')
+        if not facts or not facts.get('facts', {}).get('us-gaap'):
+            return cik, None, 'no US-GAAP XBRL facts'
+        shard = universe.company_shard(facts, sub)
+        if not shard['periods']:
+            return cik, None, 'no annual USD period in a 10-K'
+        validate_shard(shard)
+        return cik, shard, None
+
+    with ThreadPoolExecutor(args.workers) as pool:
+        built = list(pool.map(build, members))
+    shards = []
+    for cik, shard, reason in built:
+        if reason:
+            excluded[reason] = excluded.get(reason, 0) + 1
+        else:
+            shards.append(shard)
+    rank = {cik: i + 1 for i, cik in enumerate(sorted((s['cik'] for s in shards), key=lambda c: -floats.get(c, ('', 0))[1]))}
+    changed = 0
+    keep = set()
+    for shard in shards:
+        path = OUT / 'c' / f"{shard['cik']}.json"
+        keep.add(path.name)
+        changed += write_if_changed(path, stable(shard) + '\n')
+    removed = 0
+    if not args.ciks and not args.limit:
+        for old in (OUT / 'c').glob('*.json'):
+            if old.name not in keep:
+                old.unlink()
+                removed += 1
+    entries = sorted((index_entry(s, rank[s['cik']], names.CURATED) for s in shards), key=lambda e: e['r'])
+    # A derived alias shared by two companies is ambiguous and is dropped from both; curated names stay.
+    owners = {}
+    for e in entries:
+        for a in e['a']:
+            owners.setdefault(a, set()).add(e['c'])
+    curated = {a.lower() for en, _ in names.CURATED.values() for a in en}
+    for e in entries:
+        e['a'] = [a for a in e['a'] if len(owners[a]) == 1 or a in curated]
+    screen = [row for row in (screen_row(s) for s in sorted(shards, key=lambda s: rank[s['cik']])) if row]
+    data_as_of = max((p['filed'] for s in shards for p in s['periods']), default=None)
+    index = {'schema': 'finscope.universe.index/1', 'built': today.isoformat(), 'data_as_of': data_as_of, 'count': len(entries),
+             'selection': 'SEC large accelerated filers with a 10-K filed in the last 15 months and a ticker on NYSE or Nasdaq',
+             'outside': names.OUTSIDE, 'companies': entries}
+    write_if_changed(OUT / 'index.json', stable(index) + '\n')
+    write_if_changed(OUT / 'screen.json', stable({'schema': 'finscope.universe.screen/1', 'built': today.isoformat(), 'rows': screen}) + '\n')
+    sizes = sorted((OUT / 'c' / f"{s['cik']}.json").stat().st_size for s in shards)
+    manifest = {
+        'schema': 'finscope.universe.manifest/1', 'built': today.isoformat(), 'built_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        'companies': len(shards), 'templates': {t: sum(1 for s in shards if s['template'] == t) for t in universe.TEMPLATES},
+        'funnel': {'listed_ciks': len(listed), 'float_candidates': len(candidates), 'large_accelerated_with_recent_10k': len(members), 'built': len(shards)},
+        'excluded': excluded, 'shards_changed': changed, 'shards_removed': removed,
+        'bytes': {'index': (OUT / 'index.json').stat().st_size, 'screen': (OUT / 'screen.json').stat().st_size,
+                  'shards_total': sum(sizes), 'shard_median': sizes[len(sizes) // 2] if sizes else 0, 'shard_max': sizes[-1] if sizes else 0},
+        'sec': {'requests': sec.requests, 'compressed_bytes': sec.bytes, 'rate_limit_per_second': RATE, 'seconds': round(time.monotonic() - started)},
+        'sources': ['https://www.sec.gov/files/company_tickers_exchange.json', 'https://data.sec.gov/api/xbrl/frames/dei/EntityPublicFloat/USD/{quarter}.json',
+                    'https://data.sec.gov/submissions/CIK##########.json', 'https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json'],
+    }
+    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=1) + '\n')
+    assert manifest['bytes']['shards_total'] < 200_000_000, 'Universe shards exceed the 200 MB budget'
+    print(json.dumps(manifest, indent=1))
+
+
+if __name__ == '__main__':
+    main()

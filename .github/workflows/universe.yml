@@ -1,0 +1,66 @@
+name: Build company universe
+# Weekly: every SEC large accelerated filer with XBRL 10-Ks listed on NYSE or Nasdaq (docs/UNIVERSE.md).
+# Commits web/data/universe/ to the branch it runs on; on main it also deploys Pages.
+on:
+  schedule:
+    - cron: '41 6 * * 6'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: universe-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.lock
+      - run: python -m pip install --no-deps -e .
+      - run: python -m pytest -q tests/test_universe.py
+      - name: Build from SEC Submissions and CompanyFacts (at most 8 requests per second)
+        env:
+          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+        run: python scripts/build_universe.py
+      - name: Summary
+        run: |
+          { echo '```json'; cat web/data/universe/manifest.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Record the new universe
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add web/data/universe
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m 'data: refresh the company universe'
+          for attempt in 1 2 3; do
+            git pull --rebase -q origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((attempt * 10))
+          done
+          exit 1
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4
