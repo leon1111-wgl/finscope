@@ -12,6 +12,10 @@ Since 0.3.0 the box has two data sources and one set of rules:
 - The settled names are blanked before figures, years and topic cues are read. Topic cues see each company as "it", so "Best Buy revenue", "T. Rowe Price net income", "Weatherford", "TTM Technologies" and "Q2 Holdings" are answered, while "Is Best Buy a buy?" and "should I buy Target stock" are still refused as advice.
 - A name two companies share asks which one and lists both.
 - Exchange-traded trusts (SIC 6221: bitcoin, ether and gold funds) are answered with what their 10-K holds (total assets, and net income that is mostly the change in value); revenue and margins are said not to apply.
+- **Tickers** (0.3.3).
+  - A ticker typed in capitals, or with `$`, means that company. It beats a typo alias of the six companies (APLE is Apple Hospitality) and the list of companies outside the universe.
+  - When the ticker is also another company's name (COKE and Coca-Cola, HP and HP Inc.), or the name of a company outside the universe (BYD), the box asks which is meant and lists the candidates. `$COKE` always means the ticker; lower case keeps the name meaning.
+  - A ticker that is also an ordinary word or a figure (PM, SO, IT, A, CASH, FCF), written first with no company named, is named back with how to ask: "For Philip Morris International (PM), write $PM".
 - The all-company gate (`scripts/name-gate.mjs`, `docs/validation/NAME_GATE.md`) asks "<natural name> revenue" for every company.
 
 **A ranking that names no company** (现金转化最差的是哪家, 半导体公司里…, which retailer…, among X companies, X stocks) also goes here: ranking a sector or the whole universe is the Screen page's job, so the answer states no figure and carries a link that opens Screen with the sector filter (a fixed word list maps common sectors to SIC codes: semiconductors 3674, software 7372, pharmaceuticals 2834, retail division G, REITs, …) and the sort the question asked for; banks and insurers are named as outside the Screen.

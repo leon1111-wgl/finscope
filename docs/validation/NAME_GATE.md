@@ -81,3 +81,26 @@ This matches the main session's own count (39).
 The main session asked that "HP" ask which company is meant, listing both Helmerich & Payne (ticker HP) and HP Inc. (HPQ), whose natural name is "HP". The name gate accepted a clarification only for a natural name that two companies share, so it would have scored that clarification for HPQ as a miss. The two requests conflict on this one question. The name gate now also accepts a clarification that lists the company when its natural name is another company's ticker. Under the original rule the result below would read 1,989 correct and 4 clarify_listed with 1 miss (HPQ: "HP revenue" asks and lists HP and HPQ); under the amended rule it reads 1,989 correct and 5 clarify_listed with no miss.
 
 Also corrected after the development run: a question whose only Latin text is one word (IT 的营收) is not "all capitals", so a ticker typed in it counts as typed in capitals.
+
+## Ticker gate: first run on the fixed head
+
+`b5034ef` (report `ticker-gate-first-run-b5034ef.json`). **Passed.**
+
+| Outcome | Companies |
+| --- | ---: |
+| correct | 1,902 |
+| clarify_listed | 37 |
+| wrong_company | 0 |
+| false_outside | 0 |
+| miss | 0 |
+
+The 37 clarifications all name the company and say how to ask for it:
+- 32 tickers that are also ordinary words, such as PM, SO, IT, ON and A ("write $PM");
+- CASH and FCF, which are read as figures;
+- COKE and HP, which are also names people use for KO and HPQ (both companies listed);
+- BYD, Boyd Gaming's ticker, also the name of BYD Company of China, which is outside the universe.
+
+Same head:
+- The name gate (amended rule, `name-gate-rerun-b5034ef.json`): correct 1,989, clarify_listed 5, wrong 0, false outside 0, miss 0; all twelve probes hold.
+- Blind set v3 (seen rerun, not blind): 210 correct, 0 wrong, 1 abstained; must-not-answer 53/53.
+- Both gates run in CI (`tests/name-gate.test.mjs`).
