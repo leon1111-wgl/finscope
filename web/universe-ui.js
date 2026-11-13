@@ -173,7 +173,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
 
   // ---------------------------------------------------------------- Compare (universe side)
   function compareView() {
-    const head = `<p class="eyebrow">02 / SIDE BY SIDE · 并排比较</p><h2>Compare up to eight companies <span class="zh" lang="zh-Hans">最多八家并排</span></h2><p class="muted">Each company is shown with its own fiscal year and period end. Fiscal calendars differ; the column header says which year each value belongs to.</p>`;
+    const head = `<p class="eyebrow">03 / SIDE BY SIDE · 并排比较</p><h2>Compare up to eight companies <span class="zh" lang="zh-Hans">最多八家并排</span></h2><p class="muted">Each company is shown with its own fiscal year and period end. Fiscal calendars differ; the column header says which year each value belongs to.</p>`;
     if (s.indexError) return `${head}${searchMarkup()}`;
     if (!s.prepared) return `${head}<p class="empty">Loading the company list…</p>`;
     const entries = s.compare.map(c => s.prepared.byCik.get(c)).filter(Boolean);
@@ -214,7 +214,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
     });
   }
   function screenView() {
-    const head = `<p class="eyebrow">03 / EARNINGS-QUALITY SCREEN · 盈利质量筛选</p><h2>Screen the universe by cash behind profit</h2><p class="muted">Cash conversion, the accrual ratio and FCF margin for every industrial company and REIT, from each company's latest 10-K, with its percentile among sector peers. A screen sorts and filters reported ratios; it is not a rating, a recommendation or a fraud signal. Banks and insurers are left out because these ratios do not describe their statements.</p>`;
+    const head = `<p class="eyebrow">04 / EARNINGS-QUALITY SCREEN · 盈利质量筛选</p><h2>Screen the universe by cash behind profit</h2><p class="muted">Cash conversion, the accrual ratio and FCF margin for every industrial company and REIT, from each company's latest 10-K, with its percentile among sector peers. A screen sorts and filters reported ratios; it is not a rating, a recommendation or a fraud signal. Banks and insurers are left out because these ratios do not describe their statements.</p>`;
     if (s.indexError || s.screenError) return `${head}<div class="error"><h3>The screen could not be loaded</h3><p class="error-detail">${e(s.screenError || s.indexError)}</p><div class="actions"><button type="button" id="retry-screen">Retry</button></div></div>`;
     if (!s.screen) return `${head}<p class="empty" aria-busy="true">Loading the screen…</p>`;
     const f = s.filters, rows = screenRows();
@@ -269,7 +269,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
     render();
   }
   function watchView() {
-    const head = `<p class="eyebrow">04 / FILING WATCH · 关注新文件</p><h2>New 10-K, 10-Q and 8-K filings for companies you follow</h2><p class="privacy-note"><strong>What leaves this page:</strong> only one request per watched company, from your browser straight to the SEC (<code>data.sec.gov/submissions</code>), for its public filing list. Nothing is sent to FinScope. Your watchlist is kept in this browser's local storage; clearing site data removes it.</p>`;
+    const head = `<p class="eyebrow">05 / FILING WATCH · 关注新文件</p><h2>New 10-K, 10-Q and 8-K filings for companies you follow</h2><p class="privacy-note"><strong>What leaves this page:</strong> only one request per watched company, from your browser straight to the SEC (<code>data.sec.gov/submissions</code>), for its public filing list. Nothing is sent to FinScope. Your watchlist is kept in this browser's local storage; clearing site data removes it.</p>`;
     const list = s.watch.length ? `<ul class="watch-list">${s.watch.map(w => {
       const res = s.watchResults[w.cik];
       const body = !res ? '<p class="muted">Not checked yet.</p>' : !res.ok ? `<p class="error">Could not reach the SEC for ${e(w.ticker)}: ${e(res.error)}. The list stays as it was; retry later.</p>`
