@@ -32,6 +32,8 @@ def test_outcomes():
     assert ac.judge(cell(value=0.1, parts=[{'tag': 'Revenues', 'v': 0.1, 'sign': 1}]), num, pre, '2026-09-30')['outcome'] == 'scale'
     assert ac.judge(cell(value=101.0, parts=[{'tag': 'Revenues', 'v': 101.0, 'sign': 1}]), num, pre, '2026-09-30')['outcome'] == 'wrong value'
     assert ac.judge(cell(end='2023-09-30'), num, pre, '2026-09-30')['outcome'] == 'period mismatch'
+    exact_dates = {'A': [row('Revenues', '20250927', '4', 100)]}
+    assert ac.judge(cell(), exact_dates, pre, '2026-09-30')['outcome'] == 'match', 'an unrounded period end is accepted too'
     assert ac.judge(cell(parts=[{'tag': 'Other', 'v': 100.0, 'sign': 1}]), num, pre, '2026-09-30')['reason'] == 'tag absent'
     dup = {'A': num['A'] + [row('Revenues', '20250930', '4', 101)]}
     assert ac.judge(cell(), dup, pre, '2026-09-30')['outcome'] == 'duplicate context'

@@ -80,6 +80,8 @@ def fetch(url, ua, attempts=4):
 
 def read_rows(z, name, keep):
     """Rows of a tab-separated member whose adsh is wanted, as dicts keyed by the header."""
+    stem = name.split('.')[0]
+    name = next((m for m in z.namelist() if m.split('/')[-1].split('.')[0] == stem), name)
     with z.open(name) as handle:
         text = io.TextIOWrapper(handle, encoding='utf-8', errors='replace')
         header = text.readline().rstrip('\n').split('\t')
@@ -110,7 +112,8 @@ def cells_for(shard):
 
 
 def judge(cell, num, pre, available_until):
-    key_date = month_end(cell['period_end'])
+    # The data sets document ddate as the period end rounded to the nearest month end; the exact date is accepted too.
+    key_dates = {month_end(cell['period_end']), cell['period_end'].replace('-', '')}
     qtrs = '0' if cell['figure'] in INSTANT else '4'
     uom = UNIT.get(cell['figure'], 'USD')
     tol = TOLERANCE[uom]
@@ -121,7 +124,7 @@ def judge(cell, num, pre, available_until):
     results = []
     for part in cell['parts']:
         same_tag = [r for r in rows if r['tag'] == part['tag'] and r.get('coreg', '') == '' and r.get('segments', '') == '' and r['uom'] == uom]
-        exact = [r for r in same_tag if r['ddate'] == key_date and r['qtrs'] == qtrs]
+        exact = [r for r in same_tag if r['ddate'] in key_dates and r['qtrs'] == qtrs]
         values = sorted({float(r['value']) for r in exact if r['value'] != ''})
         if not same_tag:
             results.append(('tag absent', None))

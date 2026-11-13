@@ -29,6 +29,7 @@ import re
 import sys
 import threading
 import time
+import traceback
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -288,8 +289,9 @@ def main():
                 return cik, None, 'no annual USD period in a 10-K'
             validate_shard(shard)
         except Exception as exc:  # one malformed company must not stop the universe; it is counted and named
-            print(f'excluded CIK {cik}: {type(exc).__name__}: {exc}', flush=True)
-            failures.append({'cik': cik, 'name': sub.get('name'), 'error': f'{type(exc).__name__}: {exc}'[:200]})
+            where = traceback.extract_tb(exc.__traceback__)[-1]
+            print(f'excluded CIK {cik}: {type(exc).__name__}: {exc} at {Path(where.filename).name}:{where.lineno}', flush=True)
+            failures.append({'cik': cik, 'name': sub.get('name'), 'error': f'{type(exc).__name__}: {exc} at {Path(where.filename).name}:{where.lineno}'[:240]})
             return cik, None, 'failed validation'
         return cik, shard, None
 

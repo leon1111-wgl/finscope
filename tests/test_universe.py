@@ -140,3 +140,12 @@ def test_two_periods_with_one_label_never_share_it():
     shard = company_shard(payload(rows), SUB)
     assert len({p['fy'] for p in shard['periods']}) == len(shard['periods'])
     assert any(q['kind'] == 'fiscal_shift' and 'not shown' in q['text'] for q in shard['quality'])
+
+
+def test_debt_from_the_combined_debt_and_lease_tag_is_a_noted_fallback():
+    extra = [('DebtAndCapitalLeaseObligations', 'USD', 900, None, '2024-12-31', '2025-02-10', '10-K', 'A-25', 2024)]
+    shard = company_shard(payload(two_years(extra)), SUB)
+    cell = shard['values']['total_debt'][1]
+    assert cell['v'] == 900 and cell['via'] == 'fallback' and 'finance lease' in cell['note']
+    fallback = [q for q in shard['quality'] if q['kind'] == 'fallback' and q['metric'] == 'total_debt']
+    assert fallback and 'DebtLongtermAndShorttermCombinedAmount' in fallback[0]['text']

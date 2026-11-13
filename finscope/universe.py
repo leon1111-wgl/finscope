@@ -64,6 +64,11 @@ METRICS = {
 # Leading tags in a chain that are equally standard ways to report the figure; only tags after them count as fallbacks.
 STANDARD = {'revenue': 2, 'cost_of_revenue': 3, 'interest_expense': 2, 'operating_cash_flow': 1}
 via_of = lambda metric, priority: 'primary' if priority < STANDARD.get(metric, 1) else 'fallback'
+
+
+def first_choice(metric):
+    """The first-choice tags of a figure; total debt is composed, so its first choice is the combined debt tag."""
+    return METRICS[metric][3][:STANDARD.get(metric, 1)] or DEBT_TOTAL[:1]
 # Fallbacks that combine two facts of the same filing. Each part is a tag chain; all parts must come from one filing.
 SGA_PARTS = (['SellingAndMarketingExpense', 'SellingExpense'], ['GeneralAndAdministrativeExpense'])
 STI_TAGS = ['ShortTermInvestments', 'MarketableSecuritiesCurrent', 'AvailableForSaleSecuritiesDebtSecuritiesCurrent']
@@ -459,7 +464,7 @@ def company_shard(payload, submissions, ticker_rows=None):
                 by_tag[c['tag']].append(y)
         for tag, ys in by_tag.items():
             quality.append({'kind': 'fallback', 'metric': metric, 'fy': ys, 'tag': tag,
-                            'text': f"{LABELS[metric]}: FY{', FY'.join(map(str, ys))} use the fallback tag {tag} (first choice {' or '.join(METRICS[metric][3][:STANDARD.get(metric, 1)])} not reported)."})
+                            'text': f"{LABELS[metric]}: FY{', FY'.join(map(str, ys))} use the fallback tag {tag} (first choice {' or '.join(first_choice(metric))} not reported)."})
         derived = [y for y, c in zip(years, row) if c and c.get('via') == 'derived']
         if derived:
             notes = sorted({c['note'] for c in row if c and c.get('via') == 'derived'})
