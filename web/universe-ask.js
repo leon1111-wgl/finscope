@@ -540,7 +540,7 @@ export function answerUniverse(r, p, ctx, helpers) {
   if (!p.companies.length) {
     if (/哪一?年|哪个财年|which (fiscal )?year|what year|in which year/.test(low)) return finish(r, {status: 'clarify', topic: 'ambiguous', plan: {...r.plan, metric: metricKeys[0] || null}, summary: L(lang,
       'Which company? Name a ticker or company name, and FinScope lists its fiscal years.', '哪家公司？请写出代码或公司名，FinScope 会列出它的各个财年。')});
-    if (has(UCUE.universeRank) || c.rank || p.cues.cashSupport) return screenPointer(r, p, ctx, helpers.selectFigures(p).metric || metricKeys[0] || null);
+    if (has(UCUE.universeRank) || c.rank) return screenPointer(r, p, ctx, helpers.selectFigures(p).metric || metricKeys[0] || null);
     return finish(r, {status: 'clarify', topic: 'ambiguous', plan: {...r.plan, metric: metricKeys[0] || null}, summary: L(lang,
       `Which company? Name a ticker or company name; the universe holds ${ctx.prepared.index.count} US large accelerated filers.`, `哪家公司？请写出代码或公司名；公司全集包括 ${ctx.prepared.index.count} 家美国大型加速申报公司。`)});
   }
