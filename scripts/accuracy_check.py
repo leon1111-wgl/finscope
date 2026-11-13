@@ -196,11 +196,47 @@ def identity_checks(index):
     return {'checked': checked, 'violations': len(found), 'examples': found[:50]}
 
 
+def labels_rerun(previous, universe=UNIVERSE):
+    """The fiscal-label section only, offline: FinScope's current label for each period an earlier run checked, against the
+    reference fy that run read from sub.txt (no SEC requests; the sample, periods and reference values are the earlier run's)."""
+    old = json.loads(Path(previous).read_text())
+    ends = {(c['cik'], c['fy']): c['period_end'] for c in old['cells']}
+    rows = []
+    for l in old['fiscal_labels']:
+        end = ends.get((l['cik'], l['fy']))
+        shard = json.loads((Path(universe) / 'c' / f"{l['cik']}.json").read_text())
+        p = next((x for x in shard['periods'] if x['end'] == end), None)
+        row = {**l, 'fy_before': l['fy'], 'fy': p['fy'] if p else None, 'period_end': end, 'own_label': p.get('fy_reported') if p else None}
+        if l['outcome'] != 'unverifiable':
+            row['outcome'] = 'match' if p and str(p['fy']) == str(l['reference_fy']) else 'fiscal mislabel'
+        rows.append(row)
+    checked = [r for r in rows if r['outcome'] != 'unverifiable']
+    ok = [r for r in checked if r['outcome'] == 'match']
+    return {'checked': len(checked), 'match': len(ok), 'changed_labels': sum(r['fy'] is not None and r['fy'] != r['fy_before'] for r in rows),
+            'mislabels': [{k: r[k] for k in ('cik', 'fy', 'fy_before', 'own_label', 'period_end', 'reference_fy')} for r in checked if r['outcome'] != 'match'],
+            'fiscal_label_at_least_98pct': bool(checked) and len(ok) / len(checked) >= 0.98, 'rows': rows, 'protocol': old['protocol'],
+            'reference': old['reference'], 'quarters': old['quarters'], 'earlier_code_commit': old['code_commit'], 'earlier_data_commit': old['data_commit']}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--out', default='accuracy.json')
     parser.add_argument('--older', action='store_true', help='Addendum A: the 4th and 7th most recent fiscal years, plus identity checks')
+    parser.add_argument('--labels-only', metavar='REPORT', help='Rerun only the fiscal-label section of an earlier report, offline, on the current shards')
     args = parser.parse_args()
+    if args.labels_only:
+        result = labels_rerun(args.labels_only)
+        try:
+            commit = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+            data_commit = subprocess.run(['git', 'log', '-1', '--format=%h', '--', 'web/data/universe/index.json'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        except OSError:
+            commit = data_commit = None
+        rows = result.pop('rows')
+        report = {'rerun_of': args.labels_only, 'section': 'fiscal labels only (offline rerun: same sample, periods and sub.txt reference fy)',
+                  'run_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'), 'code_commit': commit, 'data_commit': data_commit, **result, 'fiscal_labels': rows}
+        Path(args.out).write_text(json.dumps(report, indent=1) + '\n')
+        print(json.dumps({k: v for k, v in report.items() if k != 'fiscal_labels'}, indent=1))
+        return
     ua = os.environ.get('SEC_USER_AGENT', '')
     if '@' not in ua:
         raise SystemExit('SEC_USER_AGENT with a contact email is required (SEC fair-access policy).')

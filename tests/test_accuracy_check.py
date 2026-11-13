@@ -65,3 +65,21 @@ def test_eps_uses_its_own_unit_and_tolerance():
     num = {'A': [row('EarningsPerShareDiluted', '20250930', '4', 7.46, uom='USD/shares')]}
     c = cell('eps_diluted', 7.46, parts=[{'tag': 'EarningsPerShareDiluted', 'v': 7.46, 'sign': 1}])
     assert ac.judge(c, num, {'A': [{'stmt': 'IS', 'tag': 'EarningsPerShareDiluted'}]}, '2026-09-30')['outcome'] == 'match'
+
+
+def test_labels_only_rerun_reads_current_shards_against_the_earlier_reference(tmp_path=None):
+    import json, tempfile
+    tmp = Path(tmp_path or tempfile.mkdtemp())
+    (tmp / 'c').mkdir(parents=True, exist_ok=True)
+    (tmp / 'c' / '7.json').write_text(json.dumps({'periods': [{'fy': 2024, 'fy_reported': 2024, 'end': '2024-12-31'}, {'fy': 2025, 'fy_reported': 2024, 'end': '2025-12-31'}]}))
+    old = {'protocol': 'p', 'reference': 'r', 'quarters': [], 'code_commit': 'a', 'data_commit': 'b',
+           'cells': [{'cik': 7, 'fy': 2023, 'period_end': '2024-12-31'}, {'cik': 7, 'fy': 2024, 'period_end': '2025-12-31'}],
+           'fiscal_labels': [{'cik': 7, 'fy': 2023, 'reference_fy': '2024', 'outcome': 'fiscal mislabel'},
+                             {'cik': 7, 'fy': 2024, 'reference_fy': '2024', 'outcome': 'match'},
+                             {'cik': 7, 'fy': 2099, 'outcome': 'unverifiable', 'reason': 'publication lag'}]}
+    (tmp / 'old.json').write_text(json.dumps(old))
+    (tmp / 'c' / '7.json').write_text((tmp / 'c' / '7.json').read_text())
+    result = ac.labels_rerun(tmp / 'old.json', universe=tmp)
+    assert (result['checked'], result['match'], result['changed_labels']) == (2, 1, 2)
+    # The year ended 2025-12-31: its filing's reference fy is the mistyped 2024; FinScope now shows FY2025 and says why.
+    assert result['mislabels'] == [{'cik': 7, 'fy': 2025, 'fy_before': 2024, 'own_label': 2024, 'period_end': '2025-12-31', 'reference_fy': '2024'}]
