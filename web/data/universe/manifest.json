@@ -1,7 +1,7 @@
 {
  "schema": "finscope.universe.manifest/1",
  "built": "2026-11-13",
- "built_at": "2026-11-13T19:05:34.223053Z",
+ "built_at": "2026-11-13T19:42:12.335546Z",
  "companies": 1994,
  "templates": {
   "industrial": 1566,
@@ -21,20 +21,20 @@
   "no annual USD period in a 10-K": 4
  },
  "validation_failures": [],
- "shards_changed": 1857,
+ "shards_changed": 1994,
  "shards_removed": 0,
  "bytes": {
-  "index": 516198,
-  "screen": 813608,
-  "shards_total": 78507967,
-  "shard_median": 40772,
-  "shard_max": 73580
+  "index": 516556,
+  "screen": 813610,
+  "shards_total": 70506668,
+  "shard_median": 36654,
+  "shard_max": 71396
  },
  "sec": {
   "requests": 6028,
-  "compressed_bytes": 506215879,
+  "compressed_bytes": 506217383,
   "rate_limit_per_second": 8.0,
-  "seconds": 762
+  "seconds": 806
  },
  "sources": [
   "https://www.sec.gov/files/company_tickers_exchange.json",
