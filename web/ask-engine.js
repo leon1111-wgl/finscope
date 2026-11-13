@@ -746,7 +746,10 @@ export function answerQuestion(question, bundle, {date, universe} = {}) {
   return metricAnswer(r, p, bundle, index, t, metric, asOf);
 }
 
-const RATIO_PAIRS = {'net_income>revenue': 'net_margin', 'operating_income>revenue': 'operating_margin', 'operating_cash_flow>revenue': 'cash_margin', 'operating_cash_flow>net_income': 'cash_conversion', 'current_assets>current_liabilities': 'current_ratio', 'liabilities>assets': 'liabilities_assets', 'cash>current_liabilities': 'cash_coverage'};
+const RATIO_PAIRS = {'net_income>revenue': 'net_margin', 'operating_income>revenue': 'operating_margin', 'operating_cash_flow>revenue': 'cash_margin', 'operating_cash_flow>net_income': 'cash_conversion', 'current_assets>current_liabilities': 'current_ratio', 'liabilities>assets': 'liabilities_assets', 'cash>current_liabilities': 'cash_coverage',
+  'gross_profit>revenue': 'gross_margin', 'rnd>revenue': 'rnd_intensity', 'free_cash_flow>revenue': 'fcf_margin', 'total_debt>equity': 'debt_to_equity', 'operating_income>interest_expense': 'interest_coverage', 'net_income>equity': 'roe', 'net_income>assets': 'roa'};
+// One figure "as a share of" revenue, written with the figure first (研发占营收多少, R&D as a share of revenue).
+const SHARE_OF = /占.{0,6}(营收|收入|销售额)|as an? (%|percent|percentage|share|proportion) of (revenue|sales)|% of (revenue|sales)|of (revenue|sales)\b|to (revenue|sales)\b/;
 const EXCLUDE = /excluding|excl\.?|net of|without|不包括|不含|扣除|扣掉|剔除|除去/;
 // Which figure the question asks for. Two named figures are either a defined combination (by the words
 // between them), a list for one company, or declined — never the first one silently.
@@ -775,6 +778,7 @@ function selectFigures(p) {
     if (ids.length === 2 && set === 'net_income|operating_cash_flow') return p.companies.length >= 2 || (c.rank && !p.companies.length) ? {metric: 'cash_conversion'} : {route: 'cash_support'};
     return {figures: ids};
   }
+  if (ids.length === 2 && ids[1] === 'revenue' && RATIO_PAIRS[`${ids[0]}>revenue`] && SHARE_OF.test(p.low)) return {metric: RATIO_PAIRS[`${ids[0]}>revenue`]};
   if (ids.length === 1 && REPORTED.includes(ids[0])) {
     if (EXCLUDE.test(p.low)) return {decline: 'narrower'};
     if (/\bmargins?\b|\bratio\b|% of|percent(age)? of|as a share of|\bper (share|employee|user|unit|head)\b|占比|比例|比率|人均/.test(p.masked)) return {decline: 'combination'};

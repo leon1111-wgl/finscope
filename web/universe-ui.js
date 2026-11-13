@@ -197,7 +197,8 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
   function screenRows() {
     const f = s.filters, built = s.screen;
     let rows = built.rows;
-    if (f.peer) rows = rows.filter(r => r.peer === f.peer || (f.peer.startsWith('div:') && `div:${r.entry.v}` === f.peer) || (f.peer.startsWith('sic2:') && r.sic.padStart(4, '0').slice(0, 2) === f.peer.slice(5)));
+    if (f.peer.startsWith('sic2:')) rows = rows.filter(r => r.sic.padStart(4, '0').slice(0, 2) === f.peer.slice(5));
+    else if (f.peer) rows = rows.filter(r => (s.screen.members.get(f.peer) || []).includes(r));
     if (f.template) rows = rows.filter(r => r.entry.tp === f.template);
     if (f.text) { const q = f.text.toLowerCase(); rows = rows.filter(r => r.entry.t.some(t => t.toLowerCase() === q) || r.entry.n.toLowerCase().includes(q) || r.entry.z.some(z => z.includes(f.text))); }
     const num = v => v === '' ? null : Number(v);
@@ -219,7 +220,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
     const f = s.filters, rows = screenRows();
     const peers = [...new Map(s.screen.rows.map(r => [r.peer, r])).keys()].sort();
     const sic2 = [...new Set(s.screen.rows.map(r => r.sic.padStart(4, '0').slice(0, 2)).filter(x => /^\d\d$/.test(x)))].sort();
-    const pctCell = (r, k) => Number.isFinite(r.values[k]) ? `<span class="v">${k === 'cash_conversion' ? `${r.values[k].toFixed(2)}×` : `${(r.values[k] * 100).toFixed(1)}%`}</span><small class="pct" title="Percentile among ${r.peerN?.[k] ?? 0} peers in ${e(peerLabel(r.peer, s.screen.rows))}">p${r.pct[k]}</small>` : '<span class="missing">—</span>';
+    const pctCell = (r, k) => Number.isFinite(r.values[k]) ? `<span class="v">${k === 'cash_conversion' ? `${r.values[k].toFixed(2)}×` : `${(r.values[k] * 100).toFixed(1)}%`}</span><small class="pct" title="Percentile among ${r.peerN?.[k] ?? 0} companies with this indicator in ${e(peerLabel(r.peerFor?.[k] || r.peer, s.screen.rows))}">p${r.pct[k]}</small>` : '<span class="missing">—</span>';
     const body = rows.slice(0, s.shown).map(r => [`<button type="button" class="table-button" data-open="${r.c}">${e(primary(r.entry))}</button><small>${e(r.entry.n)}</small>`, `<small>${e(peerLabel(r.peer, s.screen.rows))}</small>`, `FY${r.fy}<small>${e(r.end)}</small>`,
       r.revenue ? `<a class="traced" href="${e(filingUrl(r.c, r.revenue[2]))}" target="_blank" rel="noopener noreferrer" title="${e(`${r.revenue[1]} · ${r.revenue[2]}`)}">${e(show('revenue', r.revenue[0]))}</a>` : '—', pctCell(r, 'cash_conversion'), pctCell(r, 'accruals'), pctCell(r, 'fcf_margin')]);
     const sortBtn = (key, text) => `<button type="button" class="sort" data-sort="${key}" aria-label="Sort by ${text}">${text}${f.sort === key ? (f.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button>`;

@@ -17,6 +17,7 @@ export const UCUE = {
 };
 
 const L = (lang, en, zh) => lang === 'zh' ? zh : en;
+const ordinal = n => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
 const finish = (r, fields) => Object.assign(r, fields);
 
 function definitionText(k, lang) {
@@ -316,15 +317,17 @@ function sectorRankAnswer(r, p, ctx, t, key) {
   const entry = ctx.entryOf(t), row = built.rows.find(x => x.c === entry.c);
   if (!row) return unavailable(r, p, ctx, t, ctx.shardOf(t), key, null, {reason: 'unsupported'});
   if (!row.values[key] && row.values[key] !== 0) return unavailable(r, p, ctx, t, ctx.shardOf(t), key, latestIndex(ctx.shardOf(t)), indicator(ctx.shardOf(t), key, latestIndex(ctx.shardOf(t))));
-  const peers = built.rows.filter(x => x.peer === row.peer && Number.isFinite(x.values[key]));
+  const peerKey = row.peerFor?.[key] || row.peer;
+  const peers = (built.members?.get(peerKey) || built.rows.filter(x => x.peer === peerKey)).filter(x => Number.isFinite(x.values[key]));
   const shard = ctx.shardOf(t), i = latestIndex(shard), res = indicator(shard, key, i);
   const meaning = {cash_conversion: L(lang, 'higher means more operating cash per dollar of profit', '越高表示每一美元利润对应的经营现金越多'), accruals: L(lang, 'higher means profit ran further ahead of operating cash', '越高表示利润越跑在经营现金前面'), fcf_margin: L(lang, 'higher means more free cash flow per dollar of revenue', '越高表示每一美元营收带来的自由现金流越多')}[key];
-  const group = row.peer.startsWith('div:') ? L(lang, `SIC division ${row.peer.slice(4)}`, `SIC 门类 ${row.peer.slice(4)}`) : `SIC ${row.peer.split(':')[1]}${row.peer.startsWith('sic4') ? '' : row.peer.startsWith('sic3') ? 'x' : 'xx'}`;
-  return finish(r, {topic: 'sector_rank', plan: {tickers: [t], metric: key, period: 'latest', peer_group: row.peer, peers: peers.length}, facts: res.sources.map(s => fact(shard, s, lang)),
+  const [tp, level, code] = peerKey.split(':');
+  const group = (level === 'div' ? L(lang, `SIC division ${code}`, `SIC 门类 ${code}`) : `SIC ${code}${level === 'sic4' ? '' : level === 'sic3' ? 'x' : 'xx'}`) + (tp === 'reit' ? L(lang, ', REITs', '，房地产信托') : '');
+  return finish(r, {topic: 'sector_rank', plan: {tickers: [t], metric: key, period: 'latest', peer_group: peerKey, peers: peers.length}, facts: res.sources.map(s => fact(shard, s, lang)),
     calculations: [calcOf(shard, t, key, i, row.values[key], lang), {label: L(lang, 'Peer percentile', '同业百分位'), formula: L(lang, '(peers below + half of ties) ÷ peers with a value × 100, latest fiscal year of each', '（低于它的同业数 + 并列数的一半）÷ 有数值的同业数 × 100，各取最新财年'), result: `${row.pct[key]} / 100`}].filter(Boolean),
-    summary: L(lang, `${nameOf(ctx, t, 'en')}'s ${lc(label(key, 'en'))} (FY${row.fy}) is ${show(key, row.values[key], 'en')}, at the ${row.pct[key]}th percentile of ${peers.length} companies in its peer group (${group}); ${meaning}. A position, not a rating.`,
+    summary: L(lang, `${nameOf(ctx, t, 'en')}'s ${lc(label(key, 'en'))} (FY${row.fy}) is ${show(key, row.values[key], 'en')}, at the ${ordinal(row.pct[key])} percentile of ${peers.length} companies in its peer group (${group}); ${meaning}. A position, not a rating.`,
       `${nameOf(ctx, t, 'zh')}的${label(key, 'zh')}（${row.fy} 财年）为 ${show(key, row.values[key], 'zh')}，在同业组（${group}）${peers.length} 家公司中处于第 ${row.pct[key]} 百分位；${meaning}。这只是位置，不是评级。`),
-    notes: [L(lang, 'Peer group: the most specific SIC level (4-digit, 3-digit, 2-digit, then division) with at least 10 companies. Each peer uses its own latest fiscal year. Banks and insurers are not in the screen.', '同业组取至少有 10 家公司的最细 SIC 层级（四位、三位、两位，再到门类）。每家同业用自己最新的财年。银行和保险公司不在筛选范围内。')],
+    notes: [L(lang, 'Peer group: the most specific SIC level (4-digit, 3-digit, 2-digit, then division) where at least 10 screened companies have this indicator. Each peer uses its own latest fiscal year. Banks and insurers are not in the screen.', '同业组取至少有 10 家筛选公司具备该指标的最细 SIC 层级（四位、三位、两位，再到门类）。每家同业用自己最新的财年。银行和保险公司不在筛选范围内。')],
     offers: [L(lang, `${t} cash conversion over the last five years`, `${t} 近五年的现金转化率`)]});
 }
 
@@ -462,6 +465,9 @@ export function answerUniverse(r, p, ctx, helpers) {
   }
   if (c.trend || p.range || p.lastN || p.years.length >= 3) return trendAnswer(r, p, u, t, key);
   if ((c.change && !c.definition) || p.years.length === 2) return changeAnswer(r, p, u, t, key);
-  if (c.definition && !p.years.length) { const d = universeDefinition({...r}, p, [key]); if (d) return finish(r, {...d, plan: {...d.plan, tickers: [t]}}); }
-  return metricAnswer(r, p, u, t, key);
+  // "What is X" names a definition; "why is X negative" asks about the figure, which is stated with a note on causes.
+  if (c.definition && !c.why && !p.years.length) { const d = universeDefinition({...r}, p, [key]); if (d) return finish(r, {...d, plan: {...d.plan, tickers: [t]}}); }
+  const answer = metricAnswer(r, p, u, t, key);
+  if (c.why && answer.status === 'answered') answer.notes.push(L(lang, 'The figures do not state causes; read management’s discussion and the notes in the filing for the reasons.', '数字本身不说明原因；原因请读财报中的管理层讨论和附注。'));
+  return answer;
 }

@@ -289,40 +289,49 @@ export function buildScreen(screen, prepared) {
     return entry ? {...r, entry, sic: String(entry.s || ''), values: screenValues(r)} : null;
   }).filter(Boolean);
   const counts = new Map();
+  // REITs are peers of REITs only, so an operating company in SIC division H is not ranked against property trusts.
   const keysOf = row => {
-    const s = row.sic.padStart(4, '0');
-    return /^\d{4}$/.test(row.sic) ? [`sic4:${s}`, `sic3:${s.slice(0, 3)}`, `sic2:${s.slice(0, 2)}`, `div:${row.entry.v}`] : [`div:${row.entry.v}`];
+    const s = row.sic.padStart(4, '0'), tp = row.entry.tp === 'reit' ? 'reit' : 'ind';
+    return (/^\d{4}$/.test(row.sic) ? [`sic4:${s}`, `sic3:${s.slice(0, 3)}`, `sic2:${s.slice(0, 2)}`, `div:${row.entry.v}`] : [`div:${row.entry.v}`]).map(k => `${tp}:${k}`);
   };
+  const fallbackKey = row => `${row.entry.tp === 'reit' ? 'reit' : 'ind'}:div:${row.entry.v}`;
   // Membership is by classification: a company's peers are every screened company that shares its peer key.
-  const members = new Map();
-  for (const row of rows) if (Object.values(row.values).some(Number.isFinite)) for (const k of keysOf(row)) {
-    counts.set(k, (counts.get(k) || 0) + 1);
+  // The level is chosen per indicator: the most specific one where at least PEER_MIN companies have that indicator.
+  const members = new Map(), finite = new Map();
+  for (const row of rows) for (const k of keysOf(row)) {
     if (!members.has(k)) members.set(k, []);
     members.get(k).push(row);
+    for (const key of SCREEN_KEYS) if (Number.isFinite(row.values[key])) finite.set(`${k}|${key}`, (finite.get(`${k}|${key}`) || 0) + 1);
+    if (Object.values(row.values).some(Number.isFinite)) counts.set(k, (counts.get(k) || 0) + 1);
   }
-  for (const row of rows) row.peer = keysOf(row).find(k => (counts.get(k) || 0) >= PEER_MIN) || `div:${row.entry.v}`;
-  const groups = new Map();
-  for (const row of rows) { if (!groups.has(row.peer)) groups.set(row.peer, members.get(row.peer) || [row]); }
-  const sorted = new Map();
+  const groups = new Map(), sorted = new Map();
   for (const row of rows) {
-    const peers = groups.get(row.peer);
-    row.pct = {}; row.peerN = {};
+    row.peer = keysOf(row).find(k => (counts.get(k) || 0) >= PEER_MIN) || fallbackKey(row);
+    row.peerFor = {}; row.pct = {}; row.peerN = {};
     for (const key of SCREEN_KEYS) {
-      const id = `${row.peer}|${key}`;
-      if (!sorted.has(id)) sorted.set(id, peers.map(m => m.values[key]).filter(Number.isFinite).sort((a, b) => a - b));
+      const peer = keysOf(row).find(k => (finite.get(`${k}|${key}`) || 0) >= PEER_MIN) || fallbackKey(row);
+      row.peerFor[key] = peer;
+      const id = `${peer}|${key}`;
+      if (!sorted.has(id)) sorted.set(id, (members.get(peer) || [row]).map(m => m.values[key]).filter(Number.isFinite).sort((a, b) => a - b));
       const vals = sorted.get(id), x = row.values[key];
       if (!Number.isFinite(x)) { row.pct[key] = null; continue; }
       const below = vals.filter(v => v < x).length, ties = vals.filter(v => v === x).length;
       row.pct[key] = Math.round(((below + 0.5 * ties) / vals.length) * 100);
       row.peerN[key] = vals.length;
     }
+    if (!groups.has(row.peer)) groups.set(row.peer, members.get(row.peer) || [row]);
   }
-  return {rows, groups};
+  return {rows, groups, members};
 }
 export function peerLabel(peer, rows, lang = 'en') {
+  const [tp, kind, code] = peer.split(':');
+  const label = peerLabelPlain(`${kind}:${code}`, rows.filter(r => r.peer.startsWith(`${tp}:`)), lang);
+  return tp === 'reit' ? `${label} (REITs)` : label;
+}
+function peerLabelPlain(peer, rows, lang) {
   const [kind, code] = peer.split(':');
   if (kind === 'div') return `${lang === 'zh' ? 'SIC 门类' : 'SIC division'} ${code} · ${DIVISION[code]?.[lang === 'zh' ? 1 : 0] || ''}`;
-  const sample = rows.find(r => r.peer === peer && r.entry.d);
+  const sample = rows.find(r => r.peer.endsWith(peer) && r.entry.d);
   const desc = kind === 'sic4' && sample ? ` · ${sample.entry.d}` : '';
   return `SIC ${code}${kind === 'sic4' ? '' : kind === 'sic3' ? 'x' : 'xx'}${desc}`;
 }
