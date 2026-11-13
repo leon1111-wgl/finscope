@@ -53,7 +53,11 @@ export function scoreBlindV3({label = 'blind-set v3 run', set = JSON.parse(fs.re
       const pt = a.plan.tickers || [];
       if (tickers.length && !(tickers.length === pt.length && tickers.every(t => pt.includes(t)))) why.push(`tickers ${pt.join(',') || '—'} ≠ ${tickers.join(',')}`);
       const gm = g.metric, pm = a.plan.metric;
-      if (gm && pm !== gm && !(g.topic === 'cash_support' && a.topic === 'cash_support') && !(gm === 'revenue_growth' && pm === 'revenue' && a.topic === 'change')) why.push(`metric ${pm} ≠ ${gm}`);
+      if (Array.isArray(gm)) {
+        // Several gold figures (a 'figures' question) match the box's list of figures (corrected after the first run; see ASK.md).
+        const pms = a.plan.metrics || [pm];
+        if (!(gm.length === pms.length && gm.every(m => pms.includes(m)))) why.push(`metrics ${pms.join(',')} ≠ ${gm.join(',')}`);
+      } else if (gm && pm !== gm && !(g.topic === 'cash_support' && a.topic === 'cash_support') && !(gm === 'revenue_growth' && pm === 'revenue' && a.topic === 'change')) why.push(`metric ${pm} ≠ ${gm}`);
       const gp = g.period, pp = a.plan.period;
       if (gp && !['ytd', 'bridge', 'rates', 'anomaly'].includes(g.topic)) {
         const one = tickers.length === 1 ? shardOf(tickers[0]) : null;

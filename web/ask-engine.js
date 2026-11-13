@@ -22,7 +22,7 @@ const EN_NAME = {AAPL: 'Apple', MSFT: 'Microsoft', NVDA: 'NVIDIA', AMZN: 'Amazon
 
 // ---------------------------------------------------------------- normalisation
 // Traditional characters that occur in the closed vocabulary below, mapped to simplified.
-const T2S = Object.fromEntries([...'蘋軟偉輝達亞馬遜臉書營淨負債資產應帳賬潤經動歷圖嗎買賣價漲長變獲對這個們麼來為會計準據與間異標報庫貨開總稅費錢銷額幣樣還轉換覆蓋虧損誰數時說從於幾進處現實際預測將給讓問題網頁鏈結財務詐騙紅員發構業級純毛關係區別差較點並讀載檔類評於腦嗎國趨勢舊攤權勵義億萬寫碼氣詩譯餘屬選優覽'].map((c, i) => [c, '苹软伟辉达亚马逊脸书营净负债资产应账账润经动历图吗买卖价涨长变获对这个们么来为会计准据与间异标报库货开总税费钱销额币样还转换覆盖亏损谁数时说从于几进处现实际预测将给让问题网页链结财务诈骗红员发构业级纯毛关系区别差较点并读载档类评于脑吗国趋势旧摊权励义亿万写码气诗译余属选优览'[i]]));
+const T2S = Object.fromEntries([...'賺蘋軟偉輝達亞馬遜臉書營淨負債資產應帳賬潤經動歷圖嗎買賣價漲長變獲對這個們麼來為會計準據與間異標報庫貨開總稅費錢銷額幣樣還轉換覆蓋虧損誰數時說從於幾進處現實際預測將給讓問題網頁鏈結財務詐騙紅員發構業級純毛關係區別差較點並讀載檔類評於腦嗎國趨勢舊攤權勵義億萬寫碼氣詩譯餘屬選優覽'].map((c, i) => [c, '赚苹软伟辉达亚马逊脸书营净负债资产应账账润经动历图吗买卖价涨长变获对这个们么来为会计准据与间异标报库货开总税费钱销额币样还转换覆盖亏损谁数时说从于几进处现实际预测将给让问题网页链结财务诈骗红员发构业级纯毛关系区别差较点并读载档类评于脑吗国趋势旧摊权励义亿万写码气诗译余属选优览'[i]]));
 
 export function normalize(text) {
   let s = String(text ?? '').normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g, ' ');
@@ -65,7 +65,7 @@ export const NOT_TICKERS = new Set(['SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', '
 // Figures, indicators, look-alikes the bundle does not hold, and bridge lines.
 const METRIC_ALIASES = {
   revenue: ['营收', '营业收入', '营业总收入', '总营收', '收入', '销售额', '销售收入', '营业额', '总收入', '主营收入', 'revenue', 'revenues', 'net sales', 'sales', 'total revenue', 'top line', 'topline', 'rev', 'revs', 'revnue', 'revenu', 'reveune'],
-  net_income: ['净利润', '净利', '纯利', '净收益', '净收入', '税后利润', '归母净利润', '利润', '盈利', '赚了多少钱', '赚多少钱', '赚了多少', '赚多少', '赚钱', '赚了', 'net income', 'net profit', 'net earnings', 'profit', 'profits', 'earnings', 'bottom line', 'net incom', 'net imcome', 'net icome'],
+  net_income: ['净利润', '净利', '纯利', '净收益', '净收入', '税后利润', '归母净利润', '利润', '盈利', '赚了多少钱', '赚多少钱', '赚了多少', '赚多少', '赚钱', '赚了', 'net income', 'net profit', 'net earnings', 'profit', 'profits', 'earnings', 'bottom line', 'net incom', 'net imcome', 'net icome', 'ni'],
   operating_income: ['营业利润', '经营利润', '营运利润', '经营性利润', '营业利益', 'operating income', 'operating profit', 'income from operations', 'operating earnings', 'op income', 'op inc'],
   operating_cash_flow: ['经营活动现金流量净额', '经营活动产生的现金流量净额', '经营活动产生的现金流', '经营活动现金流量', '经营活动现金流', '经营活动的现金流', '经营现金流量', '经营现金流', '经营性现金流', '营运现金流', '经营现金', '现金流量', '现金流', 'operating cash flow', 'operating cash flows', 'cash flow from operations', 'cash flows from operations', 'cash from operations', 'cash from operating activities', 'net cash provided by operating activities', 'operating cash', 'ocf', 'cash flow', 'cash flows', 'cashflow'],
   assets: ['总资产', '资产总额', '资产总计', '资产规模', '资产', 'total assets', 'assets'],
@@ -82,40 +82,40 @@ const METRIC_ALIASES = {
   cash_coverage: ['现金覆盖率', '现金比率', '现金覆盖', 'cash coverage', 'cash ratio', 'cash to current liabilities'],
   accruals: ['应计比率', '应计利润率', '应计项目', '应计利润', '应计', 'accrual ratio', 'accruals ratio', 'sloan accruals', 'accruals', 'accrual'],
   revenue_growth: ['营收增长率', '营收增速', '收入增长率', '收入增速', '营业收入增长率', '营业收入增速', '销售增长率', 'revenue growth rate', 'revenue growth', 'sales growth', 'top-line growth', 'topline growth'],
-  cash_conversion: ['现金转化率', '现金转化', '现金转换', '利润转化为现金', '利润转化成现金', '现金转换率', '利润现金含量', '盈利现金含量', '净利润现金含量', '净现比', '现金含量', '利润含金量', 'cash conversion ratio', 'cash conversion rate', 'cash conversion', 'ocf to net income', 'ocf/net income', 'ocf / net income', 'ocf/ni', 'operating cash flow to net income', 'cash-to-profit', 'cash to profit'],
+  cash_conversion: ['现金转化率', '现金转化', '现金转换', '利润转化为现金', '利润转化成现金', '现金转换率', '利润现金含量', '盈利现金含量', '净利润现金含量', '净现比', '现金含量', '利润含金量', 'cash conversion ratio', 'cash conversion rate', 'cash conversion', 'ocf to net income', 'ocf/net income', 'ocf / net income', 'ocf/ni', 'operating cash flow to net income', 'cash-to-profit', 'cash to profit', 'cash conv'],
   free_cash_flow: ['自由现金流量', '自由现金流', 'free cash flow', 'free cash flows', 'fcf'],
   profit_cash_gap: ['利润与现金差距', '利润和现金差距', '利润和现金流差距', '利润与现金流差距', '利润现金差距', '利润现金差', 'profit-to-cash gap', 'profit to cash gap', 'profit cash gap'],
   // 0.3.0 universe figures (answered from web/data/universe shards; see universe-ask.js).
   cost_of_revenue: ['营业成本', '销售成本', '主营业务成本', 'cost of revenue', 'cost of revenues', 'cost of sales', 'cost of goods sold', 'cogs'],
-  gross_profit: ['毛利润', '毛利', 'gross profit'],
+  gross_profit: ['毛利润', '毛利', 'gross profit', 'gp'],
   gross_margin: ['毛利率', 'gross margin', 'gross margins', 'gross profit margin'],
-  rnd: ['研发费用', '研发支出', '研发投入', '研发开支', '研发', 'r&d expense', 'r&d expenses', 'r&d spending', 'r&d', 'research and development', 'research & development'],
-  rnd_intensity: ['研发费用率', '研发强度', '研发投入占比', '研发占营收', 'r&d intensity', 'r&d as a percentage of revenue', 'r&d as % of revenue', 'r&d to revenue', 'r&d ratio'],
+  rnd: ['研发费用', '研发支出', '研发投入', '研发开支', '研发', 'r&d expense', 'r&d expenses', 'r&d spending', 'r&d', 'r & d', 'rnd', 'research and development', 'research & development'],
+  rnd_intensity: ['研发费用率', '研发强度', '研发投入占比', '研发占营收', '研发率', 'rnd率', 'rnd 率', 'r&d率', 'r&d 率', 'rnd intensity', 'rnd ratio', 'r&d intensity', 'r&d as a percentage of revenue', 'r&d as % of revenue', 'r&d to revenue', 'r&d ratio'],
   sga: ['销售及管理费用', '销售和管理费用', '销售、一般及管理费用', '销售管理费用', 'sg&a', 'sga', 'selling, general and administrative', 'selling general and administrative', 'selling, general & administrative'],
   interest_expense: ['利息支出', '利息费用', '利息开支', '利息', 'interest expense', 'interest expenses', 'interest cost', 'interest costs'],
   pretax_income: ['利润总额', '税前利润', '税前收入', 'pretax income', 'pre-tax income', 'income before tax', 'income before taxes', 'income before income taxes', 'pretax profit', 'pre-tax profit'],
   income_tax: ['所得税费用', '所得税', '税费', '缴税', '交了多少税', 'income tax', 'income taxes', 'income tax expense', 'tax expense', 'taxes', 'tax'],
   eps_diluted: ['稀释每股收益', '每股收益', '每股盈利', '每股净利', '每股利润', 'eps', 'diluted eps', 'earnings per share', 'diluted earnings per share'],
   shares_diluted: ['稀释股数', '稀释加权平均股数', '加权平均股数', 'diluted shares', 'weighted average shares', 'weighted-average shares', 'diluted share count', 'diluted shares outstanding'],
-  dividends: ['现金分红', '分红', '股息', '派息', 'dividends paid', 'cash dividends', 'dividends', 'dividend'],
+  dividends: ['现金分红', '分红', '股息', '派息', 'dividends paid', 'cash dividends', 'dividends', 'dividend', 'divs', 'div', 'divvies'],
   buybacks: ['股票回购', '股份回购', '回购', 'share buybacks', 'buybacks', 'buyback', 'share repurchases', 'share repurchase', 'stock repurchases', 'stock buybacks', 'repurchases', 'repurchase'],
   cash_sti: ['现金及短期投资', '现金和短期投资', '现金及有价证券', '现金和有价证券', '现金及投资', 'cash and short-term investments', 'cash and short term investments', 'cash & short-term investments', 'cash and marketable securities', 'cash, cash equivalents and marketable securities', 'cash, cash equivalents and short-term investments', 'cash and investments'],
   equity: ['股东权益合计', '股东权益', '所有者权益', '净资产', 'shareholders equity', "shareholders' equity", 'stockholders equity', "stockholders' equity", 'total equity', 'book value', 'equity'],
   total_debt: ['有息负债', '总债务', '债务总额', '总借款', '债务', '借款', '负债里的借款', 'total debt', 'debt', 'borrowings', 'total borrowings'],
-  debt_to_equity: ['债务权益比', '债务股本比', '有息负债权益比', 'debt to equity', 'debt-to-equity', 'debt/equity', 'd/e ratio'],
-  interest_coverage: ['利息保障倍数', '利息覆盖率', '利息覆盖倍数', '已获利息倍数', 'interest coverage', 'interest coverage ratio', 'times interest earned'],
+  debt_to_equity: ['债务权益比', '债务股本比', '有息负债权益比', 'debt to equity', 'debt-to-equity', 'debt/equity', 'd/e ratio', 'd/e'],
+  interest_coverage: ['利息保障倍数', '利息覆盖率', '利息覆盖倍数', '已获利息倍数', 'interest coverage', 'interest coverage ratio', 'times interest earned', 'int coverage', 'int cov', 'interest cov'],
   roe: ['净资产收益率', '股东权益回报率', '权益回报率', '权益收益率', 'roe', 'return on equity'],
   roa: ['总资产收益率', '资产回报率', '总资产回报率', '资产收益率', 'roa', 'return on assets'],
   fcf_margin: ['自由现金流利润率', '自由现金流率', '自由现金流占营收', 'free cash flow margin', 'fcf margin'],
   payout: ['股东回报', '股东回馈', '分红加回购', '分红和回购', '分红与回购', 'shareholder payout', 'shareholder returns', 'capital returned to shareholders', 'total payout', 'dividends and buybacks', 'dividends plus buybacks'],
-  net_interest_income: ['净利息收入', '利息净收入', 'net interest income', 'nii'],
-  noninterest_income: ['非利息收入', 'noninterest income', 'non-interest income', 'fee income'],
-  provision: ['信贷损失准备', '贷款损失准备', '信用损失准备', '拨备', '信用减值损失', 'provision for credit losses', 'provision for loan losses', 'credit loss provision', 'loan loss provision', 'loan loss provisions', 'provisions'],
+  net_interest_income: ['净利息收入', '利息净收入', 'net interest income', 'net int income', 'nii'],
+  noninterest_income: ['非利息收入', 'noninterest income', 'non-interest income', 'non interest income', 'non int income', 'non-int income', 'nonint income', 'fee income'],
+  provision: ['信贷损失准备', '贷款损失准备', '信用损失准备', '拨备', '信用减值损失', 'provision for credit losses', 'provision for loan losses', 'credit loss provision', 'loan loss provision', 'loan loss provisions', 'provisions', 'provision'],
   deposits: ['客户存款', '存款', 'total deposits', 'deposits'],
   loans: ['贷款净额', '贷款总额', '贷款', 'net loans', 'total loans', 'loan book', 'loans'],
   premiums: ['已赚保费', '保费收入', '保费', 'premiums earned', 'net premiums earned', 'premium revenue', 'premiums'],
   net_investment_income: ['净投资收益', 'net investment income', 'investment income'],
-  real_estate: ['投资性房地产', '房地产净值', '房地产投资', 'real estate investments', 'real estate assets', 'investment property', 'investment properties', 'rental properties']
+  real_estate: ['投资性房地产', '房地产净值', '房地产投资', 'real estate investments', 'real estate assets', 'net real estate', 'real estate, net', 'real estate', 'investment property', 'investment properties', 'rental properties']
 };
 const UNSUPPORTED = {
   basic_eps: [['基本每股收益', 'basic eps', 'basic earnings per share'], 'Basic earnings per share (FinScope holds diluted EPS as reported)', '基本每股收益（FinScope 只有报告的稀释每股收益）'],
@@ -247,9 +247,9 @@ const CUE = {
   advice: /买入|买进|卖出|卖掉|抛售|抛了|抛掉|继续持有|该持有|要不要持有|值得持有|持有还是|还能持有|持有吗|加仓|减仓|建仓|清仓|抄底|仓位|值得买|值不值得|值得投资|能买吗|能买么|可以买|能不能买|该不该买|要不要买|买吗|买么|买不买|卖吗|卖么|卖不卖|推荐.{0,6}股|荐股|目标价|上车|梭哈|all in|投资建议|该买|该卖|入手|低估|高估|便宜吗|贵吗|划算|投资价值|长期持有|买哪|投哪|选哪只|哪只股票|哪个股票|哪支股票|牛股|跑赢|赚钱机会|能投吗|可以投吗|投不投|要不要投|值得入|能不能投|\bbuy\b(?! ?backs?)|\bbuying\b(?! ?backs?)|(should|time to|when to|do|would|can|must) (i |we |you )?(still )?sell\b|\bsell (it|them|my|the stock|the shares|shares|stock|now|before|after|or|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet)\b|buy or sell|\bsell signal|\bselling (it|now|my)\b|(should|do|would|can) (i|you|we) (keep )?hold|hold (the |this |my |its )?(stock|shares|position)|buy,? (or )?hold|hold or sell|keep holding|\bhold (nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|it|them)\b|\bholding it\b|should i (invest|buy|sell|hold|get|own|add|trim|short|long)|worth (investing|buying|it)|(good|best|better|safest|top) (investment|buy|stock|pick)s?|最值得投资|最值得买|哪个最值得|invest in|investment advice|price target|target price|undervalued|overvalued|bullish|bearish|to the moon|recommend(ation)? (a |any )?stock|which stock|stock pick|long or short|go long|go short|portfolio|allocat|outperform|is it a buy|cheap stock|expensive stock/,
   fraud: /造假|做假账|假账|财务造假|财务舞弊|舞弊|欺诈|粉饰|操纵利润|利润操纵|操纵财报|调节利润|做账|虚增|暴雷|爆雷|骗局|fraud|cook(ing|ed|s)? (the|its|their)? ?books|manipulat|accounting scandal|beneish|m-score|cheat|lying about|fake (numbers|earnings|profit)|ponzi/,
   forecast: /gonna|going to be|next yr|下一年度|预测|预计|预期|明年|后年|下一年|下个财年|下一个财年|下一财年|未来|将来|以后会|接下来|会不会|会增长|会下降|会怎样|会怎么样|会如何|能达到|能不能达到|前景|展望|业绩指引|指引|guidance|forecast|predict|projection|projected|outlook|next year|next fiscal|next quarter|下个季度|下季度|in the future|going forward|will (it|they|its|their|the|nvda|aapl|msft|amzn|googl|meta|apple|microsoft|nvidia|amazon|google|alphabet|revenue|profit|earnings|cash)?.{0,30}\b(grow|increase|decrease|rise|fall|be|reach|beat|miss|keep|continue|stay|go)\b|expected to|estimates? for|consensus|分析师预期/,
-  scope: /能干嘛|干嘛的|干嘛用|是干什么的|干什么用|有什么用|能做啥|what (can|does) (this|it) do|what('s| is) this (tool |box |thing )?for|what is this (tool|box|thing)|what can (you|u) do|what do (you|u) do|哪几家|几家公司|哪些家|能问啥|问啥|能干啥|能做啥|能回答啥|可以问啥|你能回答什么|你能做什么|你会什么|能问什么|可以问什么|可以回答什么|能回答什么|能回答哪些|支持哪些|支持什么|怎么用|如何使用|使用说明|有什么功能|帮助|help\b|what can (you|i) (ask|do|answer)|what (questions|kinds? of questions|can this)|how (do|does|can) (i use|this work|it work)|哪些公司|有哪些公司|包括哪些公司|覆盖(哪些|什么)|which companies|what companies|companies (are )?(covered|included|available)|list (of )?(the )?companies|^(你好|您好|hello|hi|hey)[!！.。 ]*$/,
+  scope: /会啥|都会|会什么|会些什么|能做什么|wat can|wut can|what can u\b|能干嘛|干嘛的|干嘛用|是干什么的|干什么用|有什么用|能做啥|what (can|does) (this|it) do|what('s| is) this (tool |box |thing )?for|what is this (tool|box|thing)|what can (you|u) do|what do (you|u) do|哪几家|几家公司|哪些家|能问啥|问啥|能干啥|能做啥|能回答啥|可以问啥|你能回答什么|你能做什么|你会什么|能问什么|可以问什么|可以回答什么|能回答什么|能回答哪些|支持哪些|支持什么|怎么用|如何使用|使用说明|有什么功能|帮助|help\b|what can (you|i) (ask|do|answer)|what (questions|kinds? of questions|can this)|how (do|does|can) (i use|this work|it work)|哪些公司|有哪些公司|包括哪些公司|覆盖(哪些|什么)|which companies|what companies|companies (are )?(covered|included|available)|list (of )?(the )?companies|^(你好|您好|hello|hi|hey)[!！.。 ]*$/,
   freshness: /数据.{0,4}(什么时候|哪天|哪一天|多久|几号|新吗|旧吗|过时|最新吗)|什么时候的数据|哪天的数据|几号的数据|how old is the data|is the data (current|recent|up to date|stale|old)|数据(的)?(更新|截至|截止|最新|日期|时间|多新|多久|有多新|是哪天|什么时候)|更新到|截至什么时候|截止到什么时候|截止什么时候|最新数据是|数据是最新的吗|多久更新|什么时候更新|data (as of|date|freshness|updated|current|from when)|how (recent|fresh|current|up to date|old) is|last updated|up to date|when (was|is|were) (the )?(data|bundle|snapshot|evidence)|as of when|data cutoff|cut-?off date/,
-  definition: /是个啥|啥是|什么是|是什么意思|什么意思|啥意思|是啥|是什么|的含义|含义|定义|怎么算|如何计算|怎么计算|计算公式|公式|怎么理解|解释一下|^what (is|are|does) |what does .* mean|\bmeans?\b\??$|\bdefine\b|definition|meaning of|how (is|are|do you|does finscope) .{0,40}(calculated|computed|measured|defined|work)|\bformula\b|explain (what|the term)/,
+  definition: /\bmeaning\b|啥\s*[?？]?$|是个啥|啥是|什么是|是什么意思|什么意思|啥意思|是啥|是什么|的含义|含义|定义|怎么算|如何计算|怎么计算|计算公式|公式|怎么理解|解释一下|^what (is|are|does) |what does .* mean|\bmeans?\b\??$|\bdefine\b|definition|meaning of|how (is|are|do you|does finscope) .{0,40}(calculated|computed|measured|defined|work)|\bformula\b|explain (what|the term)/,
   rates: /国债|美债|treasury|treasuries|t-bill|t-note|yield curve|收益率曲线|无风险利率|risk-free|bond yield|利率环境|美国利率/,
   rateWords: /收益率|利率|yield|yields|\brates?\b/,
   tenor: /(个月|月期|年期|-?month|-?year|\b\d{1,2}\s*[ym]\b)/,
@@ -355,6 +355,7 @@ function indicator(bundle, ticker, entry, key, asOf, lang) {
 }
 
 // ---------------------------------------------------------------- reading the question
+const FIRST_WORD_STOP = new Set(['what', 'how', 'which', 'who', 'why', 'when', 'where', 'is', 'are', 'was', 'do', 'does', 'did', 'can', 'could', 'should', 'would', 'will', 'the', 'a', 'an', 'show', 'give', 'list', 'compare', 'tell', 'find', 'get', 'any', 'all', 'and', 'or', 'but', 'if', 'on', 'in', 'at', 'by', 'for', 'to', 'of', 'it', 'i', 'me', 'my', 'we', 'us', 'you', 'so', 'be', 'go', 'no', 'yes', 'hi', 'hey', 'pls', 'please', 'low', 'high', 'now', 'top', 'best', 'new', 'big', 'key', 'one', 'two', 'net', 'cost', 'cash', 'real', 'well', 'open', 'plus', 'sum', 'avg', 'max', 'min']);
 const SIX_CIK = {320193: 'AAPL', 789019: 'MSFT', 1045810: 'NVDA', 1018724: 'AMZN', 1652044: 'GOOGL', 1326801: 'META'};
 const FIGURE_WORDS = new Set(Object.values(METRIC_ALIASES).flat().concat(Object.values(UNSUPPORTED).flatMap(([list]) => list || [])));
 
@@ -386,6 +387,17 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
       const entry = universe.byCik.get(h.cik), ticker = SIX_CIK[h.cik] || primary(entry);
       hits.push({start: h.start, end: h.end, ticker});
       if (!SIX_CIK[h.cik]) ucompanies.push(ticker);
+    }
+    // A lower-case ticker as the first word, directly before a figure or Chinese text (de roe 24, all 负债率), names a company.
+    const first = !hits.length && text.match(/^\s*\$?([a-z]{1,5})(?=\s|[㐀-鿿]|$)/);
+    if (first) {
+      const tok = first[1], start = first[0].length - tok.length, entry = universe.byTicker.get(tok.toUpperCase());
+      const rest = text.slice(first[0].length);
+      const figureNext = figureSpans.some(f => f.start > start + tok.length && /^\s*$/.test(low.slice(start + tok.length, f.start)));
+      if (entry && !inFigure(start, start + tok.length) && (/^\s*[㐀-鿿]/.test(rest) || (figureNext && !FIRST_WORD_STOP.has(tok)))) {
+        hits.push({start, end: start + tok.length, ticker: SIX_CIK[entry.c] || primary(entry)});
+        if (!SIX_CIK[entry.c]) ucompanies.push(primary(entry));
+      }
     }
     for (const o of matchOutside(universe, low)) if (!hits.some(x => o.start < x.end && x.start < o.end)) { others.push(text.slice(o.start, o.end)); otherReasons.push(o.reason); }
   } else others = findSpans(low, OTHER_TABLE).map(h => text.slice(h.start, h.end));
@@ -436,8 +448,9 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   // Relative years follow the information date, not the build date.
   const year = Number((asOf || bundle?.as_of || '2026').slice(0, 4));
   let relative = null, m;
-  if ((m = low.match(/前年|year before last/))) addYear(year - 2, m.index);
-  else if ((m = low.match(/去年|上一年|上年度|last year|previous year|prior year/)) && !/比去年|较去年|相比去年|和去年比|跟去年比|than last year|vs\.? last year|versus last year|compared (to|with) (the )?(last|prior|previous) year|from last year|over last year/.test(low)) addYear(year - 1, m.index);
+  const relYears = new Set();
+  if ((m = low.match(/前年|year before last/))) { addYear(year - 2, m.index); relYears.add(year - 2); }
+  else if ((m = low.match(/去年|上一年|上年度|last year|previous year|prior year/)) && !/比去年|较去年|相比去年|和去年比|跟去年比|than last year|vs\.? last year|versus last year|compared (to|with) (the )?(last|prior|previous) year|from last year|over last year/.test(low)) { addYear(year - 1, m.index); relYears.add(year - 1); }
   const ago = low.match(/(\d{1,2}|[一两二三四五六七八九十])\s*(?:个)?(?:财年|年)前/) || low.match(/(\d{1,2}|a|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:fiscal\s+)?years?\s+ago/);
   if (ago) addYear(year - (/\d/.test(ago[1]) ? Number(ago[1]) : ago[1] === 'a' || ago[1] === 'one' ? 1 : CN_NUM[ago[1]] || EN_NUM[ago[1]]), ago.index);
   if (/今年(?!以来)|本年度|this year(?! so far)|this fiscal year|本财年/.test(low)) relative = 'this_year';
@@ -445,8 +458,12 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   let lastN = null;
   const n1 = low.match(/(?<![比较和跟与对])(?:近|最近|过去|前)\s*(\d{1,2}|[一两二三四五六七八九十])\s*(?:个)?(?:财年|年)(?!前)/);
   const n2 = low.match(/(?:past|last|previous)\s+(\d{1,2}|two|three|four|five|six|seven|eight|nine|ten)\s+(?:fiscal\s+)?years/);
+  // Bare spans count too: 5y, 5 yrs, 这5年, 3年 (one to ten years; 24年 is a year, 两年前 is a date).
+  const n3 = !n1 && !n2 && low.match(/(?<![\d.])(\d{1,2})\s*(?:y|yr|yrs|year|years)\b(?!\s*ago)/);
+  const n4 = !n1 && !n2 && !n3 && low.match(/(?<![\d.])(\d{1,2}|[两二三四五六七八九十])\s*(?:个)?(?:财年|年)(?!前|度|期|内|后|报|初|底|末|以来|来|的)/);
   if (n1) lastN = /\d/.test(n1[1]) ? Number(n1[1]) : CN_NUM[n1[1]];
   else if (n2) lastN = /\d/.test(n2[1]) ? Number(n2[1]) : EN_NUM[n2[1]];
+  else for (const n of [n3, n4]) if (n) { const v = /\d/.test(n[1]) ? Number(n[1]) : CN_NUM[n[1]]; if (v >= 2 && v <= 10) lastN = v; }
   if (lastN !== null && lastN < 2) lastN = null;
   const has = re => re.test(low);
   let masked = low;
@@ -455,7 +472,7 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   const yearOrder = [...yearPos.entries()].sort((a, b) => a[1] - b[1]).map(([y]) => y);
   return {
     universe: Boolean(universe), text, low, masked, lang, companies, ucompanies, companySpans: hits, others, otherReasons, metrics, unsupported, bridge, price, spans, dates, badDates,
-    years: [...yearPos.keys()].sort(), yearOrder, range, relative, lastN,
+    years: [...yearPos.keys()].sort(), yearOrder, range, relative, relYears, lastN,
     cues: Object.fromEntries(Object.entries(CUE).map(([k, re]) => [k, maskedCue.has(k) ? re.test(masked) : has(re)]))
   };
 }
@@ -781,6 +798,7 @@ function selectFigures(p) {
     const [a, b] = figSpans;
     const between = p.low.slice(a.end, b.start), window = p.low.slice(Math.max(0, a.start - 8), b.end);
     const key = `${a.id}>${b.id}`, set = [a.id, b.id].sort().join('|');
+    if (set === 'buybacks|dividends' && /\+|plus|加上|合计|总共|一共|combined|together|total/.test(window)) return {metric: 'payout'};
     if (/minus|减去|减掉|after (deducting|subtracting)/.test(between)) { const m = {'net_income>operating_cash_flow': 'profit_cash_gap', 'operating_cash_flow>capex': 'free_cash_flow'}[key]; return m ? {metric: m} : {decline: 'combination'}; }
     if (EXCLUDE.test(window)) return set === 'capex|operating_cash_flow' ? {metric: 'free_cash_flow'} : {decline: 'combination'};
     if (/divided by|÷|\/|as an? (%|percent|percentage|share|proportion) of|% of|percent of|percentage of|share of|占|除以|之比|比率|ratio of|relative to/.test(between) || /占.{0,4}比|比例/.test(window)) return RATIO_PAIRS[key] ? {metric: RATIO_PAIRS[key]} : {decline: 'combination'};

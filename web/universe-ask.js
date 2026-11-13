@@ -9,7 +9,7 @@ export const SUPPORTED = new Set([...Object.keys(FIGURES), ...Object.keys(INDICA
 
 export const UCUE = {
   lineage: /哪个标签|什么标签|用的.{0,6}标签|标签是|xbrl|\btags?\b|哪个科目|取自|口径|lineage|fallback|备用标签|which (filing|concept|element|line)|what (tag|concept|element)|where (does|did|do) .{0,40}(come from|from)|从哪(个|份|里)?(来|取)|来自哪|数据出处|出处|来源/,
-  quality: /数据质量|数据.{0,4}(问题|缺失|异常|毛病|坑|注意)|有没有.{0,4}(问题|缺失|重述)|缺失|缺了|没报|重述|追溯调整|restat|amend|data[- ](quality|issues?|problems?|gaps?|caveats?)|(any|known) (data )?(issues?|problems?|caveats?|quirks?|gaps?)|missing (data|figures|values|items)|quirks?|caveats?|what('s| is) (missing|odd|wrong) with/,
+  quality: /数据质量|质量问题|数据.{0,8}(问题|缺失|异常|毛病|坑|注意|质量)|有没有.{0,4}(问题|缺失|重述)|缺失|缺了|没报|重述|追溯调整|restat|amend|data[- ](quality|issues?|problems?|gaps?|caveats?)|(any|known) (data )?(issues?|problems?|caveats?|quirks?|gaps?)|missing (data|figures|values|items)|quirks?|caveats?|what('s| is) (missing|odd|wrong) with/,
   sector: /行业|同行|同业|板块|同类|peer|peers|sector|industry|in (its|their) (group|space)/,
   percentile: /百分位|分位|排第几|排名|排在|位置|处于|水平|percentile|rank|ranks|ranking|where (does|do|is|are)|how .{0,20}compare|stack up|standing/,
   universeRank: /哪家|哪个公司|哪一家|which (company|bank|insurer|reit|one|firm|stock)|who has|highest|lowest|largest|biggest|top \d+|\btop\b|最高|最低|最大|最多|最少|排名|排行/,
@@ -95,6 +95,12 @@ function nameOf(ctx, t, lang) {
 function resolveIndex(p, shard, t, ci = 0) {
   if (p.exactEnd) { const i = shard.periods.findIndex(x => x.end === p.exactEnd); return i >= 0 ? {i} : {bad: 'date'}; }
   const years = p.companies.length >= 2 && p.yearOrder.length === p.companies.length ? [p.yearOrder[ci]] : p.years;
+  if (years.length && p.relYears?.has(years.at(-1))) {
+    const y = years.at(-1), a = Date.parse(`${y}-01-01`), b = Date.parse(`${y}-12-31`);
+    const overlap = q => Math.max(0, Math.min(b, Date.parse(q.end)) - Math.max(a, Date.parse(q.start)));
+    const best = shard.periods.map((q, i) => [overlap(q), i]).sort((x, z) => z[0] - x[0])[0];
+    if (best && best[0] > 0) return {i: best[1], asked: shard.periods[best[1]].fy, relative: y};
+  }
   if (years.length) {
     const y = years.at(-1), i = periodIndex(shard, y);
     if (i >= 0) return {i, asked: y};
@@ -218,11 +224,11 @@ function trendAnswer(r, p, ctx, t, key) {
   let stated = 0;
   for (const i of idx) {
     const res = indicator(shard, key, i);
-    if (res.reason === 'unsupported') return unavailable(r, p, ctx, t, shard, key, i, res);
+    if (res.reason === 'unsupported') return withSpan(unavailable(r, p, ctx, t, shard, key, i, res), p);
     rows.push([`FY${shard.periods[i].fy}`, shard.periods[i].end, res.value === null ? L(lang, 'not stated', '无') : show(key, res.value, lang)]);
     if (res.value !== null) { stated++; facts.push(...res.sources.map(s => fact(shard, s, lang))); const c = calcOf(shard, t, key, i, res.value, lang); if (c) calcs.push(c); }
   }
-  if (!stated) return unavailable(r, p, ctx, t, shard, key, idx.at(-1), indicator(shard, key, idx.at(-1)));
+  if (!stated) return withSpan(unavailable(r, p, ctx, t, shard, key, idx.at(-1), indicator(shard, key, idx.at(-1))), p);
   const span = `FY${shard.periods[idx[0]].fy}–FY${shard.periods[idx.at(-1)].fy}`;
   const notes = noteFor(shard, key, facts.map(f => ({...f, metric: f.key, fy: f.fiscal_year})), lang);
   if (p.lastN && idx.length < p.lastN) notes.push(L(lang, `Only ${idx.length} fiscal years are available.`, `只有 ${idx.length} 个财年的数据。`));
@@ -231,6 +237,8 @@ function trendAnswer(r, p, ctx, t, key) {
     summary: L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(key, 'en'))} ${span}: ${rows.map(x => `${x[0]} ${x[2]}`).join(', ')}.`,
       `${nameOf(ctx, t, 'zh')} ${span} 的${label(key, 'zh')}：${rows.map(x => `${x[0]} ${x[2]}`).join('，')}。`), notes});
 }
+
+const withSpan = (r, p) => { if (p.lastN) r.plan.period = `last${p.lastN}`; return r; };
 
 function changeAnswer(r, p, ctx, t, key) {
   const lang = p.lang, shard = ctx.shardOf(t);
@@ -255,7 +263,7 @@ function changeAnswer(r, p, ctx, t, key) {
     notes: noteFor(shard, key, [...a.sources, ...b.sources], lang)});
 }
 
-function compareAnswer(r, p, ctx, tickers, key) {
+function compareAnswer(r, p, ctx, tickers, key, {rank = false, low = false} = {}) {
   const lang = p.lang, rows = [], facts = [], calcs = [], skipped = [];
   const values = [];
   tickers.forEach((t, ci) => {
@@ -274,15 +282,19 @@ function compareAnswer(r, p, ctx, tickers, key) {
   if (!values.length) return finish(r, {status: 'not_in_bundle', topic: 'missing_fact', plan: {tickers, metric: key, period: p.years.length ? `FY${p.years.at(-1)}` : 'latest'},
     table: {columns: [L(lang, 'Company', '公司'), L(lang, 'Fiscal year', '财年'), L(lang, 'Period end', '期末'), label(key, lang)], rows: rows.map(x => x.length === 4 ? x : [...x])},
     summary: L(lang, `${label(key, 'en')} is not available for any of these companies.`, `这些公司都没有可用的${label(key, 'zh')}。`)});
-  const sorted = [...values].sort((a, b) => b[1] - a[1]);
+  const sorted = [...values].sort((a, b) => low ? a[1] - b[1] : b[1] - a[1]);
   const fys = new Set(values.map(v => v[2]));
   const notes = [];
   if (fys.size > 1 || tickers.some(t => ctx.shardOf(t)?.periods.at(-1).end.slice(5) !== ctx.shardOf(tickers[0])?.periods.at(-1).end.slice(5))) notes.push(L(lang, 'Fiscal years end on different dates; each company is shown with its own fiscal year and period end.', '各公司的财年截止日不同；每家公司都标明了各自的财年和期末。'));
   if (skipped.length) notes.push(L(lang, `Not stated for ${skipped.join(', ')} (see the table).`, `${skipped.join('、')} 没有给出（见表格）。`));
-  return finish(r, {topic: 'compare', plan: {tickers, metric: key, period: p.years.length ? `FY${p.years.at(-1)}` : 'latest'}, facts, calculations: calcs,
+  if (rank) {
+    rows.sort((a, b) => { const i = tickers.findIndex(t => a[0].includes(`(${t})`) || a[0].includes(`（${t}）`)), j = tickers.findIndex(t => b[0].includes(`(${t})`) || b[0].includes(`（${t}）`)); return sorted.findIndex(v => v[0] === tickers[i]) - sorted.findIndex(v => v[0] === tickers[j]); });
+    notes.push(L(lang, 'A ranking of the companies named, each on its own latest fiscal year; not a judgement of quality or value.', '只对点名的公司排序，各用自己的最新财年；不评价质量或投资价值。'));
+  }
+  return finish(r, {topic: rank ? 'rank' : 'compare', plan: {tickers, metric: key, period: p.years.length ? `FY${p.years.at(-1)}` : 'latest'}, facts, calculations: calcs,
     table: {columns: [L(lang, 'Company', '公司'), L(lang, 'Fiscal year', '财年'), L(lang, 'Period end', '期末'), label(key, lang)], rows},
-    summary: L(lang, `${label(key, 'en')}: ${sorted.map(([t, v, y]) => `${t} ${show(key, v, 'en')} (FY${y})`).join(', ')}. Highest: ${sorted[0][0]}.`,
-      `${label(key, 'zh')}：${sorted.map(([t, v, y]) => `${t} ${show(key, v, 'zh')}（${y} 财年）`).join('，')}。最高：${sorted[0][0]}。`), notes});
+    summary: L(lang, `${label(key, 'en')}: ${sorted.map(([t, v, y]) => `${t} ${show(key, v, 'en')} (FY${y})`).join(', ')}. ${low ? 'Lowest' : 'Highest'}: ${sorted[0][0]}.`,
+      `${label(key, 'zh')}：${sorted.map(([t, v, y]) => `${t} ${show(key, v, 'zh')}（${y} 财年）`).join('，')}。${low ? '最低' : '最高'}：${sorted[0][0]}。`), notes});
 }
 
 function cashSupportAnswer(r, p, ctx, t) {
@@ -383,6 +395,14 @@ function overviewAnswer(r, p, ctx, t) {
   return res;
 }
 
+const FILLER = /\b(the|of|for|in|a|an|about|please|pls|show|me|give|tell|latest|fy|data|numbers|figures|financials?|company|inc|corp|co)\b|的|是|吗|呢|啊|吧|最新|数据|看看|一下|查一下|查|请|给我|公司|情况|财务/g;
+function onlyCompany(p) {
+  let rest = p.low;
+  for (const h of p.companySpans || []) rest = rest.slice(0, h.start) + ' '.repeat(h.end - h.start) + rest.slice(h.end);
+  rest = rest.replace(FILLER, ' ').replace(/[\d\s\p{P}\p{S}]+/gu, '');
+  return rest.length === 0;
+}
+
 // ------------------------------------------------------------------ entry point
 // r: the base answer, p: the parsed question (companies as primary tickers), ctx: {prepared, shards, screen, asOf, latestDate}.
 export function answerUniverse(r, p, ctx, helpers) {
@@ -452,7 +472,11 @@ export function answerUniverse(r, p, ctx, helpers) {
       'Ask about one figure at a time for comparisons, trends and changes. For one company, several figures for the same year can be listed together.', '比较、走势和变化请一次问一个数字。同一家公司同一年的几个数字可以一起列出。')});
   }
   if (!key) {
-    if (p.companies.length === 1) return overviewAnswer(r, p, u, t);
+    if (p.companies.length === 1 && (has(UCUE.overview) || onlyCompany(p))) return overviewAnswer(r, p, u, t);
+    if (p.companies.length === 1) return finish(r, {status: 'clarify', topic: 'clarify', plan: {...r.plan, tickers: [t]}, summary: L(lang,
+      `Which figure for ${nameOf(u, t, 'en')}? FinScope did not recognise one in the question, so it states none rather than guess. For example: revenue, gross margin, net income, free cash flow, total debt, ROE, or "tell me about ${t}".`,
+      `要 ${nameOf(u, t, 'zh')} 的哪个数字？问题里没有读出可识别的指标，所以不猜测、不给数字。例如：营收、毛利率、净利润、自由现金流、有息负债、净资产收益率，或“介绍一下 ${t}”。`),
+      offers: [L(lang, `Tell me about ${t}`, `介绍一下 ${t}`), L(lang, `${t} revenue over the last five years`, `${t} 近五年的营收`)]});
     return finish(r, {status: 'clarify', topic: 'clarify', plan: {...r.plan, tickers: [...p.companies]}, summary: L(lang, 'Which figure should be compared? For example revenue, gross margin or free cash flow.', '要比较哪个数字？例如营收、毛利率或自由现金流。'),
       offers: [L(lang, `Compare ${p.companies.join(', ')} revenue`, `比较 ${p.companies.join('、')} 的营收`)]});
   }
@@ -461,7 +485,8 @@ export function answerUniverse(r, p, ctx, helpers) {
       offers: p.companies.map(x => L(lang, `${x} ${lc(label(key, 'en'))} trend`, `${x} 近几年的${label(key, 'zh')}`))});
     let k = key;
     if ((c.growthCompare || c.growthRank || (c.change && p.yearOrder.length < 2)) && isFigure(k)) k = k === 'revenue' ? 'revenue_growth' : k;
-    return compareAnswer(r, p, u, p.companies, k);
+    const superlative = p.companies.length >= 3 && /最(?!新|近|后)|highest|lowest|best|worst|\bmost\b|\bleast\b|\btop\b|\brank|排名|排序|排行/.test(low);
+    return compareAnswer(r, p, u, p.companies, k, {rank: superlative, low: superlative && c.low});
   }
   if (c.trend || p.range || p.lastN || p.years.length >= 3) return trendAnswer(r, p, u, t, key);
   if ((c.change && !c.definition) || p.years.length === 2) return changeAnswer(r, p, u, t, key);
