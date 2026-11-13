@@ -22,7 +22,7 @@ jobs:
           python-version: '3.12'
       - name: Compare the sample with the Financial Statement Data Sets
         env:
-          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: python scripts/accuracy_check.py --out accuracy.json
       - name: Summary
         if: always()

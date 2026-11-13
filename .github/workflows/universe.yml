@@ -31,7 +31,7 @@ jobs:
       - run: python -m pytest -q tests/test_universe.py
       - name: Build from SEC Submissions and CompanyFacts (at most 8 requests per second)
         env:
-          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: python scripts/build_universe.py
       - name: Summary
         run: |
