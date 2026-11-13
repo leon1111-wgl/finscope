@@ -243,7 +243,8 @@ export function matchOutside(prepared, low) {
     const m = low.match(re);
     if (m) out.push({name, reason, start: m.index, end: m.index + name.length});
   }
-  return out;
+  // Keep the longest of overlapping names (Coca-Cola Europacific Partners, not also Europacific Partners).
+  return out.sort((a, b) => (b.end - b.start) - (a.end - a.start)).filter((o, i, all) => !all.slice(0, i).some(x => o.start < x.end && x.start < o.end)).sort((a, b) => a.start - b.start);
 }
 
 // The company search box: ranked matches for what the visitor typed.

@@ -1,8 +1,8 @@
 {
-  "label": "seen rerun",
-  "engine_commit": "027f838",
+  "label": "seen rerun after the review fixes (not blind)",
+  "engine_commit": "4dd0d2d",
   "set_commit": "cdb3874",
-  "universe_data_commit": "ec1f904",
+  "universe_data_commit": "5e55a21",
   "universe_built": "2026-11-13",
   "rules": "tests/ask-blind-v3/SCORING.md",
   "set": {
@@ -916,7 +916,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "BOEING CO (BA): 63 data-quality notes over FY2016–FY2025 (changed in a later filing: 43; composed from parts: 2; fallback tag: 5; note: 10; not reported: 3). The table lists them; each stated figure's source line shows its tag and filing."
+      "summary": "BOEING CO (BA): 38 data-quality notes over FY2016–FY2025 (changed in a later filing: 30; composed from parts: 3; fallback tag: 2; not reported: 3). The table lists them; each stated figure's source line shows its tag and filing."
     },
     {
       "id": "c020",
@@ -952,7 +952,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "BOEING CO (BA): 63 data-quality notes over FY2016–FY2025 (changed in a later filing: 43; composed from parts: 2; fallback tag: 5; note: 10; not reported: 3). The table lists them; each stated figure's source line shows its tag and filing."
+      "summary": "BOEING CO (BA): 38 data-quality notes over FY2016–FY2025 (changed in a later filing: 30; composed from parts: 3; fallback tag: 2; not reported: 3). The table lists them; each stated figure's source line shows its tag and filing."
     },
     {
       "id": "c021",
@@ -4036,7 +4036,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "麦当劳（MCD）2024 财年（2024-01-01 至 2024-12-31）的总债务（有息负债）：392.14 亿美元。"
+      "summary": "麦当劳（MCD）2024 财年（2024-01-01 至 2024-12-31）的总债务（有息负债）：384.24 亿美元。"
     },
     {
       "id": "c104",
@@ -4072,7 +4072,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "MCDONALDS CORP (MCD), total debt for FY2024 (2024-01-01 → 2024-12-31): $39.21B."
+      "summary": "MCDONALDS CORP (MCD), total debt for FY2024 (2024-01-01 → 2024-12-31): $38.42B."
     },
     {
       "id": "c105",
@@ -4414,7 +4414,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "通用电气（GE）：2016–2025 财年共有 108 条数据质量说明（后续文件改变: 93；由组成部分合成: 1；备用标签: 5；说明: 1；未报告: 8）。表格逐条列出；每个陈述的数字的来源行都写明了标签和文件。"
+      "summary": "通用电气（GE）：2016–2025 财年共有 107 条数据质量说明（split: 1；后续文件改变: 92；备用标签: 4；说明: 2；未报告: 8）。表格逐条列出；每个陈述的数字的来源行都写明了标签和文件。"
     },
     {
       "id": "c114",
@@ -4450,7 +4450,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "通用电气（GE）：2016–2025 财年共有 108 条数据质量说明（后续文件改变: 93；由组成部分合成: 1；备用标签: 5；说明: 1；未报告: 8）。表格逐条列出；每个陈述的数字的来源行都写明了标签和文件。"
+      "summary": "通用电气（GE）：2016–2025 财年共有 107 条数据质量说明（split: 1；后续文件改变: 92；备用标签: 4；说明: 2；未报告: 8）。表格逐条列出；每个陈述的数字的来源行都写明了标签和文件。"
     },
     {
       "id": "c115",
@@ -5290,7 +5290,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "Salesforce, Inc. (CRM), net income for FY2025 (2024-02-01 → 2025-01-31): $6.20B."
+      "summary": "Salesforce, Inc. (CRM), net income for FY2025 (2025-02-01 → 2026-01-31): $7.46B."
     },
     {
       "id": "c138",
@@ -5326,7 +5326,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "Salesforce, Inc. (CRM), net income for FY2025 (2024-02-01 → 2025-01-31): $6.20B."
+      "summary": "Salesforce, Inc. (CRM), net income for FY2025 (2025-02-01 → 2026-01-31): $7.46B."
     },
     {
       "id": "c139",
@@ -6779,7 +6779,7 @@
         "metric null ≠ revenue",
         "period null ≠ FY2024"
       ],
-      "summary": "阿里巴巴、阿里 不在 FinScope 公司全集里：它作为外国私人发行人提交 20-F 或 40-F 年报，而不是 10-K。全集共有 1994 家公司；可以在“财务”页按代码或名字搜索，或到 SEC EDGAR 查找这家公司。"
+      "summary": "阿里巴巴 不在 FinScope 公司全集里：它作为外国私人发行人提交 20-F 或 40-F 年报，而不是 10-K。全集共有 1994 家公司；可以在“财务”页按代码或名字搜索，或到 SEC EDGAR 查找这家公司。"
     },
     {
       "id": "c179",
@@ -6889,7 +6889,7 @@
         "metric null ≠ revenue",
         "period null ≠ last5"
       ],
-      "summary": "茅台、贵州茅台 不在 FinScope 公司全集里：它不在美国上市，也不向 SEC 提交年报。全集共有 1994 家公司；可以在“财务”页按代码或名字搜索，或到 SEC EDGAR 查找这家公司。"
+      "summary": "贵州茅台 不在 FinScope 公司全集里：它不在美国上市，也不向 SEC 提交年报。全集共有 1994 家公司；可以在“财务”页按代码或名字搜索，或到 SEC EDGAR 查找这家公司。"
     },
     {
       "id": "c182",
@@ -7797,7 +7797,7 @@
       "outcome": "correct",
       "strict_status": false,
       "why": [],
-      "summary": "Which company? Total assets is available for AAPL, MSFT, NVDA, AMZN, GOOGL and META, or ask which of the six is highest."
+      "summary": "Which company? Name a ticker or company name for total assets, up to eight to compare; rankings across a sector are on the Screen page."
     },
     {
       "id": "c207",
@@ -7897,7 +7897,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "哪家公司？净利润 对 AAPL、MSFT、NVDA、AMZN、GOOGL、META 都可以查，也可以问六家里谁最高。"
+      "summary": "哪家公司？请写出代码或公司名（比较最多八家）；跨行业排名请用“筛选”页。"
     },
     {
       "id": "c210",
@@ -7929,7 +7929,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "Which company? Revenue is available for AAPL, MSFT, NVDA, AMZN, GOOGL and META, or ask which of the six is highest."
+      "summary": "Which company? Name a ticker or company name for revenue, up to eight to compare; rankings across a sector are on the Screen page."
     },
     {
       "id": "c211",
