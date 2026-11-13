@@ -566,7 +566,18 @@ const OUTSIDE_REASON = {
   unknown: ['no company with that ticker or name is in the universe: US companies that are SEC large accelerated filers and file 10-Ks with XBRL', '公司全集里没有这个代码或名字：全集是提交 10-K（XBRL）的美国大型加速申报公司']
 };
 
-export function answerQuestion(question, bundle, {date, universe} = {}) {
+export function answerQuestion(question, bundle, options = {}) {
+  const a = answerCore(question, bundle, options);
+  // A covered company named beside one outside the universe is answered; the outside one is named in the answer.
+  if (a.outside) {
+    if (a.status === 'answered') a.summary = `${a.summary}${a.lang === 'zh' ? '' : ' '}${a.outside}`;
+    else a.notes = [a.outside, ...(a.notes || [])];
+  }
+  delete a.outside;
+  return a;
+}
+
+function answerCore(question, bundle, {date, universe} = {}) {
   if (!bundle?.snapshots?.length || !bundle.companies?.length) throw new Error('An evidence bundle is required.');
   const asOf = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : bundle.as_of;
   const snapshot = selectSnapshot(bundle.snapshots, asOf);
@@ -606,6 +617,12 @@ export function answerQuestion(question, bundle, {date, universe} = {}) {
       'FinScope cannot judge whether a company misstates its accounts, and it will not give a fraud verdict. It can show transparent indicators — the accrual ratio, cash conversion and the AI triage percentile — each with its source and limits.',
       'FinScope 无法判断一家公司是否财务造假，也不会给出这类结论。它可以展示透明的指标——应计比率、现金转化率和 AI 分诊百分位——每个都附来源和局限。'),
       offers: lang === 'zh' ? [`${zhName(t)}的应计比率`, `${zhName(t)}的现金转化率`, `${zhName(t)}的异常分数是多少`] : [`${t} accrual ratio`, `${t} cash conversion`, `${t} anomaly percentile`]});
+  }
+  if (p.others.length && prepared && p.companies.length) {
+    const reason = OUTSIDE_REASON[p.otherReasons[0]] || OUTSIDE_REASON.unknown;
+    r.outside = ask(lang, `${p.others.slice(0, 3).join(', ')} is not in the FinScope universe (${reason[0]}), so this covers ${p.companies.join(', ')} only.`,
+      `${p.others.slice(0, 3).join('、')} 不在 FinScope 公司全集里（${reason[1]}），所以这里只回答 ${p.companies.join('、')}。`);
+    p.others = [];
   }
   if (p.others.length && prepared) {
     const reason = OUTSIDE_REASON[p.otherReasons[0]] || OUTSIDE_REASON.unknown;

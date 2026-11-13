@@ -134,21 +134,43 @@ function unavailable(r, p, ctx, t, shard, metric, i, res) {
   const tl = TEMPLATE_LABEL[shard.template][lang === 'zh' ? 1 : 0];
   const plan = {...r.plan, tickers: [t], metric, period: i == null ? null : p.years.length ? `FY${shard.periods[i].fy}` : 'latest'};
   if (res.reason === 'unsupported') return finish(r, {status: 'not_in_bundle', topic: 'template_unsupported', plan, summary: L(lang,
-    `${label(metric, 'en')} is not supported for ${nameOf(ctx, t, 'en')}, which uses the ${tl.toLowerCase()} template (SIC ${shard.sic || 'n/a'}): its statements are not built that way. FinScope will not substitute another figure.`,
-    `${nameOf(ctx, t, 'zh')}使用“${tl}”模板（SIC ${shard.sic || '无'}），这类报表没有${label(metric, 'zh')}，所以不支持；FinScope 不会用别的数字代替。`),
+    `${label(metric, 'en')} is not supported for ${nameOf(ctx, t, 'en')}, which uses the ${tl.toLowerCase()} template (SIC ${shard.sic || 'n/a'}): ${TEMPLATE_WHY[shard.template]?.[metric]?.[0] || 'its statements are not built that way'}. FinScope will not substitute another figure.`,
+    `${nameOf(ctx, t, 'zh')}使用“${tl}”模板（SIC ${shard.sic || '无'}），${TEMPLATE_WHY[shard.template]?.[metric]?.[1] || `这类报表没有${label(metric, 'zh')}`}，所以不支持；FinScope 不会用别的数字代替。`),
     offers: templateOffers(shard, t, lang)});
   const missing = res.missing?.filter(m => !m.endsWith('_prior')) || [];
+  // The summary says in the question's language which part is missing; the XBRL tag order is rule detail, kept as a note.
   const chain = missing.map(m => catalog[m]?.rule || (catalog[m]?.chain || []).join(' → ')).filter(Boolean);
   const why = res.reason === 'conflict' ? L(lang, 'the filing reports conflicting values for it', '该文件对它报告了相互矛盾的数值')
     : res.reason === 'nonpositive' ? L(lang, 'the denominator is zero or negative, so the ratio is not meaningful', '分母为零或负数，比率没有意义')
     : res.reason === 'no_prior' ? L(lang, 'it needs the prior fiscal year, which is not available', '需要上一财年的数据，但没有')
-    : L(lang, `${missing.map(m => lc(label(m, 'en'))).join(' and ')} is not reported under the tags FinScope reads${chain.length ? ` (${chain.join('; ')})` : ''}`,
-      `${missing.map(m => label(m, 'zh')).join('和')}没有用 FinScope 读取的标签报告${chain.length ? `（${chain.join('；')}）` : ''}`);
+    : missing.map(m => missingPart(shard, m, i, lang)).join(L(lang, '; ', '；'));
   const period = i == null ? '' : ` ${L(lang, `FY${shard.periods[i].fy}`, `${shard.periods[i].fy} 财年`)}`;
   return finish(r, {status: 'not_in_bundle', topic: res.reason === 'nonpositive' ? 'not_meaningful' : 'missing_fact', plan, summary: L(lang,
     `${label(metric, 'en')} for ${t}${period} is not stated: ${why}. FinScope does not substitute another figure or treat a missing value as zero.`,
     `${t}${period}的${label(metric, 'zh')}无法给出：${why}。FinScope 不会用别的数字代替，也不把缺失当作零。`),
+    notes: res.reason === 'missing' && chain.length ? [L(lang, `Tags FinScope reads, in order: ${chain.join('; ')}.`, `FinScope 读取的标签及顺序：${chain.join('；')}。`)] : [],
     offers: [L(lang, `${t} data quality notes`, `${t} 的数据质量说明`), L(lang, `${t} revenue and net income`, `${t} 的营收和净利润`)]});
+}
+
+// Why a template leaves out a figure, where the general sentence would not say enough.
+const TEMPLATE_WHY = {
+  reit: Object.fromEntries(['free_cash_flow', 'fcf_margin'].map(k => [k, [
+    'a REIT spends on properties through acquisition and development lines, not the capital-expenditure tags, so operating cash flow minus capex would overstate what it keeps; REITs report FFO and AFFO instead, which are non-GAAP and not in SEC XBRL',
+    'REIT 买入和开发物业的支出记在收购和开发科目里，不在资本开支标签下，用经营现金流减资本开支会高估它留下的现金；REIT 通常报告 FFO 和 AFFO，这两个是非 GAAP 指标，不在 SEC XBRL 里']]))
+};
+
+// One missing input, said in the question's language: which part of a composed figure is absent, or which figure.
+function missingPart(shard, m, i, lang) {
+  const fy = i == null ? null : shard.periods[i].fy;
+  if (m === 'cash_sti' && i != null && sourceOf(shard, 'cash', i)) return L(lang, 'the 10-K reports cash but no short-term investments (or a combined cash and short-term investments line) in the same filing',
+    '该年 10-K 报告了现金，但同一份文件里没有短期投资（或现金及短期投资合计）');
+  if (m === 'total_debt' && fy != null && shard.quality.some(q => q.kind === 'withheld' && q.fy?.includes(fy))) return L(lang, 'the total composed from its parts is implausible, so it is withheld (see the data-quality notes)',
+    '由各部分合成的总债务明显不合理，所以不陈述（见数据质量说明）');
+  if (m === 'total_debt') return L(lang, 'no borrowings (long-term debt, its current part, short-term borrowings or commercial paper) are reported under the tags FinScope reads',
+    '没有用 FinScope 读取的标签报告借款（长期债务及其一年内到期部分、短期借款或商业票据）');
+  if (m === 'liabilities') return L(lang, 'total liabilities are not reported, and cannot be derived from total liabilities and equity in the same filing', '没有报告总负债，也无法由同一份文件的“负债和股东权益合计”减去股东权益推出');
+  if (m === 'sga') return L(lang, 'SG&A is not reported, as one line or as separate selling and administrative lines', '没有报告销售及管理费用，也没有分开报告的销售费用和管理费用');
+  return L(lang, `${lc(label(m, 'en'))} is not reported under the tags FinScope reads`, `${label(m, 'zh')}没有用 FinScope 读取的标签报告`);
 }
 
 function templateOffers(shard, t, lang) {

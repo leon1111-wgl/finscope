@@ -74,7 +74,7 @@ For each figure and period: the **best tag in the figure's chain that any 10-K o
 | Industrial | the default | bank, insurance and REIT lines |
 | Bank / other financial | SIC 6000–6799 (except REITs and insurers), or no SIC, **and** no classified balance sheet (no `AssetsCurrent`) | gross profit, cost of revenue, R&D, SG&A, current assets and liabilities, capex, cash and short-term investments and the ratios built on them (gross margin, current ratio, FCF, FCF margin, cash conversion, accruals, debt ÷ equity, interest coverage), insurance and REIT lines |
 | Insurance | SIC 6311–6399 or 6411 **and** no classified balance sheet | as for banks, plus bank lines |
-| REIT | SIC 6798 | gross profit and gross margin, R&D, cash and short-term investments, bank and insurance lines |
+| REIT | SIC 6798 | gross profit and gross margin, R&D, cash and short-term investments, bank and insurance lines; free cash flow and FCF margin (a REIT's property spending is in acquisition and development lines, not the capex tags, so operating cash flow minus capex would overstate what it keeps; REITs report FFO and AFFO, which are non-GAAP and not in SEC XBRL), also left out of the Screen's FCF margin |
 
 The balance-sheet test keeps health insurers, insurance brokers, exchanges and payment networks with classified balance sheets (UnitedHealth, Visa) on the industrial template.
 

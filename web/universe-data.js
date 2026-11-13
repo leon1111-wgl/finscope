@@ -26,8 +26,8 @@ export const INDICATORS = {
   net_margin: ['Net margin', '净利率', 'pct', 'net income ÷ revenue', '净利润 ÷ 营收', ['net_income', 'revenue'], ALL],
   rnd_intensity: ['R&D intensity', '研发费用率', 'pct', 'R&D ÷ revenue', '研发费用 ÷ 营收', ['rnd', 'revenue'], ['industrial']],
   cash_margin: ['Operating cash margin', '经营现金流利润率', 'pct', 'operating cash flow ÷ revenue', '经营活动现金流 ÷ 营收', ['operating_cash_flow', 'revenue'], NONFIN],
-  free_cash_flow: ['Free cash flow', '自由现金流', 'money', 'operating cash flow − capital expenditure', '经营活动现金流 − 资本开支', ['operating_cash_flow', 'capex'], NONFIN],
-  fcf_margin: ['FCF margin', '自由现金流利润率', 'pct', '(operating cash flow − capital expenditure) ÷ revenue', '（经营活动现金流 − 资本开支）÷ 营收', ['operating_cash_flow', 'capex', 'revenue'], NONFIN],
+  free_cash_flow: ['Free cash flow', '自由现金流', 'money', 'operating cash flow − capital expenditure', '经营活动现金流 − 资本开支', ['operating_cash_flow', 'capex'], ['industrial']],
+  fcf_margin: ['FCF margin', '自由现金流利润率', 'pct', '(operating cash flow − capital expenditure) ÷ revenue', '（经营活动现金流 − 资本开支）÷ 营收', ['operating_cash_flow', 'capex', 'revenue'], ['industrial']],
   cash_conversion: ['Cash conversion', '现金转化率', 'times', 'operating cash flow ÷ net income', '经营活动现金流 ÷ 净利润', ['operating_cash_flow', 'net_income'], NONFIN],
   accruals: ['Accrual ratio', '应计比率', 'pct', '(net income − operating cash flow) ÷ average total assets of this and the prior fiscal year', '（净利润 − 经营活动现金流）÷ 本年与上年总资产的平均值', ['net_income', 'operating_cash_flow', 'assets'], NONFIN, 'assets'],
   profit_cash_gap: ['Profit-to-cash gap', '利润与现金差距', 'money', 'net income − operating cash flow', '净利润 − 经营活动现金流', ['net_income', 'operating_cash_flow'], NONFIN],
@@ -56,6 +56,7 @@ export const unitOf = k => FIGURES[k]?.[2] || (INDICATORS[k]?.[2] === 'money' ? 
 // ------------------------------------------------------------------ formatting
 export function money(v, lang = 'en') {
   if (!Number.isFinite(v)) return lang === 'zh' ? '无' : '—';
+  if (v === 0) return lang === 'zh' ? '0 美元' : '$0';
   const sign = v < 0 ? '−' : '', a = Math.abs(v);
   if (lang === 'zh') return a >= 1e8 ? `${sign}${(a / 1e8).toFixed(2)} 亿美元` : `${sign}${(a / 1e4).toFixed(1)} 万美元`;
   return a >= 1e12 ? `${sign}$${(a / 1e12).toFixed(2)}T` : a >= 1e9 ? `${sign}$${(a / 1e9).toFixed(2)}B` : `${sign}$${(a / 1e6).toFixed(1)}M`;
@@ -274,13 +275,14 @@ export const SCREEN_KEYS = ['cash_conversion', 'accruals', 'fcf_margin'];
 export const PEER_MIN = 10;
 const DIVISION = {A: ['Agriculture, forestry and fishing', '农林牧渔'], B: ['Mining', '采矿'], C: ['Construction', '建筑'], D: ['Manufacturing', '制造业'], E: ['Transportation, communications and utilities', '交通、通信与公用事业'], F: ['Wholesale trade', '批发'], G: ['Retail trade', '零售'], H: ['Finance, insurance and real estate', '金融、保险与地产'], I: ['Services', '服务业'], J: ['Other', '其他']};
 
-export function screenValues(row) {
+// FCF margin is left out for REITs: their property spending is not in the capex tags (see TEMPLATE_WHY in universe-ask.js).
+export function screenValues(row, template = 'industrial') {
   const v = k => row[k]?.[0];
   const out = {cash_conversion: null, accruals: null, fcf_margin: null};
   if (Number.isFinite(v('operating_cash_flow')) && v('net_income') > 0) out.cash_conversion = v('operating_cash_flow') / v('net_income');
   if (Number.isFinite(v('net_income')) && Number.isFinite(v('operating_cash_flow')) && Number.isFinite(v('assets')) && Number.isFinite(row.assets_prior?.[0]) && v('assets') + row.assets_prior[0] > 0)
     out.accruals = (v('net_income') - v('operating_cash_flow')) / ((v('assets') + row.assets_prior[0]) / 2);
-  if (Number.isFinite(v('operating_cash_flow')) && Number.isFinite(v('capex')) && v('revenue') > 0) out.fcf_margin = (v('operating_cash_flow') - v('capex')) / v('revenue');
+  if (template !== 'reit' && Number.isFinite(v('operating_cash_flow')) && Number.isFinite(v('capex')) && v('revenue') > 0) out.fcf_margin = (v('operating_cash_flow') - v('capex')) / v('revenue');
   return out;
 }
 
@@ -288,7 +290,7 @@ export function screenValues(row) {
 export function buildScreen(screen, prepared) {
   const rows = screen.rows.map(r => {
     const entry = prepared.byCik.get(r.c);
-    return entry ? {...r, entry, sic: String(entry.s || ''), values: screenValues(r)} : null;
+    return entry ? {...r, entry, sic: String(entry.s || ''), values: screenValues(r, entry.tp)} : null;
   }).filter(Boolean);
   const counts = new Map();
   // REITs are peers of REITs only, so an operating company in SIC division H is not ranked against property trusts.

@@ -160,3 +160,37 @@ test('a ranking that names no companies, or names a sector, points to Screen; th
   // Named companies are compared, not sent to Screen.
   assert.equal(ask('Which of KO, PEP and MDLZ has the highest gross margin?').status, 'answered');
 });
+
+test('P2 classes from the probe of b12433a: outside name beside a covered one, zero, Chinese abstentions, REIT FCF', async () => {
+  // A covered company named beside an outside one is answered; the outside one is named as not covered.
+  for (const q of ['特斯拉和比亚迪的营收对比', 'Compare Tesla and BYD revenue']) {
+    const a = ask(q);
+    assert.equal(a.status, 'answered', `${q}: ${a.status} ${a.summary}`);
+    assert.deepEqual(a.plan.tickers, ['TSLA'], q);
+    assert.match(a.summary, /比亚迪|BYD/, q);
+    assert.match(a.summary, /不在|not in/, q);
+  }
+  // Zero is shown as zero, not 0.0 of a unit.
+  const {money, show, buildScreen, prepareIndex} = await import('../web/universe-data.js');
+  assert.equal(money(0), '$0');
+  assert.equal(money(0, 'zh'), '0 美元');
+  assert.equal(show('dividends', 0, 'zh'), '0 美元');
+  // A Chinese abstention says in Chinese which part is missing; the English tag order is a note, not the summary.
+  const camel = /\b(?!FinScope)[A-Z][a-z]+[A-Z]\w+/;
+  const ford = ask('福特的总债务');
+  assert.equal(ford.status, 'not_in_bundle');
+  assert.doesNotMatch(ford.summary, camel, ford.summary);
+  assert.ok(ford.notes.some(n => camel.test(n)), 'the tag order stays available as a note');
+  const dal = ask('达美航空的现金及短期投资');
+  assert.doesNotMatch(dal.summary, camel, dal.summary);
+  assert.match(dal.summary, /报告了现金.*短期投资/);
+  // REITs: free cash flow and FCF margin are not supported by the template, with the reason.
+  for (const q of ['Realty Income 自由现金流', 'O FCF margin']) {
+    const a = ask(q);
+    assert.equal(`${a.status}/${a.topic}`, 'not_in_bundle/template_unsupported', `${q}: ${a.topic} ${a.summary}`);
+    assert.match(a.summary, /FFO/, q);
+  }
+  const screen = buildScreen(JSON.parse(fs.readFileSync(new URL('../web/data/universe/screen.json', import.meta.url), 'utf8')), disk.prepared);
+  const reits = screen.rows.filter(r => r.entry.tp === 'reit');
+  assert.ok(reits.length > 50 && reits.every(r => r.values.fcf_margin === null && r.pct.fcf_margin === null));
+});
