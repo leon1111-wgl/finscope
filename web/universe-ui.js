@@ -31,7 +31,7 @@ export function newFilings(submissions, cik, since) {
   (r.form || []).forEach((form, i) => {
     if (!WATCH_FORMS.has(form)) return;
     const filed = r.filingDate[i];
-    if (since && filed <= since) return;
+    if (since && filed < since) return;  // the day marked seen is shown again: a repeat beats a missed filing
     const accn = r.accessionNumber[i], doc = r.primaryDocument?.[i];
     out.push({form, filed, accn, report: r.reportDate?.[i] || '', items: r.items?.[i] || '', description: r.primaryDocDescription?.[i] || '', url: filingUrl(cik, accn, doc), index: filingIndexUrl(cik, accn)});
   });
@@ -87,7 +87,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
   // ---------------------------------------------------------------- company search (combobox)
   function searchMarkup() {
     const label = s.index ? `Company <small>${s.index.count.toLocaleString('en-US')} US companies · 公司</small>` : 'Company <small>loading the universe…</small>';
-    return `<div class="company-search" role="search"><label for="company-search">${label}</label><input id="company-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="company-options" autocomplete="off" spellcheck="false" maxlength="60" placeholder="Ticker, name or 中文名 — e.g. KO, Costco, 摩根大通" value="${s.entry ? e(primary(s.entry)) : ''}"${s.index ? '' : ' disabled'}><ul id="company-options" role="listbox" class="company-options" hidden></ul><p id="company-search-note" class="note" role="status" aria-live="polite">${s.indexError ? `The company list could not be loaded: ${e(s.indexError)} <button type="button" class="link-button" id="retry-universe">Retry</button>` : ''}</p></div>`;
+    return `<div class="company-search" role="search"><label for="company-search">${label}</label><input id="company-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="company-options" autocomplete="off" spellcheck="false" maxlength="60" placeholder="Ticker, name or 中文名 — e.g. KO, Costco, 摩根大通" value="${s.entry ? e(primary(s.entry)) : ''}"${s.index ? '' : ' disabled'}><ul id="company-options" role="listbox" aria-label="Matching companies" class="company-options" hidden></ul><p id="company-search-note" class="note" role="status" aria-live="polite">${s.indexError ? `The company list could not be loaded: ${e(s.indexError)} <button type="button" class="link-button" id="retry-universe">Retry</button>` : ''}</p></div>`;
   }
   function bindSearch(root) {
     const input = root.querySelector('#company-search'), list = root.querySelector('#company-options');
@@ -97,7 +97,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
     const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; };
     const paint = () => {
       list.innerHTML = results.length ? results.map((r, i) => `<li role="option" id="co-opt-${i}" data-cik="${r.c}" aria-selected="${i === active}"><strong>${e(primary(r))}</strong> ${e(r.n)}${r.z.length ? ` <span lang="zh-Hans">${e(r.z[0])}</span>` : ''}<small>${e(TEMPLATE_LABEL[r.tp][0])} · SIC ${e(r.s || '—')} · FY${r.fy}</small></li>`).join('')
-        : `<li class="no-match" role="option" aria-disabled="true">No company in the universe matches “${e(input.value)}”. FinScope covers SEC large accelerated filers with 10-Ks listed on NYSE or Nasdaq; foreign companies filing 20-F are not included.</li>`;
+        : `<li class="no-match" role="option" aria-disabled="true">No company in the universe matches “${e(input.value)}”. FinScope covers US companies that are SEC large accelerated filers and file 10-Ks; foreign companies filing 20-F are not included.</li>`;
       list.hidden = false;
       input.setAttribute('aria-expanded', 'true');
       if (active >= 0) input.setAttribute('aria-activedescendant', `co-opt-${active}`);
@@ -345,6 +345,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
       root.querySelector('#screen-reset')?.addEventListener('click', () => { s.filters = {peer: '', text: '', template: '', cc: '', acc: '', fcf: '', sort: 'revenue', dir: 'desc'}; s.shown = PAGE; render(); });
       root.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.sort; s.filters.dir = s.filters.sort === k && s.filters.dir === 'desc' ? 'asc' : 'desc'; s.filters.sort = k; render(); }));
       root.querySelector('#screen-more')?.addEventListener('click', () => { s.shown += PAGE; render(); });
+      root.querySelectorAll('[data-sort]').forEach(b => { const th = b.closest('th'); if (th) th.setAttribute('aria-sort', s.filters.sort === b.dataset.sort ? (s.filters.dir === 'asc' ? 'ascending' : 'descending') : 'none'); });
       root.querySelector('#export-screen')?.addEventListener('click', () => download(screenCSV(s.screen, screenRows()), 'text/csv;charset=utf-8', 'finscope-screen.csv'));
     }
     if (page === 'watch') {
@@ -362,6 +363,7 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
     const paint = () => {
       list.innerHTML = results.map((r, i) => `<li role="option" id="${list.id}-${i}" data-cik="${r.c}" aria-selected="${i === active}"><strong>${e(primary(r))}</strong> ${e(r.n)}</li>`).join('') || `<li class="no-match" aria-disabled="true">No match in the universe.</li>`;
       list.hidden = false; input.setAttribute('aria-expanded', 'true');
+      if (active >= 0) input.setAttribute('aria-activedescendant', `${list.id}-${active}`); else input.removeAttribute('aria-activedescendant');
       list.querySelectorAll('[data-cik]').forEach(li => li.addEventListener('mousedown', ev => { ev.preventDefault(); const en = s.prepared.byCik.get(Number(li.dataset.cik)); close(); input.value = ''; onPick(en); }));
     };
     input.addEventListener('input', () => { results = searchCompanies(s.prepared, input.value, 8); active = results.length ? 0 : -1; input.value.trim() ? paint() : close(); });

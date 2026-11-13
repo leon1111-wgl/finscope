@@ -71,7 +71,8 @@ def first_choice(metric):
     return METRICS[metric][3][:STANDARD.get(metric, 1)] or DEBT_TOTAL[:1]
 # Fallbacks that combine two facts of the same filing. Each part is a tag chain; all parts must come from one filing.
 SGA_PARTS = (['SellingAndMarketingExpense', 'SellingExpense'], ['GeneralAndAdministrativeExpense'])
-STI_TAGS = ['ShortTermInvestments', 'MarketableSecuritiesCurrent', 'AvailableForSaleSecuritiesDebtSecuritiesCurrent']
+STI_TAGS = ['ShortTermInvestments', 'MarketableSecuritiesCurrent', 'AvailableForSaleSecuritiesDebtSecuritiesCurrent', 'AvailableForSaleSecuritiesCurrent',
+            'HeldToMaturitySecuritiesCurrent', 'OtherShortTermInvestments']
 EQUITY_TOTAL = ['StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'StockholdersEquity']
 TEMPORARY_EQUITY = ['TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterest', 'TemporaryEquityCarryingAmountAttributableToParent',
                     'RedeemableNoncontrollingInterestEquityCarryingAmount']
@@ -184,24 +185,23 @@ def fiscal_periods(payload):
         if end not in periods or filed < periods[end]['filed']:
             periods[end] = candidate
     ordered = [periods[e] for e in sorted(periods)]
-    # Fiscal-year labels: the company's own label when it is plausible and strictly increasing, else the end year.
-    for p in ordered:
-        year = int(p['end'][:4])
-        label = p['fy_reported']
-        p['fy'], p['fy_source'] = (label, 'dei') if label in (year, year - 1) else (year, 'end_year')
-    # Labels must increase strictly. A later period that repeats a label takes its end year when that is free;
-    # otherwise (two annual periods in one label year, after a change of fiscal year end) the later period wins and
-    # the earlier one is recorded as replaced, never shown under a duplicate label.
-    kept = []
-    for p in ordered:
-        if kept and p['fy'] <= kept[-1]['fy']:
-            if int(p['end'][:4]) > kept[-1]['fy']:
-                p['fy'], p['fy_source'] = int(p['end'][:4]), 'end_year'
-            else:
-                gone = kept.pop()
-                p.setdefault('replaces', []).append({'end': gone['end'], 'start': gone['start'], 'fy': gone['fy']})
-        kept.append(p)
-    return kept
+    # Fiscal-year labels: the latest 10-K's own label (when plausible, else its end year), then one less for each
+    # earlier annual period, so labels are consecutive with no holes and no repeats. An earlier filing whose own label
+    # differs is named in the data-quality notes.
+    if not ordered:
+        return ordered
+    last = ordered[-1]
+    year = int(last['end'][:4])
+    last['fy'], last['fy_source'] = (last['fy_reported'], 'dei') if last['fy_reported'] in (year, year - 1) else (year, 'end_year')
+    for k in range(len(ordered) - 2, -1, -1):
+        p, nxt = ordered[k], ordered[k + 1]
+        steps = max(1, round((date.fromisoformat(nxt['end']) - date.fromisoformat(p['end'])).days / 365.25))
+        contiguous = (date.fromisoformat(nxt['start']) - date.fromisoformat(p['end'])).days <= 7
+        own, end_year = p['fy_reported'], int(p['end'][:4])
+        # Across a gap (a transition period), an earlier period keeps its own plausible label when it stays below.
+        p['fy'] = own if (not contiguous and own in (end_year, end_year - 1) and own < nxt['fy']) else nxt['fy'] - (1 if contiguous else steps)
+        p['fy_source'] = 'dei' if p['fy'] == p['fy_reported'] else 'sequence'
+    return ordered
 
 
 def _period_facts(payload, tags, unit, kind, period):
@@ -214,14 +214,18 @@ def _period_facts(payload, tags, unit, kind, period):
                 continue
             if kind == 'flow' and fact['start'] != period['start']:
                 continue
-            found.append({**fact, 'tag': tag, 'priority': priority})
+            found.append({**fact, 'tag': tag, 'priority': priority, 'unit': unit})
     return found
 
 
-def _distinct(values):
+def _tol(unit):
+    return 0.005 if unit == 'USD/shares' else 0.5
+
+
+def _distinct(values, unit='USD'):
     out = []
     for v in values:
-        if not any(abs(v - w) <= 0.5 for w in out):
+        if not any(abs(v - w) <= _tol(unit) for w in out):
             out.append(v)
     return out
 
@@ -233,7 +237,7 @@ def _in_filing(facts, accn):
         return None
     best = min(f['priority'] for f in chosen)
     same = [f for f in chosen if f['priority'] == best]
-    values = _distinct([f['v'] for f in same])
+    values = _distinct([f['v'] for f in same], same[0].get('unit', 'USD'))
     fact = dict(same[0])
     if len(values) > 1:
         fact['conflict'] = values
@@ -255,11 +259,21 @@ def _cell(fact, via, period, chain=None, parts=None, note=None):
     return cell
 
 
-def _with_first(cell, original):
-    """Record the value as first reported in the period's original 10-K when a later filing changed it."""
-    if cell and original and 'v' in cell and original['accn'] != cell['accn'] and abs(original['v'] - cell['v']) > 0.5:
+def _with_first(cell, original, unit='USD'):
+    """Record the value as first reported in the period's original 10-K when a later filing changed it (same tag only)."""
+    if cell and original and 'v' in cell and original['accn'] != cell['accn'] and original['tag'] == cell['tag'] and abs(original['v'] - cell['v']) > _tol(unit):
         cell['first'] = {'v': original['v'], 'tag': original['tag'], 'accn': original['accn'], 'filed': original['filed']}
     return cell
+
+
+def _best_tier(metric, facts):
+    """Facts of the best tag tier reported for the period in any filing; equally standard leading tags form one tier."""
+    tier = lambda f: 0 if f['priority'] < STANDARD.get(metric, 1) else f['priority']
+    best = min(tier(f) for f in facts)
+    return [f for f in facts if tier(f) == best]
+
+
+PAYMENTS = {'capex', 'dividends', 'buybacks'}
 
 
 def choose_chain(payload, metric, period):
@@ -267,9 +281,16 @@ def choose_chain(payload, metric, period):
     facts = _period_facts(payload, tags, unit, kind, period)
     if not facts:
         return None
-    fact = _in_filing(facts, _latest_accn(facts))
+    pool = _best_tier(metric, facts)
+    fact = _in_filing(pool, _latest_accn(pool))
     cell = _cell(fact, via_of(metric, fact['priority']), period)
-    return _with_first(cell, _in_filing(facts, period['accession']))
+    if metric in PAYMENTS and 'v' in cell and cell['v'] < 0:
+        cell['v'] = -cell['v']
+        cell['note'] = 'Reported with a negative sign; shown as a payment (positive)'
+    original = _in_filing([f for f in pool if f['tag'] == fact['tag']], period['accession'])
+    if original and metric in PAYMENTS:
+        original = {**original, 'v': abs(original['v'])}
+    return _with_first(cell, original, unit)
 
 
 def choose_revenue(payload, period):
@@ -293,10 +314,12 @@ def choose_revenue(payload, period):
             fact = {**total[0]}
             fact['note'] = f"Revenues (total) used; {subset['tag']} = {subset['v']:.0f} covers customer contracts only"
         return fact
+    facts = _best_tier('revenue', facts)
     fact = pick(_latest_accn(facts))
     via = 'total' if fact.get('note') else via_of('revenue', fact['priority'])
     cell = _cell(fact, via, period, note=fact.get('note'))
-    return _with_first(cell, pick(period['accession']))
+    original = pick(period['accession']) if any(f['accn'] == period['accession'] for f in facts) else None
+    return _with_first(cell, original)
 
 
 def _part(payload, tags, unit, kind, period, accn):
@@ -369,60 +392,55 @@ def choose_cash_sti(payload, period):
     cash_tags = ['CashAndCashEquivalentsAtCarryingValue']
     for filed, accn in _filings_for(payload, cash_tags, 'USD', 'instant', period):
         cash = _part(payload, cash_tags, 'USD', 'instant', period, accn)
-        if not cash or cash.get('conflict'):
-            continue
         sti = _part(payload, STI_TAGS, 'USD', 'instant', period, accn)
-        if sti and not sti.get('conflict'):
+        if cash and sti and not cash.get('conflict') and not sti.get('conflict'):
             return {'v': cash['v'] + sti['v'], 'tag': 'derived', 'accn': accn, 'filed': filed, 'form': cash['form'], 'via': 'derived',
                     'parts': [{'tag': cash['tag'], 'v': cash['v'], 'sign': 1}, {'tag': sti['tag'], 'v': sti['v'], 'sign': 1}],
                     'note': 'Cash and cash equivalents plus short-term investments, as reported separately in the same filing'}
-        return {'v': cash['v'], 'tag': 'derived', 'accn': accn, 'filed': filed, 'form': cash['form'], 'via': 'derived',
-                'parts': [{'tag': cash['tag'], 'v': cash['v'], 'sign': 1}],
-                'note': 'No short-term investment line is tagged in this filing, so this is cash and cash equivalents only'}
-    return None
+    return None  # never cash alone under this label
 
 
 def choose_debt(payload, period):
-    """Total debt (borrowings), always from one filing, in a documented order of compositions.
-
-    1. DebtLongtermAndShorttermCombinedAmount.
-    2. LongTermDebt (which includes its current portion) + short-term borrowings or commercial paper.
-    3. Noncurrent long-term debt + DebtCurrent, or + current long-term debt + short-term borrowings or commercial paper.
-    A current component that is not tagged counts as zero and the cell says so; operating leases are never included.
-    """
+    """Total debt (borrowings): the best composition reported for the period in any filing, from the latest filing
+    that supports it. Ranked: DebtLongtermAndShorttermCombinedAmount; noncurrent long-term debt + DebtCurrent;
+    noncurrent + current maturities (+ short-term borrowings or commercial paper); LongTermDebt when its current
+    portion is tagged and no short-term borrowings are (so nothing can be counted twice); DebtAndCapitalLeaseObligations.
+    Operating leases are never included. company_shard withholds values above total liabilities or far from the
+    company's other years."""
     unit, kind = 'USD', 'instant'
-    candidates = sorted({x for tags in (DEBT_TOTAL, DEBT_LONG_TOTAL, DEBT_NONCURRENT) for x in _filings_for(payload, tags, unit, kind, period)}, reverse=True)
-    for filed, accn in candidates:
+    accns = sorted({x for tags in (DEBT_TOTAL, DEBT_LONG_TOTAL, DEBT_NONCURRENT) for x in _filings_for(payload, tags, unit, kind, period)}, reverse=True)
+    ok = lambda f: f if f and not f.get('conflict') else None
+    best = None
+    for filed, accn in accns:
         form = _form(payload, accn)
-        whole = _part(payload, DEBT_TOTAL, unit, kind, period, accn)
-        if whole and not whole.get('conflict'):
-            cell = {'v': whole['v'], 'tag': whole['tag'], 'accn': accn, 'filed': filed, 'form': form, 'via': 'primary' if whole['priority'] == 0 else 'fallback'}
-            if whole['tag'] == 'DebtAndCapitalLeaseObligations':
-                cell['note'] = 'Debt including finance lease obligations, as tagged by the company'
-            return cell
-        short = _part(payload, DEBT_SHORT, unit, kind, period, accn)
-        short = short if short and not short.get('conflict') else None
-        long_total = _part(payload, DEBT_LONG_TOTAL, unit, kind, period, accn)
-        if long_total and not long_total.get('conflict'):
-            parts = [{'tag': long_total['tag'], 'v': long_total['v'], 'sign': 1}] + ([{'tag': short['tag'], 'v': short['v'], 'sign': 1}] if short else [])
-            note = 'Long-term debt including its current portion' + (' plus short-term borrowings' if short else '; no short-term borrowings tagged (counted as zero)')
-            return {'v': sum(p['v'] for p in parts), 'tag': 'derived', 'accn': accn, 'filed': filed, 'form': form, 'via': 'derived', 'parts': parts, 'note': note}
-        noncurrent = _part(payload, DEBT_NONCURRENT, unit, kind, period, accn)
-        if noncurrent and not noncurrent.get('conflict'):
-            parts = [{'tag': noncurrent['tag'], 'v': noncurrent['v'], 'sign': 1}]
-            current = _part(payload, DEBT_CURRENT_TOTAL, unit, kind, period, accn)
-            if current and not current.get('conflict'):
-                parts.append({'tag': current['tag'], 'v': current['v'], 'sign': 1})
-                note = 'Noncurrent long-term debt plus current debt'
-            else:
-                ltd = _part(payload, DEBT_CURRENT_LTD, unit, kind, period, accn)
-                for extra in (ltd, short):
-                    if extra and not extra.get('conflict'):
-                        parts.append({'tag': extra['tag'], 'v': extra['v'], 'sign': 1})
-                note = 'Noncurrent long-term debt' + ('' if len(parts) > 1 else '; no current debt tagged (counted as zero)') + \
-                       (' plus current maturities' if ltd else '') + (' plus short-term borrowings' if short else '')
-            return {'v': sum(p['v'] for p in parts), 'tag': 'derived', 'accn': accn, 'filed': filed, 'form': form, 'via': 'derived', 'parts': parts, 'note': note}
-    return None
+        part = lambda tags: ok(_part(payload, tags, unit, kind, period, accn))
+        whole, noncurrent, current, ltdc, short, long_total = (part(DEBT_TOTAL), part(DEBT_NONCURRENT), part(DEBT_CURRENT_TOTAL),
+                                                               part(DEBT_CURRENT_LTD), part(DEBT_SHORT), part(DEBT_LONG_TOTAL))
+        options = []
+        if whole and whole['tag'] == 'DebtLongtermAndShorttermCombinedAmount':
+            options.append((0, [whole], None))
+        if noncurrent and current:
+            options.append((1, [noncurrent, current], 'Noncurrent long-term debt plus current debt'))
+        if noncurrent and ltdc:
+            options.append((2, [noncurrent, ltdc] + ([short] if short else []), 'Noncurrent long-term debt plus current maturities' + (' plus short-term borrowings' if short else '; no short-term borrowings tagged')))
+        if long_total and ltdc and not short:
+            options.append((2, [long_total], 'Long-term debt including its tagged current portion; no short-term borrowings tagged'))
+        if whole and whole['tag'] == 'DebtAndCapitalLeaseObligations':
+            options.append((3, [whole], 'Debt including finance lease obligations, as tagged by the company'))
+        for rank, parts, note in options:
+            if best is None or rank < best[0]:
+                best = (rank, parts, note, filed, accn, form)
+        # Filings are newest first, so a later filing keeps only a strictly better rank.
+    if best is None:
+        return None
+    rank, parts, note, filed, accn, form = best
+    if len(parts) == 1 and rank == 0:
+        return {'v': parts[0]['v'], 'tag': parts[0]['tag'], 'accn': accn, 'filed': filed, 'form': form, 'via': 'primary'}
+    cell = {'v': sum(p['v'] for p in parts), 'tag': parts[0]['tag'] if len(parts) == 1 else 'derived', 'accn': accn, 'filed': filed, 'form': form,
+            'via': 'fallback' if len(parts) == 1 else 'derived', 'note': note}
+    if len(parts) > 1:
+        cell['parts'] = [{'tag': p['tag'], 'v': p['v'], 'sign': 1} for p in parts]
+    return cell
 
 
 CHOOSERS = {'revenue': choose_revenue, 'sga': choose_sga, 'liabilities': choose_liabilities, 'cash_sti': choose_cash_sti, 'total_debt': choose_debt}
@@ -451,6 +469,29 @@ def company_shard(payload, submissions, ticker_rows=None):
             row.append(cell)
         values[metric] = row
     years = [p['fy'] for p in periods]
+    # Total debt that cannot be right is withheld, not stated: above total liabilities, or far from the other years.
+    if 'total_debt' in values:
+        row, liab = values['total_debt'], values.get('liabilities') or [None] * len(periods)
+        stated = [(i, c['v']) for i, c in enumerate(row) if c and 'v' in c]
+        for i, v in stated:
+            limit = liab[i]['v'] if liab[i] and 'v' in liab[i] else None
+            others = sorted(w for j, w in stated if j != i)
+            med = others[len(others) // 2] if len(others) >= 3 else None
+            reason = (f'it exceeds total liabilities ({limit:,.0f})' if limit is not None and v > limit * 1.001 else
+                      f'it is more than ten times away from the company\'s other years (median {med:,.0f})' if med and med > 0 and (v > med * 10 or v < med / 10) else None)
+            if reason:
+                quality.append({'kind': 'withheld', 'metric': 'total_debt', 'fy': [years[i]], 'text': f"Total debt FY{years[i]}: the composed value {v:,.0f} is not stated because {reason}; the parts are in the filing {row[i]['accn']}."})
+                row[i] = None
+    # A jump in the diluted share count marks a split (or a large issuance): EPS and shares change basis there.
+    splits = []
+    shares = values.get('shares_diluted') or []
+    for i in range(1, len(periods)):
+        a, b = (shares[i - 1] if shares else None), (shares[i] if shares else None)
+        if a and b and 'v' in a and 'v' in b and a['v'] > 0 and _gap_days(periods[i - 1], periods[i]) <= 7:
+            ratio = b['v'] / a['v']
+            if ratio >= 1.8 or ratio <= 0.55:
+                splits.append(years[i])
+                quality.append({'kind': 'split', 'fy': [years[i]], 'text': f"Diluted shares change {ratio:.2f}x from FY{years[i - 1]} to FY{years[i]} (a stock split, reverse split or large issuance). Per-share figures before and after are on different bases; FinScope does not compare them across this point."})
     # Data-quality notes, one per metric and kind, naming the fiscal years.
     for metric, row in values.items():
         missing = [y for y, c in zip(years, row) if c is None]
@@ -471,8 +512,9 @@ def company_shard(payload, submissions, ticker_rows=None):
             quality.append({'kind': 'derived', 'metric': metric, 'fy': derived, 'text': f"{LABELS[metric]}: FY{', FY'.join(map(str, derived))} composed from reported parts. " + ' '.join(notes)})
         for y, c in zip(years, row):
             if c and c.get('first'):
+                fmt = (lambda x: f'{x:,.2f}') if METRICS[metric][1] == 'USD/shares' else (lambda x: f'{x:,.0f}')
                 quality.append({'kind': 'restated', 'metric': metric, 'fy': [y],
-                                'text': f"{LABELS[metric]} FY{y}: first reported as {c['first']['v']:,.0f} ({c['first']['accn']}); a later filing ({c['accn']}, {c['filed']}) reports {c['v']:,.0f}. The later figure is shown."})
+                                'text': f"{LABELS[metric]} FY{y}: first reported as {fmt(c['first']['v'])} ({c['first']['accn']}); a later filing ({c['accn']}, {c['filed']}) reports {fmt(c['v'])} under the same tag. The later figure is shown."})
             if c and c.get('conflict'):
                 quality.append({'kind': 'conflict', 'metric': metric, 'fy': [y],
                                 'text': f"{LABELS[metric]} FY{y}: the filing {c['accn']} reports more than one value for {c['tag']} ({', '.join(f'{v:,.0f}' for v in c['conflict'])}); no value is stated."})
@@ -490,10 +532,10 @@ def company_shard(payload, submissions, ticker_rows=None):
     for p in periods:
         for gone in p.get('replaces', []):
             quality.append({'kind': 'fiscal_shift', 'fy': [p['fy']], 'text': f"Two annual periods carry the label FY{p['fy']}: the year ended {gone['end']} is not shown; the year ended {p['end']} is."})
-    relabelled = [p for p in periods if p['fy_source'] == 'end_year' and p['fy_reported'] is not None]
+    relabelled = [p for p in periods if p['fy_source'] in ('end_year', 'sequence') and p['fy_reported'] is not None and p['fy_reported'] != p['fy']]
     if relabelled:
         quality.append({'kind': 'label', 'fy': [p['fy'] for p in relabelled],
-                        'text': 'Fiscal-year label taken from the period end year for ' + ', '.join(f"the year ended {p['end']} (the filing says FY{p['fy_reported']})" for p in relabelled) + '.'})
+                        'text': 'Fiscal-year labels count back one year at a time from the latest 10-K, so they have no holes or repeats; ' + ', '.join(f"the year ended {p['end']} is FY{p['fy']} here (its own filing says FY{p['fy_reported']})" for p in relabelled) + '.'})
     unusual = [p for p in periods if p['fy_source'] == 'dei' and p['fy'] != int(p['end'][:4])]
     if unusual:
         quality.append({'kind': 'label', 'fy': [p['fy'] for p in unusual],
@@ -520,7 +562,7 @@ def company_shard(payload, submissions, ticker_rows=None):
         'sic': sic, 'sic_description': submissions.get('sicDescription') or '', 'division': sic_division(sic),
         'template': template, 'fiscal_year_end': submissions.get('fiscalYearEnd') or '', 'category': submissions.get('category') or '',
         'periods': [{k: p[k] for k in ('fy', 'fy_source', 'start', 'end', 'accession', 'filed')} for p in periods],
-        'values': values, 'unsupported': [m for m in METRICS if m not in values], 'quality': quality, 'filings': filing_meta,
+        'values': values, 'unsupported': [m for m in METRICS if m not in values], 'quality': quality, 'filings': filing_meta, 'splits': splits,
     }
 
 

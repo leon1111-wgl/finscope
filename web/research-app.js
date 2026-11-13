@@ -442,6 +442,9 @@ function render() {
   });
   revealCurrentStep();
   renderedVersion = uni.state.version;
+  // Re-rendering a view keeps the visitor's place: the focused control (by id, or by its data attribute) is focused again.
+  const focused = document.activeElement && $('#content').contains(document.activeElement) ? document.activeElement : null;
+  const focusKey = focused ? (focused.id ? `#${focused.id}` : ['data-sort', 'data-years', 'data-remove', 'data-open', 'data-unwatch'].map(a => focused.hasAttribute(a) ? `[${a}="${focused.getAttribute(a)}"]` : null).find(Boolean) || (focused.name ? `[name="${focused.name}"]` : null)) : null;
   $('#content').innerHTML = ({
     ask: askView,
     company: uni.views.company,
@@ -454,6 +457,7 @@ function render() {
     method
   } [page] || review)();
   uni.bind($('#content'), page);
+  if (focusKey) { try { $('#content').querySelector(focusKey)?.focus({preventScroll: true}); } catch { /* the control is gone */ } }
   if (['company', 'compare', 'screen', 'watch', 'ask'].includes(page)) uni.prepare(page).then(changed => { if (changed && renderedVersion !== uni.state.version && ready && !pendingRestore) render(); });
   $('#ask-form')?.addEventListener('submit', ev => { ev.preventDefault(); runAsk($('#ask-input').value); });
   bindAskChips($('#content'));

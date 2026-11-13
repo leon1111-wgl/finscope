@@ -24,8 +24,11 @@ const EN_NAME = {AAPL: 'Apple', MSFT: 'Microsoft', NVDA: 'NVIDIA', AMZN: 'Amazon
 // Traditional characters that occur in the closed vocabulary below, mapped to simplified.
 const T2S = Object.fromEntries([...'賺蘋軟偉輝達亞馬遜臉書營淨負債資產應帳賬潤經動歷圖嗎買賣價漲長變獲對這個們麼來為會計準據與間異標報庫貨開總稅費錢銷額幣樣還轉換覆蓋虧損誰數時說從於幾進處現實際預測將給讓問題網頁鏈結財務詐騙紅員發構業級純毛關係區別差較點並讀載檔類評於腦嗎國趨勢舊攤權勵義億萬寫碼氣詩譯餘屬選優覽'].map((c, i) => [c, '赚苹软伟辉达亚马逊脸书营净负债资产应账账润经动历图吗买卖价涨长变获对这个们么来为会计准据与间异标报库货开总税费钱销额币样还转换覆盖亏损谁数时说从于几进处现实际预测将给让问题网页链结财务诈骗红员发构业级纯毛关系区别差较点并读载档类评于脑吗国趋势旧摊权励义亿万写码气诗译余属选优览'[i]]));
 
+const CN_DIGIT = {零: 0, '〇': 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9};
 export function normalize(text) {
   let s = String(text ?? '').normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g, ' ');
+  // Years written in Chinese numerals (二零二四年) become digits; nothing else is converted.
+  s = s.replace(/[零〇一二三四五六七八九]{4}(?=\s*(年|财年))/g, m => [...m].map(c => CN_DIGIT[c]).join(''));
   s = Array.from(s, c => T2S[c] || c).join('');
   return s.replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
 }
@@ -60,7 +63,7 @@ const COMPANY_TABLE = Object.entries(COMPANY_ALIASES).flatMap(([t, list]) => lis
 // Companies outside the bundle, by name or ticker. Capitalised tickers are also caught below.
 const OTHER_COMPANIES = ['tesla', '特斯拉', 'tsla', 'netflix', '奈飞', '网飞', 'nflx', 'berkshire', '伯克希尔', 'brk', '贵州茅台', '茅台', 'moutai', '腾讯', 'tencent', '阿里巴巴', '阿里', 'alibaba', 'baba', '百度', 'baidu', 'bidu', '京东', 'jd.com', '拼多多', 'pdd', '台积电', 'tsmc', 'tsm', '三星', 'samsung', '小米', 'xiaomi', '华为', 'huawei', '比亚迪', 'byd', 'intel', '英特尔', 'intc', 'amd', '超威', 'ibm', 'oracle', '甲骨文', 'orcl', 'salesforce', 'adobe', 'adbe', 'qualcomm', '高通', 'qcom', 'broadcom', '博通', 'avgo', 'cisco', '思科', 'csco', 'uber', '优步', 'disney', '迪士尼', 'coca-cola', 'coca cola', '可口可乐', 'walmart', '沃尔玛', 'wmt', 'boeing', '波音', 'jpmorgan', 'jp morgan', '摩根大通', 'jpm', 'goldman sachs', '高盛', 'twitter', '推特', 'openai', 'palantir', 'pltr', '美团', 'meituan', '字节跳动', 'bytedance', 'tiktok', '蔚来', '小鹏', '理想汽车', '宁德时代', '中国石油', '工商银行', '中国平安', 'costco', '好市多', 'nike', '耐克', 'starbucks', '星巴克', "mcdonald's", 'mcdonalds', '麦当劳', 'pfizer', '辉瑞', 'paypal', 'shopify', 'spotify', 'micron', '美光', 'dell', '戴尔', 'arm holdings', 'sony', '索尼', 'toyota', '丰田', 'berkshire hathaway', 'exxon', '埃克森', 'johnson & johnson', '强生', 'visa inc', 'mastercard', '万事达', 'snowflake', 'zoom', 'airbnb', 'nio', 'xpeng', 'li auto', 'pinduoduo', 'asml', 'sap', 'lvmh', 'nestle', '雀巢', '贵州茅台酒'];
 const OTHER_TABLE = OTHER_COMPANIES.map(a => [a, 'other', a]);
-export const NOT_TICKERS = new Set(['SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', 'PE', 'ROE', 'ROA', 'ROIC', 'FCF', 'OCF', 'CFO', 'YOY', 'QOQ', 'YTD', 'TTM', 'FY', 'CEO', 'CFO', 'AI', 'IPO', 'ETF', 'API', 'JSON', 'CSV', 'PDF', 'EBIT', 'EBITDA', 'DCF', 'CAPEX', 'AR', 'AP', 'NI', 'OK', 'LOL', 'PS', 'IT', 'ID', 'UK', 'EU', 'CN', 'HK', 'NYSE', 'NASDAQ', 'SP', 'GDP', 'CPI', 'FED', 'IRS', 'DQC', 'URL', 'HTML', 'AWS', 'SBC', 'DA', 'PP', 'PPE', 'SGA', 'COGS', 'BTW', 'FYI', 'ASAP', 'IS', 'THE', 'AND', 'OR', 'OF', 'TO', 'IN', 'FOR', 'VS', 'AN', 'ON', 'AT', 'BY', 'MY', 'ME', 'WE', 'DO', 'BE', 'NO', 'HI', 'SO', 'UP', 'IF', 'HOW', 'WHAT', 'WHY', 'WHO', 'TTL', 'Q', 'QA', 'FAQ', 'MD', 'AM', 'PM', 'GPU', 'CPU', 'PC', 'TV', 'CTO', 'COO', 'HR', 'PR', 'ESG', 'EV', 'VR', 'ML', 'LLM', 'SAAS', 'ARR', 'MAU', 'DAU', 'ADS', 'APP', 'APPS', 'IOS', 'OS', 'NYC', 'SF', 'LA', 'UAE', 'IP', 'R', 'RMB', 'UTC', 'EST', 'CN', 'RMB', 'OTC', 'ADR', 'GMT', 'LTM', 'NTM', 'MRQ', 'KPI', 'OKR', 'CAGR', 'WACC', 'ROI', 'NPV', 'IRR', 'BS', 'IS', 'CF', 'PL', 'PNL', 'OPEX', 'RND', 'RD', 'IR', 'CIK', 'EDGAR', 'TL', 'DR', 'TLDR', 'ELI', 'PLS', 'THX', 'TY', 'IMO', 'IMHO', 'WTF', 'OMG', 'FB']);
+export const NOT_TICKERS = new Set(['EUR', 'GBP', 'JPY', 'CNY', 'HKD', 'CAD', 'AUD', 'CHF', 'TTM', 'LTM', 'CET', 'NIM', 'SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', 'PE', 'ROE', 'ROA', 'ROIC', 'FCF', 'OCF', 'CFO', 'YOY', 'QOQ', 'YTD', 'TTM', 'FY', 'CEO', 'CFO', 'AI', 'IPO', 'ETF', 'API', 'JSON', 'CSV', 'PDF', 'EBIT', 'EBITDA', 'DCF', 'CAPEX', 'AR', 'AP', 'NI', 'OK', 'LOL', 'PS', 'IT', 'ID', 'UK', 'EU', 'CN', 'HK', 'NYSE', 'NASDAQ', 'SP', 'GDP', 'CPI', 'FED', 'IRS', 'DQC', 'URL', 'HTML', 'AWS', 'SBC', 'DA', 'PP', 'PPE', 'SGA', 'COGS', 'BTW', 'FYI', 'ASAP', 'IS', 'THE', 'AND', 'OR', 'OF', 'TO', 'IN', 'FOR', 'VS', 'AN', 'ON', 'AT', 'BY', 'MY', 'ME', 'WE', 'DO', 'BE', 'NO', 'HI', 'SO', 'UP', 'IF', 'HOW', 'WHAT', 'WHY', 'WHO', 'TTL', 'Q', 'QA', 'FAQ', 'MD', 'AM', 'PM', 'GPU', 'CPU', 'PC', 'TV', 'CTO', 'COO', 'HR', 'PR', 'ESG', 'EV', 'VR', 'ML', 'LLM', 'SAAS', 'ARR', 'MAU', 'DAU', 'ADS', 'APP', 'APPS', 'IOS', 'OS', 'NYC', 'SF', 'LA', 'UAE', 'IP', 'R', 'RMB', 'UTC', 'EST', 'CN', 'RMB', 'OTC', 'ADR', 'GMT', 'LTM', 'NTM', 'MRQ', 'KPI', 'OKR', 'CAGR', 'WACC', 'ROI', 'NPV', 'IRR', 'BS', 'IS', 'CF', 'PL', 'PNL', 'OPEX', 'RND', 'RD', 'IR', 'CIK', 'EDGAR', 'TL', 'DR', 'TLDR', 'ELI', 'PLS', 'THX', 'TY', 'IMO', 'IMHO', 'WTF', 'OMG', 'FB']);
 
 // Figures, indicators, look-alikes the bundle does not hold, and bridge lines.
 const METRIC_ALIASES = {
@@ -119,8 +122,8 @@ const METRIC_ALIASES = {
 };
 const UNSUPPORTED = {
   basic_eps: [['基本每股收益', 'basic eps', 'basic earnings per share'], 'Basic earnings per share (FinScope holds diluted EPS as reported)', '基本每股收益（FinScope 只有报告的稀释每股收益）'],
-  segment: [['分部收入', '分业务', '各业务', '业务收入', 'by segment', 'segment revenue', '分部', '业务板块', '板块收入', '云业务', '云计算收入', '云收入', '广告收入', '数据中心收入', '游戏收入', '服务收入', 'aws', 'azure', 'google cloud', 'iphone', 'ipad', 'xbox', 'segment', 'segments', 'data center revenue', 'advertising revenue', 'ad revenue', 'cloud revenue', 'services revenue', '大中华区', '中国区', '中国市场', '美国以外', '海外', '国际业务', '地区', '区域', '按地区', '按产品', '分产品', '分地区', 'greater china', 'china', '中国', 'americas', 'europe', '欧洲', 'japan', '日本', 'by region', 'by geography', 'geographic', 'geography', 'region', 'regional', 'outside the united states', 'outside the us', 'outside the u.s.', 'international', 'by product', 'product line', 'product lines', '收入来源', '营收来源', '收入构成', '营收构成', '利润来源', '收入结构', 'revenue sources', 'sources of revenue', 'revenue breakdown', 'revenue mix', 'gpu', 'gpus', 'gaming', 'data center', '数据中心', '游戏', '显卡', '芯片', 'chips'], 'Segment, product or geographic figures', '分部、产品或地区数据'],
-  debt: [['长期债务', '短期债务', '净债务', '债券', 'long-term debt', 'short-term debt', 'notes payable', 'net debt'], 'Long-term or short-term debt alone, or net debt (FinScope holds total debt, with its parts in the source line)', '单独的长期或短期债务、净债务（FinScope 有总债务，来源行列出组成部分）'],
+  segment: [['分部收入', '分业务', '各业务', '业务收入', '美国市场', '在美国', '美国收入', 'in the us', 'in the u.s.', 'in china', 'in europe', 'by segment', 'segment revenue', '分部', '业务板块', '板块收入', '云业务', '云计算收入', '云收入', '广告收入', '数据中心收入', '游戏收入', '服务收入', 'aws', 'azure', 'google cloud', 'iphone', 'ipad', 'xbox', 'segment', 'segments', 'data center revenue', 'advertising revenue', 'ad revenue', 'cloud revenue', 'services revenue', '大中华区', '中国区', '中国市场', '美国以外', '海外', '国际业务', '地区', '区域', '按地区', '按产品', '分产品', '分地区', 'greater china', 'china', '中国', 'americas', 'europe', '欧洲', 'japan', '日本', 'by region', 'by geography', 'geographic', 'geography', 'region', 'regional', 'outside the united states', 'outside the us', 'outside the u.s.', 'international', 'by product', 'product line', 'product lines', '收入来源', '营收来源', '收入构成', '营收构成', '利润来源', '收入结构', 'revenue sources', 'sources of revenue', 'revenue breakdown', 'revenue mix', 'gpu', 'gpus', 'gaming', 'data center', '数据中心', '游戏', '显卡', '芯片', 'chips'], 'Segment, product or geographic figures', '分部、产品或地区数据'],
+  debt: [['长期债务', '短期债务', '净债务', '净现金', '债券', 'long-term debt', 'short-term debt', 'notes payable', 'net debt', 'net cash'], 'Long-term or short-term debt alone, or net debt (FinScope holds total debt, with its parts in the source line)', '单独的长期或短期债务、净债务（FinScope 有总债务，来源行列出组成部分）'],
   payout_ratio: [['分红率', '派息率', '股息支付率', 'payout ratio', 'dividend payout ratio'], 'The dividend payout ratio', '分红率'],
   employees: [['员工人数', '员工', '雇员', '人数', 'headcount', 'employees', 'employee count', 'staff'], 'Employee counts', '员工人数'],
   ebitda: [['息税折旧摊销前利润', '息税前利润', 'ebitda', 'ebit'], 'EBIT and EBITDA', 'EBIT 与 EBITDA'],
@@ -129,13 +132,13 @@ const UNSUPPORTED = {
   returns: [['资本回报率', '投入资本回报率', '投资回报率', 'roic', 'return on invested capital', 'return on capital'], 'Return on invested capital', '投入资本回报率'],
   interest: [['利息收入', 'interest income'], 'Gross interest income (FinScope holds interest expense, and net interest income for banks)', '利息收入（FinScope 有利息支出，银行另有净利息收入）'],
   tax: [['有效税率', '实际税率', '税率', 'tax rate', 'effective tax rate'], 'The effective tax rate', '有效税率'],
-  costs: [['营业费用', '销售费用', '管理费用', '运营费用', '营业开支', '成本', 'opex', 'operating expenses', 'total expenses', 'expenses'], 'Total operating expenses, or selling or administrative expense alone (FinScope holds cost of revenue and SG&A)', '营业费用总额，或单独的销售费用、管理费用（FinScope 有营业成本和销售及管理费用）'],
+  costs: [['营业费用', '销售费用', '管理费用', '运营费用', '营业开支', '销售和营销', '营销费用', '成本', 'opex', 'operating expenses', 'total expenses', 'expenses', 'sales and marketing', 'selling and marketing', 'marketing and sales', 'marketing expense', 'marketing expenses'], 'Total operating expenses, or selling or administrative expense alone (FinScope holds cost of revenue and SG&A)', '营业费用总额，或单独的销售费用、管理费用（FinScope 有营业成本和销售及管理费用）'],
   shares: [['股本', '流通股', '股份数', '总股本', 'shares outstanding', 'share count'], 'Shares outstanding at year end (FinScope holds weighted-average diluted shares)', '年末股本（FinScope 只有加权平均稀释股数）'],
   goodwill: [['商誉', '无形资产', 'goodwill', 'intangible assets', 'intangibles'], 'Goodwill and intangibles', '商誉与无形资产'],
   ppe: [['固定资产', 'property and equipment', 'pp&e', 'ppe'], 'Property and equipment balance', '固定资产余额'],
   deferred_revenue: [['递延收入', '合同负债', 'deferred revenue', 'unearned revenue'], 'Deferred revenue', '递延收入'],
   investments: [['短期投资', '有价证券', '可交易证券', 'marketable securities', 'short-term investments'], 'Short-term investments on their own (FinScope holds cash and cash equivalents, and cash plus short-term investments)', '单独的短期投资（FinScope 有现金及现金等价物，以及现金加短期投资）'],
-  currency: [['人民币', '换算成人民币', '折合人民币', '欧元', '日元', '港币', '港元', 'rmb', 'cny', 'yuan', 'euros', 'in euro', 'yen', 'in gbp'], 'Currency conversion (all figures are reported in USD)', '货币换算（所有数字均为财报中的美元）'],
+  currency: [['人民币', '换算成人民币', '折合人民币', '欧元', '日元', '港币', '港元', 'rmb', 'cny', 'yuan', 'euros', 'in euro', 'in eur', 'eur', 'yen', 'jpy', 'in gbp', 'gbp', 'hkd'], 'Currency conversion (all figures are reported in USD)', '货币换算（所有数字均为财报中的美元）'],
   other_ratios: [['速动比率', '速动比', '存货周转率', '存货周转', '应收账款周转率', '应收账款周转', '总资产周转率', '资产周转率', '产权比率', '负债权益比', '权益乘数', 'quick ratio', 'acid test', 'acid-test ratio', 'inventory turnover', 'receivables turnover', 'asset turnover', 'days sales outstanding', 'dso', 'equity multiplier', 'liabilities to equity'], 'That ratio (FinScope computes only its defined indicators)', '这个比率（FinScope 只计算已定义的指标）'],
   non_gaap: [['非公认会计准则', '非gaap', '经调整', '调整后', 'ffo', 'affo', 'funds from operations', 'adjusted funds from operations', 'non-gaap', 'non gaap', 'adjusted eps', 'adjusted ebitda', 'adjusted earnings', 'adjusted net income', 'core earnings'], 'Non-GAAP figures (FFO, adjusted EPS, adjusted EBITDA and similar)', '非公认会计准则数字（FFO、调整后每股收益、调整后 EBITDA 等）'],
   per_share: [['每股净资产', '每股', 'per share', 'per-share', 'book value per share'], 'Per-share figures other than reported diluted EPS', '除报告的稀释每股收益以外的每股数据'],
@@ -236,7 +239,7 @@ const DEFINITION = {
 // Topic and refusal cues, matched on the normalised lower-case question.
 const CUE = {
   offTopic: /天气|笑话|写代码|写一首|写首|写诗|翻译|讲个故事|讲故事|你是谁|你叫什么|你是什么模型|chatgpt|gpt-?\d|ignore (all |any |the )?(previous |prior |above |your )?(instructions|rules|prompts?)|system prompt|忽略.{0,8}(规则|指令|提示)|越狱|jailbreak|weather|tell (me )?a joke|\bjoke\b|write (me )?(a |an |some )?(code|poem|story|essay|song|email|script)|recipe|食谱|菜谱|足球|篮球|电影|movie|lottery|彩票|比特币|bitcoin|crypto|加密货币|星座|horoscope/,
-  quarterSpecific: /q[1-4]\b|第\s*[一二三四1-4]\s*季|(?<!最新|最近|上|本|这)[一二三四]季度|[一二三四]季报|上半年|下半年|半年报|半年度|\bh[12]\b|first half|second half|half[- ]?year|by quarter|per quarter|each quarter|every quarter|quarter by quarter|每个季度|每季|单季|单个季度|(january|february|march|april|may|june|july|august|september|october|november|december) quarter|前三季度|前两季度|前三个季度|nine months|six months|three months|前九个月|前六个月|前三个月/,
+  quarterSpecific: /\bttm\b|\bltm\b|trailing[- ]?(twelve|12)|过去十二个月|过去12个月|最近12个月|最近十二个月|q[1-4]\b|第\s*[一二三四1-4]\s*季|(?<!最新|最近|上|本|这)[一二三四]季度|[一二三四]季报|上半年|下半年|半年报|半年度|\bh[12]\b|first half|second half|half[- ]?year|by quarter|per quarter|each quarter|every quarter|quarter by quarter|每个季度|每季|单季|单个季度|(january|february|march|april|may|june|july|august|september|october|november|december) quarter|前三季度|前两季度|前三个季度|nine months|six months|three months|前九个月|前六个月|前三个月/,
   calendar: /自然年|日历年|公历年|calendar[- ]?year|calendar\s*20\d\d|\bcy\s?'?\d{2,4}\b/,
   growthCompare: /增长更快|增速更快|增长更多|增长得更快|增长得多|涨得更快|涨得更多|增幅更大|grew faster|grew more|faster growth|higher growth|growing faster|more growth/,
   growthRank: /增长最快|增速最快|增长最多|增幅最大|增长最大|增长最慢|增速最慢|grew (the )?(fastest|most|slowest)|fastest[- ]growing|fastest growth|slowest growth|highest growth|lowest growth|most growth|biggest growth/,
@@ -374,7 +377,10 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   const ucompanies = [];
   let others = [], otherReasons = [];
   if (universe) {
-    const capital = h => h.kind === 'ticker' && h.alias === h.alias.toUpperCase() && /[A-Z]/.test(h.alias);
+    const allCapsText = text === text.toUpperCase();
+    // A capital ticker beats a figure phrase only when the rest of that phrase is still a figure (AD revenue, not NET INCOME).
+    const capital = h => !allCapsText && h.kind === 'ticker' && h.alias === h.alias.toUpperCase() && /[A-Z]/.test(h.alias) &&
+      figureSpans.some(f => h.start < f.end && f.start < h.end && findSpans(low.slice(h.end, f.end), METRIC_TABLE).some(g => g.end === f.end - h.end));
     const found = matchCompanies(universe, text, low, NOT_TICKERS);
     const blanks = found.filter(h => capital(h) && inFigure(h.start, h.end) && !hits.some(x => h.start < x.end && x.start < h.end));
     if (blanks.length) {
@@ -399,7 +405,11 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
         if (!SIX_CIK[entry.c]) ucompanies.push(primary(entry));
       }
     }
-    for (const o of matchOutside(universe, low)) if (!hits.some(x => o.start < x.end && x.start < o.end)) { others.push(text.slice(o.start, o.end)); otherReasons.push(o.reason); }
+    // An outside name that contains a company match wins (Coca-Cola Europacific Partners is not Coca-Cola).
+    for (const o of matchOutside(universe, low)) {
+      for (const x of hits.filter(x => o.start <= x.start && x.end <= o.end && (o.end - o.start) > (x.end - x.start))) { hits.splice(hits.indexOf(x), 1); const k = ucompanies.indexOf(x.ticker); if (k >= 0) ucompanies.splice(k, 1); }
+      if (!hits.some(x => o.start < x.end && x.start < o.end)) { others.push(text.slice(o.start, o.end)); otherReasons.push(o.reason); }
+    }
   } else others = findSpans(low, OTHER_TABLE).map(h => text.slice(h.start, h.end));
   const companies = [];
   for (const h of hits.sort((a, b) => a.start - b.start)) if (!companies.includes(h.ticker)) companies.push(h.ticker);
@@ -440,7 +450,11 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   const shortRange = !range && rest.match(/(?<![\d.])(1[2-9]|2\d)\s*(?:年|财年)?\s*(?:-|–|~|到|至)\s*(1[2-9]|2\d)\s*(?:年|财年)(?!期)/);
   if (shortRange && Number(shortRange[2]) > Number(shortRange[1])) { range = [2000 + Number(shortRange[1]), 2000 + Number(shortRange[2])]; rest = blank(rest, shortRange); }
   const since = rest.match(/(?:since|从|自)\s*(?:fy\s*)?(20\d\d)(?!\d)\s*(?:年|财年)?\s*(?:以来|起|开始)?/);
+  const since2 = !since && !range && rest.match(/(?<!\d)(20\d\d)\s*(?:年|财年)?\s*(?:以来|至今|起)/);
   if (since && !range) { range = [Number(since[1]), null]; rest = blank(rest, since); }
+  else if (since2) { range = [Number(since2[1]), null]; rest = blank(rest, since2); }
+  const before = !range && (rest.match(/(?:before|prior to|until)\s+(?:fy\s*)?(20\d\d)(?!\d)/) || rest.match(/(?<!\d)(20\d\d)\s*(?:年|财年)?\s*(?:之前|以前)/));
+  if (before) { range = [1990, Number(before[1]) - 1]; rest = blank(rest, before); }
   for (const m of rest.matchAll(/(?:fy|财年|fiscal\s*(?:year)?)\s*'?(\d{2})(?!\d)|(?<!\d)(\d{2})\s*财年/g)) { addYear(2000 + Number(m[1] || m[2]), m.index); rest = blank(rest, m); }
   for (const m of rest.matchAll(/(?<![\d.近去前几这最])(1[2-9]|2\d)\s*年(?!期|内|来|以来|后|前|间|的时间)/g)) addYear(2000 + Number(m[1]), m.index);
   for (const m of rest.matchAll(/(?<!\d)(20\d\d|19\d\d)(?!\d)(?!\s*(?:亿|万|千|百|b\b|bn|billion|million|m\b|%|美元|元|usd|dollars|个|家|人|股))/g)) addYear(Number(m[1]), m.index);
@@ -545,7 +559,7 @@ const OUTSIDE_REASON = {
   files_20f: ['it files annual reports on Form 20-F or 40-F as a foreign private issuer, not on Form 10-K', '它作为外国私人发行人提交 20-F 或 40-F 年报，而不是 10-K'],
   not_us_listed: ['it is not listed in the US and does not file annual reports with the SEC', '它不在美国上市，也不向 SEC 提交年报'],
   private: ['it is a private company with no public SEC annual reports', '它是私人公司，没有公开的 SEC 年报'],
-  unknown: ['no company with that ticker or name is in the universe: US large accelerated filers with 10-Ks, listed on NYSE or Nasdaq', '公司全集里没有这个代码或名字：全集是在纽交所或纳斯达克上市、提交 10-K 的美国大型加速申报公司']
+  unknown: ['no company with that ticker or name is in the universe: US companies that are SEC large accelerated filers and file 10-Ks with XBRL', '公司全集里没有这个代码或名字：全集是提交 10-K（XBRL）的美国大型加速申报公司']
 };
 
 export function answerQuestion(question, bundle, {date, universe} = {}) {
@@ -761,6 +775,9 @@ export function answerQuestion(question, bundle, {date, universe} = {}) {
     }
     return compareAnswer(r, p, bundle, index, metric, p.companies, asOf);
   }
+  if (!p.companies.length && p.universe) return finish(r, {status: 'clarify', topic: 'ambiguous', plan: {...r.plan, metric}, summary: ask(lang,
+    `Which company? Name a ticker or company name for ${label(metric, 'en').toLowerCase()}, up to eight to compare; rankings across a sector are on the Screen page.`,
+    `哪家公司？请写出代码或公司名（比较最多八家）；跨行业排名请用“筛选”页。`), offers: lang === 'zh' ? [`英伟达的${label(metric, 'zh')}`] : [`NVDA ${label(metric, 'en').toLowerCase()}`]});
   if (!p.companies.length) return finish(r, {status: 'clarify', topic: 'ambiguous', summary: ask(lang,
     `Which company? ${label(metric, 'en')} is available for AAPL, MSFT, NVDA, AMZN, GOOGL and META, or ask which of the six is highest.`,
     `哪家公司？${label(metric, 'zh')} 对 AAPL、MSFT、NVDA、AMZN、GOOGL、META 都可以查，也可以问六家里谁最高。`),

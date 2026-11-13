@@ -328,7 +328,7 @@ def main():
     screen = [row for row in (screen_row(s) for s in sorted(shards, key=lambda s: rank[s['cik']])) if row]
     data_as_of = max((p['filed'] for s in shards for p in s['periods']), default=None)
     index = {'schema': 'finscope.universe.index/1', 'built': today.isoformat(), 'data_as_of': data_as_of, 'count': len(entries),
-             'selection': 'SEC large accelerated filers with a 10-K filed in the last 15 months and a ticker on NYSE or Nasdaq',
+             'selection': 'SEC large accelerated filers with a 10-K filed in the last 15 months and XBRL financial data',
              'outside': names.OUTSIDE, 'catalog': catalog(), 'companies': entries}
     write_if_changed(OUT / 'index.json', stable(index) + '\n')
     write_if_changed(OUT / 'screen.json', stable({'schema': 'finscope.universe.screen/1', 'built': today.isoformat(), 'rows': screen}) + '\n')

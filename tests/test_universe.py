@@ -96,8 +96,7 @@ def test_compositions_keep_their_parts_from_one_filing():
     liab = shard['values']['liabilities'][1]
     assert liab['v'] == 3500 and liab['via'] == 'derived' and [p['sign'] for p in liab['parts']] == [1, -1]
     debt = shard['values']['total_debt']
-    assert debt[1]['v'] == 850 and [p['tag'] for p in debt[1]['parts']] == ['LongTermDebt', 'ShortTermBorrowings']
-    assert debt[0]['v'] == 700 and 'counted as zero' in debt[0]['note']
+    assert debt[1] is None and debt[0] is None, 'LongTermDebt plus short-term borrowings, or noncurrent debt alone, is not a total'
     sga = shard['values']['sga'][1]
     assert sga['v'] == 50 and sga['via'] == 'derived'
 
@@ -136,10 +135,10 @@ def test_two_periods_with_one_label_never_share_it():
     rows = [('Revenues', 'USD', 10, '2022-07-01', '2023-06-30', '2023-08-20', '10-K', 'J-1', 2023),
             ('Revenues', 'USD', 12, '2023-01-01', '2023-12-31', '2024-02-20', '10-K', 'D-1', 2023)]
     periods = fiscal_periods(payload(rows))
-    assert [p['end'] for p in periods] == ['2023-12-31'] and periods[0]['replaces'][0]['end'] == '2023-06-30'
+    assert [(p['fy'], p['end']) for p in periods] == [(2022, '2023-06-30'), (2023, '2023-12-31')]
     shard = company_shard(payload(rows), SUB)
     assert len({p['fy'] for p in shard['periods']}) == len(shard['periods'])
-    assert any(q['kind'] == 'fiscal_shift' and 'not shown' in q['text'] for q in shard['quality'])
+    assert any(q['kind'] == 'fiscal_shift' for q in shard['quality']) and any(q['kind'] == 'label' for q in shard['quality'])
 
 
 def test_debt_from_the_combined_debt_and_lease_tag_is_a_noted_fallback():
@@ -149,3 +148,75 @@ def test_debt_from_the_combined_debt_and_lease_tag_is_a_noted_fallback():
     assert cell['v'] == 900 and cell['via'] == 'fallback' and 'finance lease' in cell['note']
     fallback = [q for q in shard['quality'] if q['kind'] == 'fallback' and q['metric'] == 'total_debt']
     assert fallback and 'DebtLongtermAndShorttermCombinedAmount' in fallback[0]['text']
+
+
+# ---- Fable review classes (failing first) ----
+def test_an_older_year_keeps_its_first_choice_tag_from_an_earlier_filing():
+    extra = [('StockholdersEquity', 'USD', 100, None, '2023-12-31', '2024-02-10', '10-K', 'A-24', 2023),
+             ('StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'USD', 110, None, '2023-12-31', '2025-02-10', '10-K', 'A-25', 2024),
+             ('StockholdersEquity', 'USD', 120, None, '2024-12-31', '2025-02-10', '10-K', 'A-25', 2024),
+             ('CashAndCashEquivalentsAtCarryingValue', 'USD', 30, None, '2023-12-31', '2024-02-10', '10-K', 'A-24', 2023),
+             ('CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents', 'USD', 45, None, '2023-12-31', '2025-02-10', '10-K', 'A-25', 2024)]
+    shard = company_shard(payload(two_years(extra)), SUB)
+    eq, cash = shard['values']['equity'][0], shard['values']['cash'][0]
+    assert (eq['v'], eq['tag'], eq['via']) == (100, 'StockholdersEquity', 'primary') and 'first' not in eq
+    assert (cash['v'], cash['tag']) == (30, 'CashAndCashEquivalentsAtCarryingValue')
+    assert not any(q['kind'] == 'restated' and q['metric'] in ('equity', 'cash') for q in shard['quality'])
+
+
+def test_cash_and_short_term_investments_is_never_cash_alone():
+    extra = [('CashAndCashEquivalentsAtCarryingValue', 'USD', 30, None, '2023-12-31', '2024-02-10', '10-K', 'A-24', 2023),
+             ('ShortTermInvestments', 'USD', 20, None, '2023-12-31', '2024-02-10', '10-K', 'A-24', 2023),
+             ('CashAndCashEquivalentsAtCarryingValue', 'USD', 30, None, '2023-12-31', '2025-02-10', '10-K', 'A-25', 2024),
+             ('CashAndCashEquivalentsAtCarryingValue', 'USD', 40, None, '2024-12-31', '2025-02-10', '10-K', 'A-25', 2024)]
+    shard = company_shard(payload(two_years(extra)), SUB)
+    assert shard['values']['cash_sti'][0]['v'] == 50, 'an earlier filing with both parts is used'
+    assert shard['values']['cash_sti'][1] is None, 'no short-term investment line anywhere: not reported'
+
+
+def test_total_debt_is_withheld_when_it_cannot_be_right():
+    years = [(str(y), f'{y}-01-01', f'{y}-12-31', f'{y + 1}-02-10', f'D-{y}') for y in range(2019, 2025)]
+    rows = []
+    for y, s, e, f, a in years:
+        rows += [('Revenues', 'USD', 1000, s, e, f, '10-K', a, int(y)), ('Liabilities', 'USD', 5000, None, e, f, '10-K', a, int(y)),
+                 ('DebtLongtermAndShorttermCombinedAmount', 'USD', 26 if y == '2022' else 3000, None, e, f, '10-K', a, int(y))]
+    shard = company_shard(payload(rows), SUB)
+    debt = shard['values']['total_debt']
+    assert debt[3] is None and all(c and c['v'] == 3000 for i, c in enumerate(debt) if i != 3), 'a stray value far from the other years is withheld'
+    assert any(q['kind'] == 'withheld' and q['metric'] == 'total_debt' for q in shard['quality'])
+    over = company_shard(payload([r if r[0] != 'Liabilities' else (r[0], r[1], 2000, *r[3:]) for r in rows]), SUB)
+    assert all(c is None for c in over['values']['total_debt']), 'debt above total liabilities is withheld'
+
+
+def test_long_term_debt_plus_short_term_borrowings_is_not_double_counted():
+    extra = [('LongTermDebt', 'USD', 800, None, '2024-12-31', '2025-02-10', '10-K', 'A-25', 2024),
+             ('ShortTermBorrowings', 'USD', 50, None, '2024-12-31', '2025-02-10', '10-K', 'A-25', 2024)]
+    shard = company_shard(payload(two_years(extra)), SUB)
+    assert shard['values']['total_debt'][1] is None, 'without LongTermDebtCurrent the split of borrowings is unknown'
+
+
+def test_share_count_jumps_mark_a_split_and_eps_uses_its_own_tolerance():
+    rows = two_years([('WeightedAverageNumberOfDilutedSharesOutstanding', 'shares', 100, *Y23, '2024-02-10', '10-K', 'A-24', 2023),
+                      ('WeightedAverageNumberOfDilutedSharesOutstanding', 'shares', 400, *Y24, '2025-02-10', '10-K', 'A-25', 2024),
+                      ('EarningsPerShareDiluted', 'USD/shares', 1.10, *Y23, '2024-02-10', '10-K', 'A-24', 2023),
+                      ('EarningsPerShareDiluted', 'USD/shares', 1.30, *Y23, '2025-02-10', '10-K', 'A-25', 2024)])
+    shard = company_shard(payload(rows), SUB)
+    assert shard['values']['eps_diluted'][0]['first']['v'] == 1.10, 'a 0.20 change in EPS is a change, not rounding'
+    assert any(q['kind'] == 'split' and q['fy'] == [2024] for q in shard['quality'])
+    assert shard['splits'] == [2024]
+    note = next(q['text'] for q in shard['quality'] if q['kind'] == 'restated' and q['metric'] == 'eps_diluted')
+    assert '1.10' in note and '1.30' in note
+
+
+def test_labels_count_back_from_the_latest_10k():
+    rows = [('Revenues', 'USD', 1, '2022-12-31', '2023-12-30', '2024-02-20', '10-K', 'L-1', 2024),
+            ('Revenues', 'USD', 1, '2023-12-31', '2024-12-28', '2025-02-20', '10-K', 'L-2', 2024),
+            ('Revenues', 'USD', 1, '2024-12-29', '2026-01-03', '2026-02-20', '10-K', 'L-3', 2025)]
+    labels = [(p['fy'], p['end']) for p in fiscal_periods(payload(rows))]
+    assert labels == [(2023, '2023-12-30'), (2024, '2024-12-28'), (2025, '2026-01-03')]
+
+
+def test_negative_payments_are_shown_as_payments_with_a_note():
+    shard = company_shard(payload(two_years([('PaymentsToAcquirePropertyPlantAndEquipment', 'USD', -70, *Y24, '2025-02-10', '10-K', 'A-25', 2024)])), SUB)
+    cell = shard['values']['capex'][1]
+    assert cell['v'] == 70 and 'negative sign' in cell['note']

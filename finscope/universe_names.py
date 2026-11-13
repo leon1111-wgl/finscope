@@ -90,7 +90,7 @@ CURATED = {
     'TGT': (['target corp', 'target corporation'], ['塔吉特']),
     'LOW': (["lowe's", 'lowes'], ['劳氏']),
     'DELL': (['dell'], ['戴尔']),
-    'HPQ': (['hp inc'], ['惠普']),
+    'HPQ': (['hp inc', 'hp'], ['惠普']),
     'HPE': (['hewlett packard enterprise'], ['慧与']),
     'AMAT': (['applied materials'], ['应用材料']),
     'LRCX': (['lam research'], ['拉姆研究', '泛林', '泛林集团']),
@@ -219,10 +219,11 @@ OUTSIDE = {
                   'tsmc', 'tsm', '台积电', 'asml', '阿斯麦', 'toyota', '丰田', 'sony', '索尼', 'nio', '蔚来', 'xpeng', '小鹏', 'li auto', '理想汽车',
                   'netease', '网易', 'trip.com', '携程', 'novo nordisk', '诺和诺德', 'sap', 'shell', '壳牌', 'bp', 'unilever', '联合利华',
                   'astrazeneca', '阿斯利康', 'hsbc', '汇丰', 'ubs', '瑞银', 'arm holdings', 'spotify', 'sea limited', 'shopee', 'nu holdings',
-                  'mercadolibre', 'meli', 'futu', '富途', 'tencent music', '腾讯音乐', 'bilibili', '哔哩哔哩', 'b站', 'zto', '中通'],
+                  'mercadolibre', 'meli', 'futu', '富途', 'tencent music', '腾讯音乐', 'bilibili', '哔哩哔哩', 'b站', 'zto', '中通',
+                  'coca-cola europacific', 'coca-cola europacific partners', 'europacific partners', 'ccep', 'honda', '本田', 'novartis', '诺华', 'sanofi', '赛诺菲', 'gsk', 'diageo', '帝亚吉欧'],
     'not_us_listed': ['tencent', '腾讯', 'moutai', '茅台', '贵州茅台', 'samsung', '三星', 'xiaomi', '小米', 'huawei', '华为', 'byd', '比亚迪',
                       'catl', '宁德时代', 'meituan', '美团', '中国石油', 'petrochina', '工商银行', 'icbc', '中国平安', 'ping an', 'lvmh', 'nestle', '雀巢',
-                      'nintendo', '任天堂', 'hermes', '爱马仕', 'louis vuitton', '路易威登'],
+                      'nintendo', '任天堂', 'hermes', '爱马仕', 'louis vuitton', '路易威登', 'adidas', '阿迪达斯', 'puma', '彪马', 'siemens', '西门子', 'volkswagen', '大众汽车', 'bmw', '宝马', 'mercedes', '奔驰', 'roche', '罗氏', 'airbus', '空客', 'hyundai', '现代汽车'],
     'private': ['openai', 'bytedance', '字节跳动', 'tiktok', '抖音', 'spacex', 'stripe', 'anthropic', 'shein', '希音', 'twitter', '推特', 'x corp'],
 }
 

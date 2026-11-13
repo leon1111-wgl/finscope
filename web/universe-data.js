@@ -58,7 +58,7 @@ export function money(v, lang = 'en') {
   if (!Number.isFinite(v)) return lang === 'zh' ? '无' : '—';
   const sign = v < 0 ? '−' : '', a = Math.abs(v);
   if (lang === 'zh') return a >= 1e8 ? `${sign}${(a / 1e8).toFixed(2)} 亿美元` : `${sign}${(a / 1e4).toFixed(1)} 万美元`;
-  return a >= 1e9 ? `${sign}$${(a / 1e9).toFixed(2)}B` : `${sign}$${(a / 1e6).toFixed(1)}M`;
+  return a >= 1e12 ? `${sign}$${(a / 1e12).toFixed(2)}T` : a >= 1e9 ? `${sign}$${(a / 1e9).toFixed(2)}B` : `${sign}$${(a / 1e6).toFixed(1)}M`;
 }
 export function show(k, v, lang = 'en') {
   if (!Number.isFinite(v)) return lang === 'zh' ? '无' : '—';
@@ -118,7 +118,7 @@ export function indicator(shard, key, i) {
   const sources = [], missing = [], v = {};
   for (const m of spec[5]) {
     const s = sourceOf(shard, m, i);
-    if (s) { sources.push(s); v[m] = s.value; } else if (!(key === 'payout')) missing.push(m);
+    if (s) { sources.push(s); v[m] = s.value; } else missing.push(m);
   }
   let prior = null;
   if (spec[7]) {
@@ -126,11 +126,8 @@ export function indicator(shard, key, i) {
     const s = j >= 0 ? sourceOf(shard, spec[7], j, 'prior_year') : null;
     if (s) { sources.push(s); prior = s.value; } else missing.push(`${spec[7]}_prior`);
   }
-  if (key === 'payout') {
-    if (!('dividends' in v) && !('buybacks' in v)) return {value: null, sources, missing: ['dividends', 'buybacks'], reason: 'missing'};
-    return {value: (v.dividends || 0) + (v.buybacks || 0), sources, missing: [], reason: null,
-      note: ['dividends', 'buybacks'].filter(m => !(m in v)).map(m => `${FIGURES[m][0]} not reported; counted as zero`)[0] || null};
-  }
+  if (key === 'payout' && missing.length) return {value: null, sources, missing, reason: 'missing'};  // never a missing part as zero
+  if (key === 'payout') return {value: v.dividends + v.buybacks, sources, missing: [], reason: null};
   if (missing.length) return {value: null, sources, missing, reason: missing.some(m => m.endsWith('_prior')) && missing.length === 1 ? 'no_prior' : 'missing'};
   const pos = x => Number.isFinite(x) && x > 0;
   const div = (a, b) => pos(b) ? a / b : null;
@@ -151,7 +148,7 @@ export function indicator(shard, key, i) {
     case 'liabilities_assets': value = div(v.liabilities, v.assets); break;
     case 'debt_to_equity': value = div(v.total_debt, v.equity); break;
     case 'interest_coverage': value = div(v.operating_income, v.interest_expense); break;
-    case 'roe': value = div(v.net_income, (v.equity + prior) / 2); break;
+    case 'roe': value = pos(v.equity) && pos(prior) ? v.net_income / ((v.equity + prior) / 2) : null; break;
     case 'roa': value = div(v.net_income, (v.assets + prior) / 2); break;
     case 'revenue_growth': value = pos(prior) ? v.revenue / prior - 1 : null; break;
   }
@@ -216,6 +213,8 @@ export function matchCompanies(prepared, text, low, notTickers = new Set()) {
     if (!entry) continue;
     const start = m.index + (dollar ? 1 : 0), hit = {start, end: start + raw.length, cik: entry.c, alias: raw, kind: 'ticker'};
     const isUpper = raw === raw.toUpperCase();
+    if (!dollar && raw.length === 1 && (/^\.\s?[A-Za-z]/.test(text.slice(start + 1)) || /[A-Za-z]\.\s?$/.test(text.slice(0, start)) || /(class|series|类|级)\s*$/i.test(text.slice(0, start)))) continue;
+    if (!dollar && prepared.outside.has(raw.toLowerCase())) continue;
     if ((!dollar && isUpper && (notTickers.has(upper) || (upper.length === 1 && !SINGLE_LETTER_OK.has(upper)))) || (!dollar && !isUpper && !(entry.l && raw.length >= 2 && raw === raw.toLowerCase()))) { rejected.push(hit); continue; }
     hits.push(hit);
   }
@@ -223,13 +222,15 @@ export function matchCompanies(prepared, text, low, notTickers = new Set()) {
   const SEP = /^[\s,，、;；/]*(?:and|和|与|及|跟|vs\.?|versus)?[\s,，、;；/]*$/i;
   for (let changed = true; changed;) {
     changed = false;
-    for (const r of [...rejected]) {
+    for (const r of [...rejected].filter(r => !notTickers.has(r.alias.toUpperCase()))) {
       if (hits.some(h => h.kind === 'ticker' && ((h.end <= r.start && SEP.test(text.slice(h.end, r.start))) || (r.end <= h.start && SEP.test(text.slice(r.end, h.start)))))) {
         hits.push(r); rejected.splice(rejected.indexOf(r), 1); changed = true;
       }
     }
   }
-  hits.sort((a, b) => (b.end - b.start) - (a.end - a.start) || a.start - b.start);
+  // Longest first; on a tie a name beats a ticker (HP the company name over HP the ticker of another firm).
+  const rankKind = h => h.kind === 'ticker' ? 1 : 0;
+  hits.sort((a, b) => (b.end - b.start) - (a.end - a.start) || rankKind(a) - rankKind(b) || a.start - b.start);
   const taken = [];
   for (const h of hits) if (!taken.some(t => h.start < t.end && t.start < h.end)) taken.push(h);
   return taken.sort((a, b) => a.start - b.start);
@@ -337,7 +338,10 @@ function peerLabelPlain(peer, rows, lang) {
 }
 
 // ------------------------------------------------------------------ exports (every cell carries its source)
-const csvCell = v => v === null || v === undefined ? '' : /[",\n\r]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+// Text cells a spreadsheet would read as a formula (= + - @) get a leading apostrophe; numbers stay numbers.
+const csvSafe = v => typeof v === 'string' && /^[=+\-@\t\r]/.test(v) && !/^-?\d+(\.\d+)?$/.test(v) ? `'${v}` : v;
+const csvCellRaw = v => v === null || v === undefined ? '' : /[",\n\r]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+const csvCell = v => csvCellRaw(csvSafe(v));
 export const toCSV = (header, rows) => [header, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
 export const CSV_HEADER = ['company', 'ticker', 'cik', 'template', 'fiscal_year', 'period_start', 'period_end', 'figure_id', 'figure', 'value', 'unit', 'how',
   'xbrl_tag_or_formula', 'accession', 'form', 'filed', 'source_url', 'first_reported_value', 'first_reported_accession', 'note'];
@@ -369,10 +373,11 @@ export function shardRows(shard, figures, indicators = [], years = null) {
 
 export function screenCSV(built, filterRows = built.rows) {
   const header = ['company', 'ticker', 'cik', 'sic', 'peer_group', 'fiscal_year', 'period_end', 'cash_conversion', 'cash_conversion_peer_percentile', 'accrual_ratio', 'accrual_ratio_peer_percentile',
-    'fcf_margin', 'fcf_margin_peer_percentile', 'net_income', 'operating_cash_flow', 'capex', 'revenue', 'total_assets', 'prior_total_assets', 'xbrl_tags', 'accession', 'source_url'];
+    'fcf_margin', 'fcf_margin_peer_percentile', 'net_income', 'operating_cash_flow', 'capex', 'revenue', 'total_assets', 'prior_total_assets', 'xbrl_tags', 'accessions', 'source_urls'];
   const rows = filterRows.map(r => [r.entry.n, primary(r.entry), r.c, r.sic, r.peer, r.fy, r.end, r.values.cash_conversion ?? '', r.pct?.cash_conversion ?? '', r.values.accruals ?? '', r.pct?.accruals ?? '',
     r.values.fcf_margin ?? '', r.pct?.fcf_margin ?? '', r.net_income?.[0] ?? '', r.operating_cash_flow?.[0] ?? '', r.capex?.[0] ?? '', r.revenue?.[0] ?? '', r.assets?.[0] ?? '', r.assets_prior?.[0] ?? '',
     ['net_income', 'operating_cash_flow', 'capex', 'revenue', 'assets'].map(k => r[k] ? `${k}=${r[k][1]}` : `${k}=not reported`).join('; '),
-    r.revenue?.[2] || r.net_income?.[2] || '', r.revenue?.[2] || r.net_income?.[2] ? filingUrl(r.c, r.revenue?.[2] || r.net_income?.[2]) : '']);
+    ['net_income', 'operating_cash_flow', 'capex', 'revenue', 'assets', 'assets_prior'].filter(k => r[k]).map(k => `${k}=${r[k][2]}`).join('; '),
+    ['net_income', 'operating_cash_flow', 'capex', 'revenue', 'assets', 'assets_prior'].filter(k => r[k]).map(k => `${k}=${filingUrl(r.c, r[k][2])}`).join('; ')]);
   return toCSV(header, rows);
 }

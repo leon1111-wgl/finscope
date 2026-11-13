@@ -70,7 +70,7 @@ export function universeDefinition(r, p, keys) {
 
 // ------------------------------------------------------------------ helpers over shards
 function fact(shard, s, lang, extra = {}) {
-  const t = primary({t: shard.tickers.length ? shard.tickers : [String(shard.cik)]});
+  const t = shard.__t || shard.tickers[0] || `CIK${shard.cik}`;
   const tag = s.parts ? `${s.parts.map(x => `${x.sign < 0 ? '−' : '+'} ${x.tag}`).join(' ').replace(/^\+ /, '')}` : s.tag;
   return {ticker: t, key: s.metric, label: `${label(s.metric, lang)}${s.role === 'prior_year' ? L(lang, ' (prior year)', '（上年）') : ''}`, value: s.value, display: show(s.metric, s.value, lang),
     exact_usd: exact(s.value), unit: s.unit, period_start: s.period_start, period_end: s.period_end, fiscal_year: s.fy, form: s.form, tag, filed: s.filed,
@@ -81,7 +81,7 @@ const fyText = (shard, i, lang) => { const p = shard.periods[i]; return lang ===
 export function universeContext(ctx) {
   const {prepared, shards} = ctx;
   return {
-    shardOf: t => { const e = entryOf(prepared, t); return e ? shards[e.c] || null : null; },
+    shardOf: t => { const e = entryOf(prepared, t); const sh = e ? shards[e.c] || null : null; if (sh && !sh.__t) Object.defineProperty(sh, '__t', {value: primary(e), enumerable: false}); return sh; },
     entryOf: t => entryOf(prepared, t)
   };
 }
@@ -216,10 +216,16 @@ function figuresAnswer(r, p, ctx, t, keys) {
 function trendAnswer(r, p, ctx, t, key) {
   const lang = p.lang, shard = ctx.shardOf(t);
   let idx = shard.periods.map((_, i) => i);
+  const allYears = /哪年|哪一年|which year|what year|best year|worst year|\bpeak\b|record year|历史最高|历史最低|最高的一年|最低的一年/.test(p.low);
   if (p.range) idx = idx.filter(i => shard.periods[i].fy >= p.range[0] && (p.range[1] === null || shard.periods[i].fy <= p.range[1]));
   else if (p.years.length >= 3) idx = idx.filter(i => p.years.includes(shard.periods[i].fy));
-  else idx = idx.slice(-(p.lastN || 5));
+  else if (!allYears) idx = idx.slice(-(p.lastN || 5));
   if (!idx.length) return finish(r, {status: 'not_in_bundle', topic: 'out_of_range', plan: {...r.plan, tickers: [t], metric: key}, summary: L(lang, `${t} has no fiscal years in that range in FinScope (it keeps the latest ten).`, `FinScope 没有 ${t} 在这个范围内的财年（只保留最近十个）。`)});
+  const basisNotes = [];
+  if (['eps_diluted', 'shares_diluted'].includes(key)) {
+    const cut = (shard.splits || []).filter(y => y > shard.periods[idx[0]].fy && y <= shard.periods[idx.at(-1)].fy).at(-1);
+    if (cut) { idx = idx.filter(i => shard.periods[i].fy >= cut); basisNotes.push(L(lang, `The share count changed basis in FY${cut} (a split or a large issuance), so per-share figures are shown from FY${cut} only.`, `股数在 ${cut} 财年改变了口径（拆股或大规模发行），所以每股数据只显示 ${cut} 财年起。`)); }
+  }
   const rows = [], facts = [], calcs = [];
   let stated = 0;
   for (const i of idx) {
@@ -230,11 +236,17 @@ function trendAnswer(r, p, ctx, t, key) {
   }
   if (!stated) return withSpan(unavailable(r, p, ctx, t, shard, key, idx.at(-1), indicator(shard, key, idx.at(-1))), p);
   const span = `FY${shard.periods[idx[0]].fy}–FY${shard.periods[idx.at(-1)].fy}`;
-  const notes = noteFor(shard, key, facts.map(f => ({...f, metric: f.key, fy: f.fiscal_year})), lang);
+  const notes = [...basisNotes, ...noteFor(shard, key, facts.map(f => ({...f, metric: f.key, fy: f.fiscal_year})), lang)];
   if (p.lastN && idx.length < p.lastN) notes.push(L(lang, `Only ${idx.length} fiscal years are available.`, `只有 ${idx.length} 个财年的数据。`));
+  let headline = '';
+  if (allYears) {
+    const lowest = /worst|最低|lowest/.test(p.low);
+    const pick = idx.map(i => [shard.periods[i].fy, indicator(shard, key, i).value]).filter(x => Number.isFinite(x[1])).sort((a, b) => lowest ? a[1] - b[1] : b[1] - a[1])[0];
+    if (pick) headline = L(lang, `${lowest ? 'Lowest' : 'Highest'} of these years: FY${pick[0]} (${show(key, pick[1], 'en')}). `, `这些年中${lowest ? '最低' : '最高'}的是 ${pick[0]} 财年（${show(key, pick[1], 'zh')}）。`);
+  }
   return finish(r, {topic: 'trend', plan: {tickers: [t], metric: key, period: p.lastN ? `last${p.lastN}` : span, years: idx.map(i => shard.periods[i].fy)}, facts, calculations: calcs.slice(-3),
     table: {columns: [L(lang, 'Fiscal year', '财年'), L(lang, 'Period end', '期末'), label(key, lang)], rows},
-    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(key, 'en'))} ${span}: ${rows.map(x => `${x[0]} ${x[2]}`).join(', ')}.`,
+    summary: headline + L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(key, 'en'))} ${span}: ${rows.map(x => `${x[0]} ${x[2]}`).join(', ')}.`,
       `${nameOf(ctx, t, 'zh')} ${span} 的${label(key, 'zh')}：${rows.map(x => `${x[0]} ${x[2]}`).join('，')}。`), notes});
 }
 
@@ -246,6 +258,10 @@ function changeAnswer(r, p, ctx, t, key) {
   if (p.years.length >= 2) { i = periodIndex(shard, p.years.at(-1)); j = periodIndex(shard, p.years[0]); }
   else { const res0 = resolveIndex(p, shard, t); if (res0.bad) return periodProblem(r, p, ctx, t, shard, res0, key); i = res0.i; j = i - 1; }
   if (i < 0 || j < 0) return finish(r, {status: 'not_in_bundle', topic: 'out_of_range', plan: {...r.plan, tickers: [t], metric: key}, summary: L(lang, `${t} does not have both fiscal years in FinScope.`, `FinScope 没有 ${t} 这两个财年的数据。`)});
+  const lo = Math.min(shard.periods[i].fy, shard.periods[j].fy), hi = Math.max(shard.periods[i].fy, shard.periods[j].fy);
+  if (['eps_diluted', 'shares_diluted'].includes(key) && (shard.splits || []).some(y => y > lo && y <= hi)) return finish(r, {status: 'not_in_bundle', topic: 'split_basis', plan: {tickers: [t], metric: key, period: `FY${shard.periods[i].fy}`}, summary: L(lang,
+    `${t}'s share count changed basis between these years (a split or a large issuance), so the two ${lc(label(key, 'en'))} figures are not comparable and no change is stated.`,
+    `${t} 的股数在这两年之间改变了口径（拆股或大规模发行），两个${label(key, 'zh')}不可比，因此不给出变化。`)});
   const a = indicator(shard, key, i), b = indicator(shard, key, j);
   if (a.value === null) return unavailable(r, p, ctx, t, shard, key, i, a);
   if (b.value === null) return unavailable(r, p, ctx, t, shard, key, j, b);
@@ -279,6 +295,13 @@ function compareAnswer(r, p, ctx, tickers, key, {rank = false, low = false} = {}
     const c = calcOf(shard, t, key, i, res.value, lang);
     if (c) calcs.push(c);
   });
+  if (values.length === 1 && tickers.length > 1) {
+    const [t1, v1, y1] = values[0];
+    return finish(r, {topic: 'compare', plan: {tickers, metric: key, period: p.years.length ? `FY${p.years.at(-1)}` : 'latest'}, facts, calculations: calcs,
+      table: {columns: [L(lang, 'Company', '公司'), L(lang, 'Fiscal year', '财年'), L(lang, 'Period end', '期末'), label(key, lang)], rows},
+      summary: L(lang, `Only ${t1} has a stated ${lc(label(key, 'en'))}: ${show(key, v1, 'en')} (FY${y1}). Not stated for ${skipped.join(', ')} (see the table), so there is no comparison.`,
+        `只有 ${t1} 有${label(key, 'zh')}：${show(key, v1, 'zh')}（${y1} 财年）。${skipped.join('、')} 没有给出（见表格），因此无法比较。`)});
+  }
   if (!values.length) return finish(r, {status: 'not_in_bundle', topic: 'missing_fact', plan: {tickers, metric: key, period: p.years.length ? `FY${p.years.at(-1)}` : 'latest'},
     table: {columns: [L(lang, 'Company', '公司'), L(lang, 'Fiscal year', '财年'), L(lang, 'Period end', '期末'), label(key, lang)], rows: rows.map(x => x.length === 4 ? x : [...x])},
     summary: L(lang, `${label(key, 'en')} is not available for any of these companies.`, `这些公司都没有可用的${label(key, 'zh')}。`)});
@@ -488,10 +511,9 @@ export function answerUniverse(r, p, ctx, helpers) {
     const superlative = p.companies.length >= 3 && /最(?!新|近|后)|highest|lowest|best|worst|\bmost\b|\bleast\b|\btop\b|\brank|排名|排序|排行/.test(low);
     return compareAnswer(r, p, u, p.companies, k, {rank: superlative, low: superlative && c.low});
   }
-  if (c.trend || p.range || p.lastN || p.years.length >= 3) return trendAnswer(r, p, u, t, key);
+  if (c.trend || p.range || p.lastN || p.years.length >= 3 || /哪年|哪一年|which year|what year|best year|worst year|\bpeak\b|record year|历史最高|历史最低|最高的一年|最低的一年/.test(low)) return trendAnswer(r, p, u, t, key);
   if ((c.change && !c.definition) || p.years.length === 2) return changeAnswer(r, p, u, t, key);
-  // "What is X" names a definition; "why is X negative" asks about the figure, which is stated with a note on causes.
-  if (c.definition && !c.why && !p.years.length) { const d = universeDefinition({...r}, p, [key]); if (d) return finish(r, {...d, plan: {...d.plan, tickers: [t]}}); }
+  // With a company named, "what is X's Y" is a lookup, and "why is X negative" states the figure with a note on causes.
   const answer = metricAnswer(r, p, u, t, key);
   if (c.why && answer.status === 'answered') answer.notes.push(L(lang, 'The figures do not state causes; read management’s discussion and the notes in the filing for the reasons.', '数字本身不说明原因；原因请读财报中的管理层讨论和附注。'));
   return answer;
