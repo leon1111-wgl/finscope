@@ -1,6 +1,6 @@
 {
-  "label": "seen rerun after the probe fix round (not blind): engine and relabelled data at 833bec8",
-  "engine_commit": "833bec8",
+  "label": "seen rerun after the probe fix round (not blind): engine at 12a0c8d, relabelled data 8a41b47",
+  "engine_commit": "12a0c8d",
   "set_commit": "cdb3874",
   "universe_data_commit": "8a41b47",
   "universe_built": "2026-11-13",
