@@ -216,14 +216,19 @@ export function matchCompanies(prepared, text, low, notTickers = new Set()) {
     }
   }
   const rejected = [];
+  // A question in capitals throughout (two Latin words or more, none in lower case) gives capitals no meaning.
+  const shouting = (text.match(/[A-Za-z]{2,}/g) || []).length >= 2 && !/[a-z]/.test(text);
   for (const m of text.matchAll(/(?<![A-Za-z0-9$&\/'])\$?([A-Za-z]{1,5}(?:[.-][A-Za-z]{1,2})?)(?![A-Za-z0-9&\/'])/g)) {
     const raw = m[1], upper = raw.toUpperCase().replace('.', '-'), dollar = m[0].startsWith('$');
     const entry = prepared.byTicker.get(upper);
     if (!entry) continue;
-    const start = m.index + (dollar ? 1 : 0), hit = {start, end: start + raw.length, cik: entry.c, alias: raw, kind: 'ticker'};
     const isUpper = raw === raw.toUpperCase();
+    // A ticker typed in capitals (in a question that is not all capitals) or with $ is meant as a ticker.
+    const capital = isUpper && /[A-Z]/.test(raw) && !shouting;
+    const start = m.index + (dollar ? 1 : 0), hit = {start, end: start + raw.length, cik: entry.c, alias: raw, kind: 'ticker', capital, dollar};
     if (!dollar && raw.length === 1 && (/^\.\s?[A-Za-z]/.test(text.slice(start + 1)) || /[A-Za-z]\.\s?$/.test(text.slice(0, start)) || /(class|series|类|级)\s*$/i.test(text.slice(0, start)))) continue;
-    if (!dollar && prepared.outside.has(raw.toLowerCase())) continue;
+    // A capital ticker that is also the name of a company outside the universe (BYD) asks which is meant; lower case stays outside.
+    if (!dollar && prepared.outside.has(raw.toLowerCase())) { if (capital) hits.push({...hit, outside: raw.toLowerCase()}); continue; }
     if ((!dollar && isUpper && (notTickers.has(upper) || (upper.length === 1 && !SINGLE_LETTER_OK.has(upper)))) || (!dollar && !isUpper && !(entry.l && raw.length >= 2 && raw === raw.toLowerCase()))) { rejected.push(hit); continue; }
     hits.push(hit);
   }
@@ -237,12 +242,22 @@ export function matchCompanies(prepared, text, low, notTickers = new Set()) {
       }
     }
   }
-  // Longest first; on a tie a name beats a ticker (HP the company name over HP the ticker of another firm).
+  // A ticker typed with $ beats a name over the same words; one typed in capitals that is also another company's name
+  // (COKE for Coca-Cola, HP for HP Inc.) asks which is meant. Otherwise, on a tie, a name beats a ticker.
+  for (const t of hits.filter(h => h.kind === 'ticker' && (h.dollar || h.capital) && !h.outside)) {
+    const same = hits.filter(h => h.kind === 'name' && h.start === t.start && h.end === t.end && h.cik !== t.cik);
+    if (!same.length) continue;
+    for (const n of same) hits.splice(hits.indexOf(n), 1);
+    if (!t.dollar) { hits.splice(hits.indexOf(t), 1); hits.push({start: t.start, end: t.end, alias: t.alias, kind: 'shared', via: 'ticker_name', ciks: [t.cik, ...same.map(n => n.cik)]}); }
+  }
   const rankKind = h => h.kind === 'ticker' ? 1 : 0;
   hits.sort((a, b) => (b.end - b.start) - (a.end - a.start) || rankKind(a) - rankKind(b) || a.start - b.start);
   const taken = [];
   for (const h of hits) if (!taken.some(t => h.start < t.end && t.start < h.end)) taken.push(h);
-  return taken.sort((a, b) => a.start - b.start);
+  taken.sort((a, b) => a.start - b.start);
+  // Tickers that are also ordinary words (PM, SO, IT, A) are not read as tickers unless written $PM; the caller may say so.
+  taken.rejected = rejected.filter(r => r.capital && !taken.some(t => r.start < t.end && t.start < r.end));
+  return taken;
 }
 
 export function matchOutside(prepared, low) {

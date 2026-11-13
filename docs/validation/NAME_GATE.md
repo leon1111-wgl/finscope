@@ -75,3 +75,9 @@ Written and committed before any 0.3.3 fix. The question: does a visitor who typ
 - False outside: MELI (wrongly listed as a 20-F filer), BYD (BYD Company of China).
 - Misses: common-word tickers such as PM, SO, IT, ON, A and the figure words CASH and FCF, answered with a generic "Which company?".
 This matches the main session's own count (39).
+
+## Amendment to the name gate (0.3.3, before the ticker gate's first run)
+
+The main session asked that "HP" ask which company is meant, listing both Helmerich & Payne (ticker HP) and HP Inc. (HPQ), whose natural name is "HP". The name gate accepted a clarification only for a natural name that two companies share, so it would have scored that clarification for HPQ as a miss. The two requests conflict on this one question. The name gate now also accepts a clarification that lists the company when its natural name is another company's ticker. Under the original rule the result below would read 1,989 correct and 4 clarify_listed with 1 miss (HPQ: "HP revenue" asks and lists HP and HPQ); under the amended rule it reads 1,989 correct and 5 clarify_listed with no miss.
+
+Also corrected after the development run: a question whose only Latin text is one word (IT 的营收) is not "all capitals", so a ticker typed in it counts as typed in capitals.

@@ -51,7 +51,9 @@ export function nameGate({label = 'name gate run', disk = universeFromDisk(path.
   const judge = (c, name) => {
     const a = ask(`${name} revenue`);
     const got = a.plan?.tickers || [];
-    const ambiguous = owners.get(name.toLowerCase()).size > 1;
+    // Amendment for 0.3.3 (NAME_GATE.md): a natural name that is also another company's ticker (HP) may ask which one.
+    const tickerOf = disk.prepared.byTicker.get(name.toUpperCase());
+    const ambiguous = owners.get(name.toLowerCase()).size > 1 || Boolean(tickerOf && tickerOf.c !== c.entry.c);
     let outcome;
     if (got.length === 1 && got[0] === c.ticker) outcome = 'correct';
     else if (a.topic === 'out_of_universe') outcome = 'false_outside';

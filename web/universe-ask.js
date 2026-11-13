@@ -539,13 +539,39 @@ export function answerUniverse(r, p, ctx, helpers) {
     `公司全集的数字是最新的文件（构建于 ${ctx.prepared.index.built}）；更早的信息日期只覆盖六家深度账本公司的原始数字。请点上方“使用最新快照”后再问。`)});
   // A name two companies share: ask which one, listing both, instead of guessing.
   if (p.ambiguous?.length) {
-    const {alias, tickers} = p.ambiguous[0];
-    const said = p.text.slice(p.ambiguous[0].start, p.ambiguous[0].end);
-    const list = tickers.map(t => `${t} (${nameOf(ctx, t, lang)})`).join(L(lang, ' or ', ' 或 '));
+    const amb = p.ambiguous[0], {tickers, via} = amb;
+    const said = p.text.slice(amb.start, amb.end), SAID = said.toUpperCase();
+    const swap = t => p.text.slice(0, amb.start).replace(/[$]$/, '') + t + p.text.slice(amb.end);
+    const list = tickers.map(t => nameOf(ctx, t, lang)).join(L(lang, ' or ', ' 或 '));
+    if (via === 'ticker_name') {
+      const [t, ...rest] = tickers, others = rest.map(x => nameOf(ctx, x, lang)).join(L(lang, ', ', '、'));
+      return finish(r, {status: 'clarify', topic: 'ambiguous_ticker', candidates: tickers, plan: {...r.plan, tickers: []}, summary: L(lang,
+        `“${said}” is the ticker of ${nameOf(ctx, t, 'en')}, and also a name people use for ${others}. Which one did you mean? Write $${SAID} for the ticker, or ask with the other company's ticker.`,
+        `“${said}”是 ${nameOf(ctx, t, 'zh')} 的代码，也是 ${others} 的常用名。你指的是哪一家？要查代码对应的公司请写 $${SAID}，否则请用另一家公司的代码。`),
+        offers: [swap(`$${SAID}`), ...rest.map(swap)]});
+    }
+    if (via === 'ticker_outside') {
+      const why = {files_20f: ['a foreign issuer that files 20-F', '提交 20-F 的外国公司'], not_us_listed: ['not listed in the US', '不在美国上市'], private: ['a private company', '私人公司']}[ctx.prepared.outside.get(amb.outside)] || ['not covered', '不在覆盖范围内'];
+      return finish(r, {status: 'clarify', topic: 'ambiguous_ticker', candidates: tickers, plan: {...r.plan, tickers: []}, summary: L(lang,
+        `“${said}” is the ticker of ${nameOf(ctx, tickers[0], 'en')}. If you meant the other company called “${said}” (${why[0]}), it is not in the FinScope universe. Write $${SAID} to ask about ${nameOf(ctx, tickers[0], 'en')}.`,
+        `“${said}”是 ${nameOf(ctx, tickers[0], 'zh')} 的代码。如果你指的是另一家叫“${said}”的公司（${why[1]}），它不在 FinScope 公司全集里。要查 ${nameOf(ctx, tickers[0], 'zh')}，请写 $${SAID}。`),
+        offers: [swap(`$${SAID}`)]});
+    }
     return finish(r, {status: 'clarify', topic: 'ambiguous_name', candidates: tickers, plan: {...r.plan, tickers: []}, summary: L(lang,
       `More than one company in the universe is called “${said}”: ${list}. Which one? Ask again with its ticker.`,
       `公司全集里不止一家公司叫“${said}”：${list}。是哪一家？请用代码再问一次。`),
-      offers: tickers.map(t => p.text.slice(0, p.ambiguous[0].start) + t + p.text.slice(p.ambiguous[0].end))});
+      offers: tickers.map(swap)});
+  }
+  // A ticker that is also a word or a figure, written first with no company named: name the company and how to ask ($PM).
+  if (!p.companies.length && p.tickerWords?.length) {
+    const w = p.tickerWords[0], SAID = w.alias.toUpperCase(), rest = p.text.replace(/^[\s$]*/, '').slice(w.alias.length).trim();
+    const example = `$${w.ticker}${rest ? ` ${rest}` : L(lang, ' revenue', ' 营收')}`;
+    return finish(r, {status: 'clarify', topic: 'ticker_word', candidates: p.tickerWords.map(x => x.ticker), plan: {...r.plan, tickers: []}, summary: w.figure ? L(lang,
+      `“${SAID}” is read as a figure here. It is also the ticker of ${nameOf(ctx, w.ticker, 'en')}; to ask about that company, write $${w.ticker}, for example “${example}”.`,
+      `这里“${SAID}”按指标理解。它也是 ${nameOf(ctx, w.ticker, 'zh')} 的代码；要查这家公司，请写 $${w.ticker}，例如“${example}”。`) : L(lang,
+      `“${SAID}” is also an ordinary word, so FinScope does not read it as a ticker on its own. For ${nameOf(ctx, w.ticker, 'en')}, write $${w.ticker}, for example “${example}”.`,
+      `“${SAID}”也是一个普通词，单独出现时不当作代码。要查 ${nameOf(ctx, w.ticker, 'zh')}，请写 $${w.ticker}，例如“${example}”。`),
+      offers: [example]});
   }
   for (const t of p.companies) if (!u.shardOf(t)) return finish(r, {status: 'not_in_bundle', topic: 'data_unavailable', plan: {...r.plan, tickers: [t]}, summary: L(lang,
     `The data for ${t} could not be loaded. Check your connection and ask again.`, `${t} 的数据没有加载成功。请检查网络后再问一次。`)});
