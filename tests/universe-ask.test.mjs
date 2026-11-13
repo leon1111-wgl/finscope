@@ -202,3 +202,32 @@ test('short names and the common-stock ticker (0.3.1)', () => {
     assert.deepEqual(a.plan.tickers, [t], q);
   }
 });
+
+test('company names are resolved before anything else is read (0.3.2 name gate classes)', () => {
+  const resolves = (q, t) => { const a = ask(q); assert.deepEqual(a.plan.tickers, [t], `${q}: ${a.status}/${a.topic} ${a.plan.tickers} ${a.summary}`); assert.notEqual(a.status, 'refused', q); return a; };
+  // A longer name wins over a six-company or shorter name inside it (wrong company before).
+  resolves('Apple Hospitality REIT revenue', 'APLE'); resolves('FB Financial revenue', 'FBK'); resolves('Southern Copper revenue', 'SCCO');
+  resolves('Canadian Pacific Kansas City revenue', 'CP'); resolves('Sealed Air revenue', 'CIK1012100');
+  // A name wins over the figure phrase it reaches into and over an all-caps word read as an unknown ticker.
+  for (const [q, t] of [['RPM International revenue', 'RPM'], ['Old Republic International revenue', 'ORI'], ['MGM Resorts International revenue', 'MGM'],
+    ['ICU Medical revenue', 'ICUI'], ['CRA International revenue', 'CRAI'], ['AMN Healthcare Services revenue', 'AMN'], ['IDEXX Laboratories revenue', 'IDXX']]) resolves(q, t);
+  // Names whose SEC form kept a state or 'new' suffix, a surname-first form, or camel case.
+  for (const [q, t] of [['Valero revenue', 'VLO'], ['Valero Energy revenue', 'VLO'], ['ONEOK revenue', 'OKE'], ['Devon Energy revenue', 'DVN'], ['VeriSign revenue', 'VRSN'],
+    ['Lennar revenue', 'LEN'], ['AMETEK revenue', 'AME'], ['F5 revenue', 'FFIV'], ['Citizens Financial Group revenue', 'CFG'], ['Six Flags Entertainment revenue', 'FUN'],
+    ['Progress Software revenue', 'PRGS'], ['Littelfuse revenue', 'LFUS'], ['Alexandria Real Estate Equities revenue', 'ARE'], ['Equity LifeStyle Properties revenue', 'ELS'],
+    ['Texas Capital Bancshares revenue', 'TCBI'], ['U.S. Physical Therapy revenue', 'USPH'], ['nCino revenue', 'NCNO'], ['Bunge Global revenue', 'BG'],
+    ['T Rowe Price net income', 'TROW'], ['T. Rowe Price revenue', 'TROW']]) resolves(q, t);
+  // Words inside a name no longer open a topic: advice, price, weather, forecast, TTM, Q2, filings.
+  for (const [q, t] of [['Best Buy revenue', 'BBY'], ['Weatherford revenue', 'WFRD'], ['MoonLake revenue', 'MLTX'], ['TTM Technologies revenue', 'TTMI'],
+    ['Q2 Holdings revenue', 'QTWO'], ['Burlington revenue', 'BURL'], ['百思买营收', 'BBY'], ['瓦莱罗的净利润', 'VLO']]) resolves(q, t);
+  // ...while the refusals hold.
+  for (const q of ['Is Best Buy a buy?', 'should I buy Target stock', '百思买值得买吗']) assert.equal(ask(q).status, 'refused', q);
+  assert.equal(ask('Best Buy stock price').topic, 'price');
+  // A name two companies share asks which one, listing both.
+  const fb = ask('First Bancorp revenue');
+  assert.equal(`${fb.status}/${fb.topic}`, 'clarify/ambiguous_name');
+  assert.deepEqual([...fb.candidates].sort(), ['FBNC', 'FBP']);
+  // Trusts say what their 10-K holds; the fallback speaks about the universe.
+  assert.match(ask('iShares Bitcoin Trust revenue').summary, /exchange-traded trust that holds bitcoin/);
+  assert.doesNotMatch(ask('asdf qwer zxcv').summary, /six companies/);
+});

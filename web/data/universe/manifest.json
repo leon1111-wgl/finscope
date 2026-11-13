@@ -24,7 +24,7 @@
  "shards_changed": 1994,
  "shards_removed": 0,
  "bytes": {
-  "index": 520120,
+  "index": 529379,
   "screen": 813610,
   "shards_total": 70833003,
   "shard_median": 36838,
@@ -52,8 +52,8 @@
  "reindexed": {
   "at": "2026-11-13",
   "script": "scripts/reindex_universe.py",
-  "shown_ticker_changed": 5,
-  "search_names_added": 185,
+  "shown_ticker_changed": 0,
+  "search_names_added": 12,
   "search_names_removed": 0
  }
 }

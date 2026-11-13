@@ -172,7 +172,9 @@ export function prepareIndex(index) {
   }
   const outside = new Map();
   for (const [reason, list] of Object.entries(index.outside || {})) for (const n of list) if (!latin.has(n) && !cjk.has(n)) outside.set(n, reason);
-  const prepared = {index, byTicker, byCik, latin, cjk, outside, maxLatinWords: 6};
+  // Names two companies share (First Bancorp): the box asks which one is meant instead of matching a shorter name.
+  const shared = new Map(Object.entries(index.shared || {}).filter(([a]) => !latin.has(a)));
+  const prepared = {index, byTicker, byCik, latin, cjk, outside, shared, maxLatinWords: 6};
   Object.defineProperty(index, '__prepared', {value: prepared, enumerable: false});
   return prepared;
 }
@@ -189,14 +191,20 @@ export function matchCompanies(prepared, text, low, notTickers = new Set()) {
     for (let n = Math.min(prepared.maxLatinWords, words.length - i); n >= 1; n--) {
       const start = words[i].index, last = words[i + n - 1], end = last.index + last[0].length;
       let phrase = low.slice(start, end).replace(/\s+/g, ' ');
-      for (const cand of [phrase, phrase.replace(/[.,!?']+$/, ''), phrase.replace(/'s$/, '')]) {
+      const bare = phrase.replace(/[.,!?']+$/, '');
+      // Periods inside a name are spaces in the index: T. Rowe Price, U.S. Physical Therapy, D.R. Horton.
+      const undotted = bare.replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+      for (const [cand, span] of [[phrase, phrase.length], [bare, bare.length], [phrase.replace(/'s$/, ''), phrase.length - 2], [undotted, bare.length]]) {
         const entry = prepared.latin.get(cand);
         if (entry) {
           // A single common word needs capitals in the original (Target, Block) unless it is a curated alias.
-          if (!cand.includes(' ') && entry.lw?.includes(cand) && text.slice(start, start + 1) === text.slice(start, start + 1).toLowerCase()) continue;
-          hits.push({start, end: start + cand.length, cik: entry.c, alias: cand, kind: 'name'});
+          // (any capital in the word counts: nCino, uniQure).
+          if (!cand.includes(' ') && entry.lw?.includes(cand) && text.slice(start, start + span) === text.slice(start, start + span).toLowerCase()) continue;
+          hits.push({start, end: start + span, cik: entry.c, alias: cand, kind: 'name'});
           break;
         }
+        const ciks = prepared.shared?.get(cand);
+        if (ciks) { hits.push({start, end: start + span, ciks, alias: cand, kind: 'shared'}); break; }
       }
     }
   }

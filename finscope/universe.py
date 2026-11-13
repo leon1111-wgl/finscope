@@ -603,7 +603,23 @@ def company_shard(payload, submissions, ticker_rows=None):
         'template': template, 'fiscal_year_end': submissions.get('fiscalYearEnd') or '', 'category': submissions.get('category') or '',
         'periods': [{k: p[k] for k in ('fy', 'fy_source', 'fy_reported', 'start', 'end', 'accession', 'filed')} for p in periods],
         'values': values, 'unsupported': [m for m in METRICS if m not in values], 'quality': quality, 'filings': filing_meta, 'splits': splits,
+        **({} if submissions.get('tickers') else {'listing': listing_evidence(submissions)}),
     }
+
+
+# A company the SEC lists without a ticker has usually been acquired, merged or delisted since its last 10-K; these
+# filings say which (the shard keeps the five latest so the page can name them).
+LISTING_FORMS = {'25': 'notice of delisting', '25-NSE': 'notice of delisting by the exchange', '15-12B': 'termination of registration',
+                 '15-12G': 'termination of registration', '15-15D': 'suspension of reporting', 'DEFM14A': 'merger proxy statement',
+                 'S-4': 'registration of securities in a merger', '425': 'communication about a merger', 'SC TO-T': 'third-party tender offer',
+                 'SC 14D9': 'response to a tender offer'}
+
+
+def listing_evidence(submissions):
+    recent = submissions.get('filings', {}).get('recent', {})
+    rows = [{'form': f, 'filed': d, 'accession': a, 'what': LISTING_FORMS[f]}
+            for f, d, a in zip(recent.get('form', []), recent.get('filingDate', []), recent.get('accessionNumber', [])) if f in LISTING_FORMS]
+    return {'tickers': 'none listed by the SEC', 'evidence': sorted(rows, key=lambda r: r['filed'], reverse=True)[:5]}
 
 
 # ------------------------------------------------------------------ names and aliases
@@ -613,14 +629,20 @@ SUFFIXES = re.compile(r"(,?\s+(inc|incorporated|corp|corporation|co|company|ltd|
 def name_aliases(name, short=True):
     """Lower-case search names derived from the SEC company name (with short=False, only the full forms); curated aliases are added separately."""
     low = re.sub(r'\s+', ' ', (name or '').lower().replace('&amp;', '&')).strip()
-    low = re.sub(r'\s*/[a-z]{2}/\s*$|\s*\\[a-z]{2}\\\s*$', '', low)
+    # EDGAR's state and 'new' suffixes, attached or not: 'corp/tx', ' /new/', '/de/', '(de)', '\\de\\', a trailing '/'.
+    for _ in range(4):
+        trimmed = STATE_SUFFIX.sub('', low).strip()
+        if trimmed == low:
+            break
+        low = trimmed
     out = {low}
     base = low
-    for _ in range(4):
-        trimmed = re.sub(r"[,.]?\s+(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|lp|l\.p|n\.v|s\.a|ag|se|holdings?|group)\.?$", '', base).strip(' ,.')
+    for _ in range(6):
+        trimmed = STATE_SUFFIX.sub('', re.sub(r"[,.]?\s+(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|lp|l\.p|n\.v|nv|s\.a|sa|ag|se|holdings?|group)\.?$", '', base)).strip(' ,.')
         if trimmed == base:
             break
         base = trimmed
+        out.add(re.sub(r'[\s&,.]+$', '', base))   # each stage: 'citizens financial group' as well as 'citizens financial'
     base = re.sub(r'[\s&,.]+$', '', base)
     if base:
         out.add(base)
@@ -629,19 +651,27 @@ def name_aliases(name, short=True):
     out |= {a.replace('-', ' ') for a in list(out) if '-' in a}
     if base and re.fullmatch(r'[a-z]+ [a-z]+', base):
         out.add(base.replace(' ', '-'))
+    # EDGAR writes people's names surname first ('price t rowe', 'horton d r'): the natural order is added.
+    words = base.split()
+    if len(words) >= 3 and re.fullmatch(r'[a-z]', words[1]):
+        out.add(' '.join(words[1:] + words[:1]))
     if short:
         out |= short_names(base)
-    return sorted(a for a in out if len(a) >= 3 and not re.search(r'[,.]-|-[,.]', a))
+    # Two characters only with a digit (F5), and never a quarter or half-year word (Q2 Holdings is found by its full name).
+    return sorted(a for a in out if (len(a) >= 3 or (re.fullmatch(r'[a-z][0-9]|[0-9][a-z]', a) and not re.fullmatch(r'[qh][1-4]', a))) and not re.search(r'[,.]-|-[,.]', a))
+
+
+STATE_SUFFIX = re.compile(r'\s*(/\s?[a-z]{2,4}/?|\\[a-z]{2}\\|\([a-z]{2}\)|/)\s*$')
 
 
 # Short names: the leading words of a company name before descriptive trailing words ("Federal Realty" for Federal
 # Realty Investment Trust, "Roivant" for Roivant Sciences). A one-word short name is taken only from a two-word name
 # ending in a sector word and never when it is a common English word; the build drops any short name two companies share.
-DESCRIPTIVE = {'investment', 'investments', 'trust', 'sciences', 'science', 'biosciences', 'therapeutics', 'pharmaceuticals', 'pharmaceutical',
+DESCRIPTIVE = {'etf', 'fund', 'investment', 'investments', 'trust', 'sciences', 'science', 'biosciences', 'therapeutics', 'pharmaceuticals', 'pharmaceutical',
                'technologies', 'technology', 'brands', 'enterprises', 'industries', 'international', 'worldwide', 'global', 'systems', 'solutions',
                'resources', 'partners'}
 ONE_WORD_BEFORE = {'sciences', 'biosciences', 'lifesciences', 'therapeutics', 'biotherapeutics', 'pharmaceuticals', 'pharma', 'biopharma', 'technologies', 'brands',
-                   'global', 'international', 'worldwide'}
+                   'global', 'international', 'worldwide', 'energy', 'laboratories', 'stores'}
 JOINING = {'of', 'and', '&', 'the', 'for', 'de', 'la', 'in', 'on', 'at', 'to'}
 COMMON_WORDS = {'united', 'exact', 'american', 'america', 'general', 'national', 'first', 'global', 'international', 'advanced', 'applied', 'digital',
                 'universal', 'standard', 'public', 'select', 'premier', 'core', 'prime', 'summit', 'pioneer', 'liberty', 'new', 'best', 'great',
@@ -669,6 +699,6 @@ def short_names(base):
         if (len(cut) >= 2 and cut[-1] not in DESCRIPTIVE | JOINING and not all(x in COMMON_WORDS for x in cut)
                 and all(re.fullmatch(r'[a-z][a-z\-]*', x) for x in cut)):
             out.add(' '.join(cut))
-    if len(words) == 2 and words[1] in ONE_WORD_BEFORE and re.fullmatch(r'[a-z]{4,}', words[0]) and words[0] not in COMMON_WORDS:
+    if len(words) == 2 and (words[1] in ONE_WORD_BEFORE or re.search(r'(therapeutics|sciences|pharmaceuticals)$', words[1])) and re.fullmatch(r'[a-z]{4,}', words[0]) and words[0] not in COMMON_WORDS:
         out.add(words[0])
     return out

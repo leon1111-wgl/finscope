@@ -129,8 +129,19 @@ function periodProblem(r, p, ctx, t, shard, res, metric) {
     `${p.exactEnd} 不是 ${t} 的财年末；它最新的财年截至 ${last.end}。请按财年提问。`)});
 }
 
+// Exchange-traded trusts (SIC 6221: bitcoin, ether, gold and similar funds) hold one asset; their 10-K reports its value.
+export const isTrust = shard => String(shard?.sic) === '6221';
+function trustNote(ctx, t, shard, lang) {
+  const asset = (shard.name.match(/bitcoin|ether(eum)?|gold|silver|platinum|palladium|solana|xrp/i)?.[0] || '').toLowerCase().replace(/^ether$/, 'ether');
+  const zh = {bitcoin: '比特币', ether: '以太币', ethereum: '以太币', gold: '黄金', silver: '白银', platinum: '铂金', palladium: '钯金'}[asset] || '一种资产';
+  return L(lang, `${nameOf(ctx, t, 'en')} is an exchange-traded trust that holds ${asset || 'one asset'}. Its 10-K reports the value of that holding: total assets, and a net income or loss that is mostly the change in its value. Revenue, margins and cash conversion do not apply.`,
+    `${nameOf(ctx, t, 'zh')}是一只持有${zh}的交易所交易信托。它的 10-K 报告的是所持资产的价值：总资产，以及主要来自资产价值变动的净利润或亏损；营收、利润率和现金转化率不适用。`);
+}
+
 function unavailable(r, p, ctx, t, shard, metric, i, res) {
   const lang = p.lang, catalog = ctx.prepared.index.catalog || {};
+  if (isTrust(shard)) return finish(r, {status: 'not_in_bundle', topic: 'trust', plan: {...r.plan, tickers: [t], metric, period: null}, summary: trustNote(ctx, t, shard, lang),
+    offers: [L(lang, `${t} total assets`, `${t} 的总资产`), L(lang, `${t} net income`, `${t} 的净利润`)]});
   const tl = TEMPLATE_LABEL[shard.template][lang === 'zh' ? 1 : 0];
   const plan = {...r.plan, tickers: [t], metric, period: i == null ? null : p.years.length ? `FY${shard.periods[i].fy}` : 'latest'};
   if (res.reason === 'unsupported') return finish(r, {status: 'not_in_bundle', topic: 'template_unsupported', plan, summary: L(lang,
@@ -439,6 +450,14 @@ function filingAnswer(r, p, ctx, t) {
 
 function overviewAnswer(r, p, ctx, t) {
   const shard = ctx.shardOf(t);
+  // An exchange-traded trust is described by what it holds: total assets and net income, with the reason.
+  if (isTrust(shard)) {
+    const res = figuresAnswer(r, p, ctx, t, ['net_income', 'assets']);
+    if (res.status === 'answered') res.topic = 'overview';
+    res.notes = [trustNote(ctx, t, shard, p.lang), ...(res.notes || [])];
+    res.offers = [L(p.lang, `${t} net income over the last five years`, `${t} 近五年的净利润`)];
+    return res;
+  }
   const keys = {bank: ['net_interest_income', 'noninterest_income', 'net_income', 'assets', 'deposits', 'equity'], insurance: ['revenue', 'premiums', 'net_income', 'assets', 'equity'], reit: ['revenue', 'net_income', 'operating_cash_flow', 'total_debt', 'real_estate'], industrial: ['revenue', 'gross_margin', 'operating_margin', 'net_income', 'operating_cash_flow', 'free_cash_flow', 'total_debt']}[shard.template];
   const res = figuresAnswer(r, p, ctx, t, keys);
   if (res.status === 'answered') res.topic = 'overview';
@@ -518,6 +537,16 @@ export function answerUniverse(r, p, ctx, helpers) {
   if (ctx.asOf && ctx.latestDate && ctx.asOf < ctx.latestDate) return finish(r, {status: 'not_in_bundle', topic: 'info_date', summary: L(lang,
     `Universe figures are the latest filings (built ${ctx.prepared.index.built}); earlier information dates cover only the six deep-ledger companies' original figures. Choose “Use latest snapshot” above to ask this.`,
     `公司全集的数字是最新的文件（构建于 ${ctx.prepared.index.built}）；更早的信息日期只覆盖六家深度账本公司的原始数字。请点上方“使用最新快照”后再问。`)});
+  // A name two companies share: ask which one, listing both, instead of guessing.
+  if (p.ambiguous?.length) {
+    const {alias, tickers} = p.ambiguous[0];
+    const said = p.text.slice(p.ambiguous[0].start, p.ambiguous[0].end);
+    const list = tickers.map(t => `${t} (${nameOf(ctx, t, lang)})`).join(L(lang, ' or ', ' 或 '));
+    return finish(r, {status: 'clarify', topic: 'ambiguous_name', candidates: tickers, plan: {...r.plan, tickers: []}, summary: L(lang,
+      `More than one company in the universe is called “${said}”: ${list}. Which one? Ask again with its ticker.`,
+      `公司全集里不止一家公司叫“${said}”：${list}。是哪一家？请用代码再问一次。`),
+      offers: tickers.map(t => p.text.slice(0, p.ambiguous[0].start) + t + p.text.slice(p.ambiguous[0].end))});
+  }
   for (const t of p.companies) if (!u.shardOf(t)) return finish(r, {status: 'not_in_bundle', topic: 'data_unavailable', plan: {...r.plan, tickers: [t]}, summary: L(lang,
     `The data for ${t} could not be loaded. Check your connection and ask again.`, `${t} 的数据没有加载成功。请检查网络后再问一次。`)});
   if (p.unsupported.length) return helpers.unsupported(r, p);

@@ -25,12 +25,15 @@ def main():
     old = json.loads((out / 'index.json').read_text())
     shards = [json.loads((out / 'c' / f"{e['c']}.json").read_text()) for e in old['companies']]
     rank = {e['c']: e['r'] for e in old['companies']}
-    entries = build.index_entries(shards, rank)
+    shared = {}
+    entries = build.index_entries(shards, rank, shared=shared)
     before = {e['c']: e for e in old['companies']}
     shown = [(before[e['c']]['t'][0], e['t'][0]) for e in entries if before[e['c']]['t'][0] != e['t'][0]]
     names_added = sum(len(set(e['a']) - set(before[e['c']]['a'])) for e in entries)
     names_removed = sum(len(set(before[e['c']]['a']) - set(e['a'])) for e in entries)
-    index = {**old, 'outside': build.names.OUTSIDE, 'catalog': build.catalog(), 'count': len(entries), 'companies': entries}
+    # The same fields, in the same order, as build_universe.py writes.
+    index = {'schema': old['schema'], 'built': old['built'], 'data_as_of': old['data_as_of'], 'count': len(entries), 'selection': old['selection'],
+             'outside': build.names.OUTSIDE, 'shared': dict(sorted(shared.items())), 'catalog': build.catalog(), 'companies': entries}
     changed = build.write_if_changed(out / 'index.json', build.stable(index) + '\n')
     if changed:
         manifest = json.loads((out / 'manifest.json').read_text())
