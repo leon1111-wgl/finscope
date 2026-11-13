@@ -129,3 +129,15 @@ for (const [query, peer] of [['?view=screen', ''], ['?view=screen&peer=ind%3Asic
     assert.equal(ui.$('#screen-form select[name="peer"]').value, peer);
   });
 }
+
+test('every Screen sector option names its SIC group, not a bare code (0.3.1)', async t => {
+  const ui = await boot(t, '?view=screen');
+  for (let i = 0; i < 200 && !ui.$('#screen-form'); i++) await tick();
+  const options = [...ui.dom.window.document.querySelectorAll('#screen-form select[name="peer"] option')].filter(o => o.value);
+  assert.ok(options.length > 50);
+  const bare = options.filter(o => !/·\s*\S/.test(o.textContent)).map(o => o.textContent);
+  assert.deepEqual(bare, []);
+  const o36 = options.find(o => o.value === 'sic2:36');
+  assert.match(o36.textContent, /SIC 36xx · Electronic/);
+  assert.match(options.find(o => /^ind:sic3:/.test(o.value)).textContent, /^SIC \d{3}x · .*\(major group \d\d\)/);
+});
