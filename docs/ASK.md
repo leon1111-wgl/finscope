@@ -1,6 +1,23 @@
 # Ask the ledger
 
-A visitor types a question of their own, in Chinese or English, and gets an answer in the page at once. No language model runs, there is no API key, and nothing the visitor types leaves the browser. Fixed rules read the question and the program answers from the same evidence bundle the rest of the workspace uses (`web/data/research.json`). Every number is stated by the program with the SEC fact behind it.
+A visitor types a question of their own, in Chinese or English, about **any company in the FinScope universe** (about 1,900 US large accelerated filers, see [UNIVERSE.md](UNIVERSE.md)) or the six deep-ledger companies, and gets an answer in the page at once. No language model runs, there is no API key, and nothing the visitor types leaves the browser. Fixed rules read the question; the program answers from the saved data the rest of the workspace uses (`web/data/research.json` for the deep ledger, `web/data/universe/` for the universe) and states every number with the SEC fact behind it.
+
+## 0.3.0: the universe path
+
+Since 0.3.0 the box has two data sources and one set of rules:
+
+- **Universe path** (`web/universe-ask.js`): any question that names a universe company outside the six, asks for a figure added in 0.3.0 (gross margin, R&D, SG&A, interest, tax, diluted EPS, diluted shares, dividends, buybacks, cash and short-term investments, equity, total debt, ROE, ROA, debt to equity, interest coverage, FCF margin, shareholder payout, bank, insurance and REIT lines), asks which XBRL tag a figure came from, asks for data-quality notes, or asks where a company stands among its sector peers. The page loads the shards of the companies named (and the screen for a sector question) before answering.
+- **Deep path** (`web/ask-engine.js`, unchanged rules): the six companies' 0.2.0 figures, the year-to-date checkpoint and cash bridge, AI triage, rankings among the six, Treasury yields and earlier information dates. A six-company figure the deep ledger lacks (NVIDIA's capex has no standard tag) goes to the universe path, which reads the documented fallback tag and says so.
+
+Refusals come first and are shared: advice, forecasts, fraud verdicts, prices, write requests and off-topic questions are declined before either path runs. A company outside the universe gets the reason when it is known (it files 20-F as a foreign private issuer, it is not US-listed, it is private) and otherwise "no company with that ticker or name is in the universe".
+
+**Companies.** Tickers in capitals anywhere; lower-case tickers only for a curated list of well-known ones (`jpm`, `wmt`, `ko`), because many tickers are ordinary words (`cost`, `low`, `now`, `all`); a short or lower-case ticker inside a list of tickers (`jpm bac wfc c gs ms`); `$TICKER` always; SEC names without their legal suffix (Coca-Cola, Home Depot); one-word names that are common words (Target, Block) only with a capital; and common Chinese names for about 190 of the largest companies (可口可乐, 摩根大通, 好市多). Up to eight companies per question.
+
+**Fiscal years.** "FY N" is the company's own fiscal year N as its 10-K labels it; the answer prints the period start and end. "Latest" is the latest filed year; "last N years" covers at most the ten FinScope keeps.
+
+**What a universe answer can be.** One figure or indicator; several figures for one company and year; a trend; a year-over-year change; two to eight companies side by side, each on its own fiscal year; whether profit is backed by operating cash (net income, operating cash flow, cash conversion, the accrual ratio, five years); a sector percentile for cash conversion, the accrual ratio or FCF margin; the tag, filing and chain behind a figure; the data-quality notes; the latest 10-K link; a definition; or, for a company named without a figure, an overview of its key figures. A figure the company does not report is *not reported* (with the tag chain read); one its template does not support (gross margin for a bank) is *not supported for this template*; neither is ever replaced by another figure. Rankings across a sector or the universe are on the Screen page; the box asks for named companies instead.
+
+**Information date.** Universe figures are the latest filings. At an earlier information date the universe path declines and says why, so an answer never uses a filing made after the date the visitor chose.
 
 This is tier 1 of the portfolio's demo pattern: instant, no download beyond the evidence the page already loads, for every visitor. There is no tier 2 (browser model) in FinScope; [FRONTIER_REVIEW.md](FRONTIER_REVIEW.md) explains why.
 
@@ -82,9 +99,13 @@ Refusals are checked first (off-topic, advice, fraud verdicts, other companies, 
 ```bash
 node scripts/ask.mjs questions.json            # a JSON array of strings or {"id","q"} objects
 node scripts/ask.mjs questions.txt             # one question per line
-node scripts/ask.mjs --q "NVDA 的利润有现金流支撑吗"
+node scripts/ask.mjs --q "可口可乐 2024 年的毛利率"           # any company in the universe
+node scripts/ask.mjs --q "Compare JPM, BAC and WFC deposits"
 node scripts/ask.mjs questions.json --date 2024-06-30 --full   # an earlier information date; full tables
+node scripts/ask.mjs questions.json --no-universe              # the six-company deep ledger only (0.2.0 behaviour)
 ```
+
+It loads the universe shards from `web/data/universe/` for the companies each question names, exactly as the page loads them. Each source line in the output carries the figure, company, value and exact amount, period, fiscal year, form, XBRL tag (or the parts of a composed figure), how it was chosen (first choice, fallback, composed), filing date, accession and URL.
 
 ## How it was tested
 

@@ -364,16 +364,25 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   let lang = /[㐀-鿿]/.test(text) ? 'zh' : 'en';
   if (/用英文|英文回答|英语回答|in english/.test(low)) lang = 'en';
   else if (/用中文|中文回答|in chinese/.test(low)) lang = 'zh';
-  // Figure words win over look-alike tickers and names (eps, nii, roe), so they are found first.
-  const figureSpans = findSpans(low, METRIC_TABLE);
+  // Figure words win over look-alike tickers and names (eps, nii, roe), so they are found first; a ticker written in
+  // capitals (AD revenue) wins over a figure phrase it would otherwise start, and the figures are then read without it.
+  let figureSpans = findSpans(low, METRIC_TABLE);
   const inFigure = (a, b) => figureSpans.some(f => a < f.end && f.start < b);
   const sixHits = findSpans(low, COMPANY_TABLE).filter(h => !inFigure(h.start, h.end) || h.alias.length > 4);
   const hits = sixHits.map(h => ({start: h.start, end: h.end, ticker: h.id}));
   const ucompanies = [];
   let others = [], otherReasons = [];
   if (universe) {
-    for (const h of matchCompanies(universe, text, low, NOT_TICKERS)) {
-      if (hits.some(x => h.start < x.end && x.start < h.end) || (inFigure(h.start, h.end) && h.kind !== 'zh')) continue;
+    const capital = h => h.kind === 'ticker' && h.alias === h.alias.toUpperCase() && /[A-Z]/.test(h.alias);
+    const found = matchCompanies(universe, text, low, NOT_TICKERS);
+    const blanks = found.filter(h => capital(h) && inFigure(h.start, h.end) && !hits.some(x => h.start < x.end && x.start < h.end));
+    if (blanks.length) {
+      let masked = low;
+      for (const h of blanks) masked = masked.slice(0, h.start) + ' '.repeat(h.end - h.start) + masked.slice(h.end);
+      figureSpans = findSpans(masked, METRIC_TABLE);
+    }
+    for (const h of found) {
+      if (hits.some(x => h.start < x.end && x.start < h.end) || (inFigure(h.start, h.end) && h.kind !== 'zh' && !capital(h))) continue;
       const entry = universe.byCik.get(h.cik), ticker = SIX_CIK[h.cik] || primary(entry);
       hits.push({start: h.start, end: h.end, ticker});
       if (!SIX_CIK[h.cik]) ucompanies.push(ticker);

@@ -95,6 +95,9 @@ test('ticker matching: ordinary words are not tickers; lists and capitals are', 
   assert.deepEqual(tickers('Target revenue'), ['TGT']);
   assert.deepEqual(tickers('jpm bac wfc c gs ms'), ['JPM', 'BAC', 'WFC', 'C', 'GS', 'MS']);
   assert.deepEqual(tickers('R&D at KO'), ['KO']);
+  const ad = ask('AD revenue FY2025');
+  if (entryOf(prepared, 'AD')) assert.deepEqual([ad.status, ad.plan.tickers[0], ad.plan.metric], ['answered', 'AD', 'revenue'], 'a capitalised ticker beats the figure phrase it starts');
+  assert.equal(ask('Meta ad revenue').status, 'not_in_bundle', 'lower-case ad revenue is still the unsupported figure');
   assert.deepEqual(tickers('$cost revenue'), ['COST']);
   assert.ok(entryOf(prepared, 'brk.b'), 'class tickers with a dot resolve');
 });
