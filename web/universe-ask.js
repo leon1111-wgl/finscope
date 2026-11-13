@@ -381,7 +381,7 @@ function lineageAnswer(r, p, ctx, t, key) {
   return finish(r, {topic: 'lineage', plan: {tickers: [t], metric: k, period: p.years.length ? `FY${shard.periods[i].fy}` : 'latest'}, facts: [fact(shard, s, lang)],
     summary: L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(k, 'en'))} for ${fyText(shard, i, 'en')}: ${what}, from ${s.form} ${s.accession} filed ${s.filed}, chosen as ${how}. The chain FinScope reads for this figure: ${chain}.`,
       `${nameOf(ctx, t, 'zh')}${fyText(shard, i, 'zh')}的${label(k, 'zh')}：${what}，来自 ${s.filed} 提交的 ${s.form}（${s.accession}），选取方式为${how}。FinScope 对这个数字读取的标签顺序：${chain}。`),
-    notes: [L(lang, 'The latest filing that reports the period wins; inside it, the earlier tag in the chain wins. A later restatement replaces the first-reported figure, and the data-quality notes say so.', '报告该期间的最新文件优先；同一文件内，链中靠前的标签优先。后来的重述会替换最初报告的数字，数据质量说明会写明。'), ...noteFor(shard, k, [s], lang)]});
+    notes: [L(lang, 'The best tag in the chain that any 10-K reports for the period wins, then the latest filing with that tag. A later restatement under the same tag replaces the first-reported figure, and the data-quality notes say so.', '任何 10-K 为该期间报告过的、链中最靠前的标签优先，再取报告该标签的最新文件。同一标签后来的重述会替换最初报告的数字，数据质量说明会写明。'), ...noteFor(shard, k, [s], lang)]});
 }
 
 function qualityAnswer(r, p, ctx, t) {
