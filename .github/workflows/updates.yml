@@ -35,7 +35,7 @@ jobs:
       - run: node --test tests/official-updates.test.mjs
       - name: Collect official announcements and daily yields
         env:
-          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: python scripts/build_updates.py
       - name: Validate the captured feed in the browser contract
         run: node --input-type=module -e "import fs from 'node:fs'; import {validateUpdates} from './web/official-updates.js'; validateUpdates(JSON.parse(fs.readFileSync('web/data/updates.json','utf8')));"
