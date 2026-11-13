@@ -88,7 +88,9 @@ async function ask(page, q) {
 
 const QUESTIONS = [
   ['NVDA 的利润有现金流支撑吗', 'answered', /1200\.67 亿美元/],
-  ['哪家公司利润和现金差距最大', 'answered', /NVDA/],
+  ['六家公司里哪家利润和现金差距最大', 'answered', /NVDA/],
+  ['半导体公司里现金转化最差的是哪家', 'not_in_bundle', /筛选/],
+  ['Which company has the highest cash conversion?', 'not_in_bundle', /Screen/],
   ['MSFT 2024 年经营现金流是多少', 'answered', /1185\.48 亿美元/],
   ['compare AMZN and META cash conversion', 'answered', /AMZN .*META/],
   ['Should I buy NVDA now?', 'refused', /investment advice/],
@@ -190,6 +192,16 @@ for (const [width, height] of [[1440, 900], [375, 812]]) for (const scheme of ['
     const head = fs.readFileSync(await csv.path(), 'utf8').split('\n')[0];
     check(/peer_group/.test(head) && /xbrl_tags/.test(head) && /source_url/.test(head), 'screen CSV carries peer group, tags and source');
   }
+  // A sector ranking in Ask points to Screen and its link opens Screen filtered and sorted (probe of b12433a).
+  await page.click('.steps [data-page="ask"]');
+  const ranked = await ask(page, '半导体公司里现金转化最差的是哪家');
+  check(ranked.status.includes('answer-not_in_bundle') && !/NVDA|英伟达/.test(ranked.summary), `${label}: a sector ranking points to Screen, not to the six`);
+  await page.click('.answer-action a[data-screen]');
+  await page.waitForSelector('.screen-table');
+  check(await page.$eval('#screen-form select[name="peer"]', el => el.value) === 'ind:sic4:3674', `${label}: the Ask link opens Screen filtered to SIC 3674`);
+  check(await page.$$eval('.screen-table tbody tr', rows => { const v = rows.map(r => parseFloat(r.cells[4].textContent)).filter(Number.isFinite); return v.length > 3 && v.every((x, i) => !i || v[i - 1] <= x); }), `${label}: the Ask link sorts by cash conversion, lowest first`);
+  await noOverflow(page, `${label} screen from Ask`);
+  await shot(page, `${label}-23-screen-from-ask`);
   // Watch: add KO, check the SEC (a SYNTHETIC fixture stands in for data.sec.gov in the walk).
   await page.click('.steps [data-page="watch"]');
   await page.fill('#watch-search', 'KO');
@@ -334,6 +346,13 @@ for (const [width, height] of [[1440, 900], [375, 812]]) for (const scheme of ['
     check(!(await page.$('#export-json')) && !(await page.$('.answer')), `deep link: ${name} shows no results`);
   }
   await shot(page, 'failure-04-bad-link');
+  // A view-only link opens that view (probe of b12433a: a bare ?view=screen said the saved version was incomplete).
+  await page.goto(`${base}?view=screen&peer=ind%3Asic4%3A3674&sort=cash_conversion&dir=asc`);
+  await page.waitForSelector('.screen-table', {timeout: 30000});
+  check(await page.$eval('#screen-form select[name="peer"]', el => el.value) === 'ind:sic4:3674' && !(await page.isVisible('#restore-preview')), 'deep link: a Screen link with a filter opens Screen filtered');
+  await page.goto(`${base}?view=screen`);
+  await page.waitForSelector('.screen-table', {timeout: 30000});
+  check(!(await page.isVisible('#restore-preview')) && !/incomplete/.test(await page.textContent('#content')), 'deep link: a bare ?view=screen opens Screen');
   await page.goto(base + '#workspace');
   await ready(page);
   check(await page.evaluate(() => document.documentElement.dataset.mode) === 'console', 'deep link: #workspace opens the console');

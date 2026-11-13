@@ -247,6 +247,7 @@ function answerMarkup(a) {
   ${a.table ? table(a.table.columns.map(e), a.table.rows.map(r => r.map(e))) : ''}
   ${a.calculations.length ? `<h4 lang="en">How the program calculated it</h4><ul class="calc-list">${a.calculations.map(c => `<li><strong>${e(c.label)}</strong> = ${e(c.formula)} → <span class="calc-result">${e(c.result)}</span></li>`).join('')}</ul>` : ''}
   ${facts.length ? `<details class="answer-sources"${facts.length <= 8 ? ' open' : ''}><summary lang="en">Source lines (${facts.length}) · every stated figure, with its SEC filing</summary>${table(['Figure', 'Company', 'Value', 'Period', 'Filed', 'Evidence'], facts)}</details>` : ''}
+  ${a.screen ? `<p class="answer-action"><a href="${e(screenHref(a.screen))}" data-screen="${e(JSON.stringify(a.screen))}">${a.lang === 'zh' ? '打开筛选页' : 'Open the Screen'}${a.screen.label ? ` · ${e(a.screen.label)}` : ''} →</a></p>` : ''}
   ${a.notes.length ? `<ul class="answer-notes">${a.notes.map(n => `<li>${noteMarkup(n)}</li>`).join('')}</ul>` : ''}
   ${a.offers.length ? `<div class="ask-offers"><span lang="en">Try next</span>${chips(a.offers, 'Suggested questions')}</div>` : ''}
   <p class="engine-note">${e(a.engine.label)} · information date ${e(a.info_date)} · snapshot ${e(a.snapshot_date)}${a.dataset_sha256 ? ` · dataset ${e(a.dataset_sha256.slice(0, 12))}` : ''}</p>
@@ -301,8 +302,15 @@ function notePendingQuestion() {
   const note = $('#pending-question');
   if (note) note.textContent = pendingQuestion === null ? '' : `Your question “${pendingQuestion}” is kept and will be answered once the evidence loads.`;
 }
+const screenHref = f => `?${new URLSearchParams(Object.entries({view: 'screen', peer: f.peer, template: f.template, sort: f.sort, dir: f.dir}).filter(([, v]) => v))}`;
 function bindAskChips(scope = document) {
   scope.querySelectorAll('[data-ask]').forEach(b => b.addEventListener('click', () => runAsk(b.dataset.ask, {focusAnswer: true})));
+  scope.querySelectorAll('a[data-screen]').forEach(a => a.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+    event.preventDefault();
+    uni.openScreen(JSON.parse(a.dataset.screen));
+    show('screen');
+  }));
 }
 
 function review() {
@@ -593,7 +601,11 @@ async function init() {
     if (startCo) uni.pick(startCo, {deep: false});
     let saved, linkError;
     // A company link (?co=KO, optionally with a universe view) needs no saved-version check: it carries no deep-ledger inputs.
-    const universeLink = params.has('co') && [...params.keys()].every(k => ['co', 'view'].includes(k)) && ['company', 'compare', 'screen', 'watch', 'ask', null].includes(params.get('view'));
+    // A company link (?co=KO) or a view link (?view=screen, optionally with Screen's filter and sort) carries no deep-ledger inputs.
+    const keys = [...params.keys()], uniView = ['company', 'compare', 'screen', 'watch', 'ask'].includes(params.get('view'));
+    const universeLink = (params.has('co') && keys.every(k => ['co', 'view'].includes(k)) && (uniView || !params.has('view'))) ||
+      (uniView && keys.every(k => ['co', 'view', ...(params.get('view') === 'screen' ? ['peer', 'template', 'sort', 'dir'] : [])].includes(k)));
+    if (universeLink && params.get('view') === 'screen') uni.openScreen(Object.fromEntries(['peer', 'template', 'sort', 'dir'].map(k => [k, params.get(k) || ''])));
     if (universeLink) { page = params.get('view') || 'company'; render(); }
     else try { saved = selectionFromURL(params, bundle); } catch (error) { linkError = error.message; }
     if (universeLink) { /* rendered above */ }

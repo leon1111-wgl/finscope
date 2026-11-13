@@ -218,7 +218,8 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
     if (s.indexError || s.screenError) return `${head}<div class="error"><h3>The screen could not be loaded</h3><p class="error-detail">${e(s.screenError || s.indexError)}</p><div class="actions"><button type="button" id="retry-screen">Retry</button></div></div>`;
     if (!s.screen) return `${head}<p class="empty" aria-busy="true">Loading the screen…</p>`;
     const f = s.filters, rows = screenRows();
-    const peers = [...new Map(s.screen.rows.map(r => [r.peer, r])).keys()].sort();
+    // A filter opened from Ask may be a classification level no company uses as its own peer group; it is listed so the select shows it.
+    const peers = [...new Set([...s.screen.rows.map(r => r.peer), ...(f.peer && !f.peer.startsWith('sic2:') && s.screen.members.has(f.peer) ? [f.peer] : [])])].sort();
     const sic2 = [...new Set(s.screen.rows.map(r => r.sic.padStart(4, '0').slice(0, 2)).filter(x => /^\d\d$/.test(x)))].sort();
     const pctCell = (r, k) => Number.isFinite(r.values[k]) ? `<span class="v">${k === 'cash_conversion' ? `${r.values[k].toFixed(2)}×` : `${(r.values[k] * 100).toFixed(1)}%`}</span><small class="pct" title="Percentile among ${r.peerN?.[k] ?? 0} companies with this indicator in ${e(peerLabel(r.peerFor?.[k] || r.peer, s.screen.rows))}">p${r.pct[k]}</small>` : '<span class="missing">—</span>';
     const body = rows.slice(0, s.shown).map(r => [`<button type="button" class="table-button" data-open="${r.c}">${e(primary(r.entry))}</button><small>${e(r.entry.n)}</small>`, `<small>${e(peerLabel(r.peer, s.screen.rows))}</small>`, `FY${r.fy}<small>${e(r.end)}</small>`,
@@ -378,6 +379,13 @@ export function createUniverseUI({$, e, download, status, openCompanyDeep, rende
 
   return {
     state: s, ensureIndex, ensureShard, ensureScreen, entryByTicker, pick, peersOf,
+    // Opens Screen with a filter and sort (from an Ask answer or a ?view=screen link); unknown values are dropped.
+    openScreen(f = {}) {
+      const ok = {peer: /^(sic2:\d\d|(ind|reit):(sic[234]:\d{2,4}|div:[A-J]))$/, template: /^(industrial|reit)$/, sort: /^(revenue|name|cash_conversion|accruals|fcf_margin)$/, dir: /^(asc|desc)$/};
+      s.filters = {peer: '', text: '', template: '', cc: '', acc: '', fcf: '', sort: 'revenue', dir: 'desc'};
+      for (const [k, re] of Object.entries(ok)) if (typeof f[k] === 'string' && re.test(f[k])) s.filters[k] = f[k];
+      s.shown = PAGE;
+    },
     views: {company: financialsView, compare: compareView, screen: screenView, watch: watchView},
     bind,
     // Loads what a view needs; resolves true when new data or a new error arrived (so the caller renders again).

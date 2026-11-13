@@ -330,6 +330,13 @@ export function peerLabel(peer, rows, lang = 'en') {
   const label = peerLabelPlain(`${kind}:${code}`, rows.filter(r => r.peer.startsWith(`${tp}:`)), lang);
   return tp === 'reit' ? `${label} (REITs)` : label;
 }
+// A Screen filter's label from the index alone (Ask points to Screen before the screen data is loaded).
+export function sectorLabel(peer, companies, lang = 'en') {
+  const [tp, kind, code] = peer.split(':');
+  if (kind === 'div') return `${lang === 'zh' ? 'SIC 门类' : 'SIC division'} ${code} · ${DIVISION[code]?.[lang === 'zh' ? 1 : 0] || ''}`;
+  const sample = kind === 'sic4' && companies.find(c => String(c.s).padStart(4, '0') === code && c.d);
+  return `SIC ${code}${kind === 'sic4' ? '' : kind === 'sic3' ? 'x' : 'xx'}${sample ? ` · ${sample.d}` : ''}${tp === 'reit' ? ' (REITs)' : ''}`;
+}
 function peerLabelPlain(peer, rows, lang) {
   const [kind, code] = peer.split(':');
   if (kind === 'div') return `${lang === 'zh' ? 'SIC 门类' : 'SIC division'} ${code} · ${DIVISION[code]?.[lang === 'zh' ? 1 : 0] || ''}`;

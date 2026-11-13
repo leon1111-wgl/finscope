@@ -1,7 +1,7 @@
 // Ask the ledger, universe path (0.3.0): answers about any company in the universe and the figures added in 0.3.0.
 // Called by ask-engine.js after its refusal checks, with the parsed question and the loaded shards. Fixed rules only;
 // the program states every number with its source line. No model, no network, no storage.
-import {FIGURES, INDICATORS, TEMPLATE_LABEL, isFigure, label, show, exact, indicator, periodIndex, latestIndex, entryOf, primary, sourceOf, filingUrl, filingIndexUrl, lc} from './universe-data.js';
+import {FIGURES, INDICATORS, TEMPLATE_LABEL, isFigure, label, show, exact, indicator, periodIndex, latestIndex, entryOf, primary, sourceOf, filingUrl, filingIndexUrl, lc, sectorLabel} from './universe-data.js';
 
 export const UNIVERSE_ONLY = new Set([...Object.keys(FIGURES), ...Object.keys(INDICATORS)].filter(k => !['revenue', 'net_income', 'operating_income', 'operating_cash_flow', 'assets', 'liabilities', 'current_assets', 'current_liabilities', 'cash', 'capex',
   'operating_margin', 'net_margin', 'cash_margin', 'current_ratio', 'liabilities_assets', 'cash_coverage', 'accruals', 'revenue_growth', 'cash_conversion', 'free_cash_flow', 'profit_cash_gap'].includes(k)));
@@ -434,6 +434,57 @@ function onlyCompany(p) {
 
 // ------------------------------------------------------------------ entry point
 // r: the base answer, p: the parsed question (companies as primary tickers), ctx: {prepared, shards, screen, asOf, latestDate}.
+// ---------------------------------------------------------------- rankings without named companies → Screen
+// A ranking across a sector or the whole universe is the Screen page's job; the answer names the filter and sort it opens.
+const SECTORS = [
+  [/半导体|芯片|semiconductor|chipmaker|chip (maker|compan|stock)/, 'ind:sic4:3674', '半导体'],
+  [/软件|software/, 'ind:sic4:7372', '软件'],
+  [/生物科技|生物技术|biotech/, 'ind:sic4:2836', '生物科技'],
+  [/制药|医药|药企|pharma|drug ?makers?|drug compan/, 'ind:sic4:2834', '制药'],
+  [/医疗器械|medical (device|instrument)/, 'ind:sic4:3841', '医疗器械'],
+  [/石油|油气|天然气|\boil\b|natural gas/, 'ind:sic2:13', '油气开采'],
+  [/公用事业|电力公司|utilit(y|ies)/, 'ind:sic2:49', '公用事业'],
+  [/餐饮|餐厅|restaurant/, 'ind:sic4:5812', '餐饮'],
+  [/零售|retail/, 'ind:div:G', '零售'],
+  [/航空公司|airline/, 'ind:sic4:4512', '航空公司'],
+  [/汽车|automaker|car ?maker|\bautos?\b/, 'ind:sic4:3711', '汽车'],
+  [/电信|telecom/, 'ind:sic2:48', '电信'],
+  [/化工|chemical/, 'ind:sic2:28', '化工'],
+  [/食品|\bfood/, 'ind:sic2:20', '食品'],
+];
+const SCREEN_SORTS = {cash_conversion: ['cash conversion', '现金转化率'], accruals: ['accrual ratio', '应计比率'], fcf_margin: ['FCF margin', '自由现金流利润率'], revenue: ['revenue', '营收']};
+
+function screenPointer(r, p, ctx, metric) {
+  const lang = p.lang, low = p.low, companies = ctx.prepared.index.companies;
+  const plan = {...r.plan, metric};
+  const left = /银行|\bbanks?\b/.test(low) ? ['Banks', '银行'] : /保险|insurers?|insurance/.test(low) ? ['Insurers', '保险公司'] : null;
+  if (left) return finish(r, {status: 'not_in_bundle', topic: 'universe_rank', plan, summary: L(lang,
+    `${left[0]} are not in the Screen: cash conversion, the accrual ratio and FCF margin do not describe their statements. To rank ${left[0].toLowerCase()}, name the ones to compare here, up to eight.`,
+    `${left[1]}不在“筛选”页里：现金转化率、应计比率和自由现金流利润率不适用于它们的报表。要给${left[1]}排序，请在这里点名要比较的公司，最多八家。`),
+    offers: [L(lang, 'Compare JPM, BAC and WFC net income', '比较 JPM、BAC 和 WFC 的净利润')]});
+  const reit = /reits?\b|房地产信托|房地产投资信托|地产信托/.test(low);
+  const hit = reit ? null : SECTORS.find(([re]) => re.test(low));
+  const [, kind, code] = hit ? hit[1].split(':') : [];
+  const peer = hit && companies.some(x => x.tp === 'industrial' && (kind === 'div' ? x.v === code : String(x.s).padStart(4, '0').startsWith(code))) ? hit[1] : '';
+  const broad = !hit && !reit && /科技|技术公司|\btech(nology)?\b/.test(low);
+  const sortable = metric === 'profit_cash_gap' ? 'cash_conversion' : SCREEN_SORTS[metric] ? metric : null;
+  const sort = sortable || 'revenue';
+  const lowWords = /最低|最少|最小|lowest|least|smallest|bottom/.test(low), bad = /最差|最弱|worst|weakest|poorest/.test(low), gap = /差距|缺口|背离|gap/.test(low);
+  const dir = sort === 'accruals' ? (lowWords ? 'asc' : 'desc') : (lowWords || bad || (sort === 'cash_conversion' && gap) ? 'asc' : 'desc');
+  const label = peer ? sectorLabel(peer, companies, 'en') : reit ? 'REITs' : '';
+  const where = L(lang, peer ? `${label}` : reit ? 'REITs' : 'the whole universe', peer ? `${hit[2]}（${label}）` : reit ? 'REIT' : '全体公司');
+  const order = L(lang, `${SCREEN_SORTS[sort][0]}, ${dir === 'asc' ? 'lowest' : 'highest'} first`, `${SCREEN_SORTS[sort][1]}${dir === 'asc' ? '从低到高' : '从高到低'}`);
+  const notSortable = metric && !sortable ? L(lang, ` The Screen sorts by revenue, cash conversion, the accrual ratio and FCF margin; ${label_(metric, 'en')} is not one of its columns, so name up to eight companies here to rank by it.`,
+    `“筛选”页可按营收、现金转化率、应计比率和自由现金流利润率排序；${label_(metric, 'zh')}不是它的列，要按它排序请在这里点名最多八家公司。`) : '';
+  const tech = broad ? L(lang, ' FinScope groups companies by SIC code, and “technology” spans several (for example 3674 semiconductors and 7372 software); pick one in the Sector filter.',
+    '“科技”在 SIC 分类里分属多个代码（例如 3674 半导体、7372 软件），请在“行业”筛选里选一个。') : '';
+  return finish(r, {status: 'not_in_bundle', topic: 'universe_rank', plan, screen: {peer, template: reit ? 'reit' : '', sort, dir, label}, summary: L(lang,
+    `A ranking across ${where} is the Screen page's job: it lists each company's latest 10-K figures with sector percentiles and a CSV with sources. The link below opens it for ${where}, sorted by ${order}. This box ranks only companies you name (up to eight), or the six deep-ledger companies if you say so.`,
+    `${where}的排名请用“筛选”页：列出每家公司最新 10-K 的数字、行业百分位和附来源的 CSV。下面的链接会打开${where}，按${order}排序。这个问答框只给你点名的公司（最多八家）排序，或在你说明时给六家深度账本公司排序。`) + notSortable + tech,
+    offers: [L(lang, 'Which of the six has the lowest cash conversion?', '六家公司里哪家现金转化率最低')]});
+}
+const label_ = (k, lang) => k && (FIGURES[k] || INDICATORS[k]) ? label(k, lang) : (lang === 'zh' ? '这个指标' : 'this figure');
+
 export function answerUniverse(r, p, ctx, helpers) {
   const lang = p.lang, c = p.cues, u = {...ctx, ...universeContext(ctx)};
   r.engine = {...r.engine, data: 'universe'};
@@ -465,10 +516,9 @@ export function answerUniverse(r, p, ctx, helpers) {
   // Definitions without a company.
   if (c.definition && !p.companies.length && metricKeys.length) return universeDefinition(r, p, metricKeys) || helpers.definition(r, p);
   if (!p.companies.length) {
-    if (has(UCUE.universeRank) || c.rank) return finish(r, {status: 'not_in_bundle', topic: 'universe_rank', plan: {...r.plan, metric: metricKeys[0] || null}, summary: L(lang,
-      'Rankings across a sector or the whole universe are on the Screen page (sort and filter, with sector percentiles and a CSV with sources). In this box, name the companies to compare, up to eight.',
-      '跨行业或全体公司的排名请用“筛选”页（可排序、筛选，有行业百分位，CSV 附来源）。在这里请点名要比较的公司，最多八家。'),
-      offers: [L(lang, 'Compare KO, PEP and MDLZ gross margin', '比较 KO、PEP 和 MDLZ 的毛利率')]});
+    if (/哪一?年|哪个财年|which (fiscal )?year|what year|in which year/.test(low)) return finish(r, {status: 'clarify', topic: 'ambiguous', plan: {...r.plan, metric: metricKeys[0] || null}, summary: L(lang,
+      'Which company? Name a ticker or company name, and FinScope lists its fiscal years.', '哪家公司？请写出代码或公司名，FinScope 会列出它的各个财年。')});
+    if (has(UCUE.universeRank) || c.rank || p.cues.cashSupport) return screenPointer(r, p, ctx, helpers.selectFigures(p).metric || metricKeys[0] || null);
     return finish(r, {status: 'clarify', topic: 'ambiguous', plan: {...r.plan, metric: metricKeys[0] || null}, summary: L(lang,
       `Which company? Name a ticker or company name; the universe holds ${ctx.prepared.index.count} US large accelerated filers.`, `哪家公司？请写出代码或公司名；公司全集包括 ${ctx.prepared.index.count} 家美国大型加速申报公司。`)});
   }

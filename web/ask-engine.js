@@ -504,8 +504,8 @@ const finish = (r, fields, extra = {}) => { Object.assign(r, fields); if (extra.
 const ask = (lang, en, zh) => L(lang, en, zh);
 function defaultOffers(lang, t = 'NVDA') {
   return lang === 'zh'
-    ? [`${zhName(t)}的利润有现金流支撑吗`, '哪家公司利润和现金差距最大', `${zhName(t)}最新的经营现金流是多少`, '你能回答什么问题']
-    : [`Is ${t}'s profit backed by operating cash?`, 'Which company has the largest profit-to-cash gap?', `What was ${t}'s latest operating cash flow?`, 'What can you answer?'];
+    ? [`${zhName(t)}的利润有现金流支撑吗`, '六家公司里哪家利润和现金差距最大', `${zhName(t)}最新的经营现金流是多少`, '你能回答什么问题']
+    : [`Is ${t}'s profit backed by operating cash?`, 'Which of the six has the largest profit-to-cash gap?', `What was ${t}'s latest operating cash flow?`, 'What can you answer?'];
 }
 const IN_BUNDLE = {
   en: 'revenue, net income, operating income, operating cash flow, total assets, total liabilities, current assets, current liabilities, cash, capex, eight ratios, cash conversion, free cash flow, the latest fiscal year-to-date checkpoint, its profit-to-cash bridge, the AI triage percentile, Treasury yields and filing links',
@@ -522,12 +522,16 @@ export function planQuestion(question, bundle, {universe} = {}) {
 }
 
 const UNIVERSE_SCOPE = /银行|保险公司|保险|房地产信托|reits?\b|\bbanks?\b|insurers?|行业|板块|sector|industry|美股|全市场|所有公司里|全部公司里|universe|all (us|u\.s\.|american) (companies|stocks)|large accelerated/;
+const SIX_SCOPE = /六家|六个公司|all six|the six|these six|six companies|深度账本|deep[- ]ledger/;
+const RANK_ASK = /哪家|哪个公司|哪一家|哪间|谁|which|who\b/;
+const RANK_NOUN = /\bwhich (\w+ ){0,2}(compan(y|ies)|firms?|stocks?|retailers?|banks?|insurers?|reits?|chipmakers?|airlines?|utilit(y|ies)|automakers?|names)\b.{0,40}\b(highest|lowest|largest|biggest|smallest|most|least|best|worst|top|bottom|strongest|weakest)\b/;
 function universeRoute(p, bundle, snapshot, prepared) {
   if (!prepared) return false;
   if (p.ucompanies.length || p.metrics.some(m => UNIVERSE_ONLY.has(m))) return true;
   if (p.companies.length && (UCUE.lineage.test(p.low) || UCUE.quality.test(p.low)) && !p.cues.provenance) return true;
   if (p.companies.length && UCUE.sector.test(p.low) && (UCUE.percentile.test(p.low) || p.cues.rank)) return true;
-  if (!p.companies.length && p.cues.rank && UNIVERSE_SCOPE.test(p.low) && !/六家|all six|the six|these six|six companies/.test(p.low)) return true;
+  // A ranking that names no company covers the universe (a pointer to Screen), unless it asks for the six deep-ledger companies.
+  if (!p.companies.length && !SIX_SCOPE.test(p.low) && ((p.cues.rank && (p.metrics.length || UNIVERSE_SCOPE.test(p.low) || RANK_ASK.test(p.low))) || RANK_NOUN.test(p.low))) return true;
   // A six-company figure the deep ledger lacks (no standard tag) may exist in the universe under a fallback tag.
   const latest = snapshot && bundle.snapshots.at(-1).as_of === snapshot.as_of;
   if (latest && p.companies.length && p.metrics.length) {
@@ -1011,7 +1015,7 @@ function compareAnswer(r, p, bundle, index, metric, tickers, asOf) {
       `${label(metric, 'en')}: ${shown.map(each).join(' · ')}.${ends.size > 1 ? ' These fiscal years end on different dates, so they are not the same twelve months.' : ''}${missing.length ? ` Not available for ${missing.join(', ')} (no standard-tag fact).` : ''}`,
       `${label(metric, 'zh')}：${shown.map(each).join(' · ')}。${ends.size > 1 ? '各公司财年截止日期不同，不是同一段十二个月。' : ''}${missing.length ? `${missing.join('、')} 没有标准标签事实，无法给出。` : ''}`),
     notes: [ask(lang, 'Fiscal calendars differ: each company’s own latest or named fiscal year is shown with its dates. Side by side only; this is not a ranking of investment merit.', '各公司财年不同：每家显示自己的最新或指定财年及其日期。仅并列展示，不是投资优劣排名。')],
-    offers: lang === 'zh' ? ['哪家公司利润和现金差距最大'] : ['Which company has the largest profit-to-cash gap?']});
+    offers: lang === 'zh' ? ['六家公司里哪家利润和现金差距最大'] : ['Which of the six has the largest profit-to-cash gap?']});
 }
 
 function rankAnswer(r, p, bundle, index, metric, asOf) {
@@ -1086,7 +1090,7 @@ function cashSupportAnswer(r, p, bundle, index, t, asOf) {
       ? ask(lang, 'Cash above profit usually comes from non-cash charges (depreciation, share-based pay) and working-capital timing; check how much is recurring before calling it strong.', '现金高于利润通常来自非现金费用（折旧、股权激励）和营运资本时间差；先看有多少是经常性的，再下判断。')
       : ask(lang, 'Profit above cash is a prompt to read receivables, inventory and other working-capital lines in the cash-flow statement, not a verdict.', '利润高于现金是去读现金流量表里应收、存货等营运资本项目的提示，不是结论。'),
     ask(lang, 'Descriptive figures from the filings; not investment advice.', '以上是财报中的描述性数字，不构成投资建议。')],
-    offers: lang === 'zh' ? [`为什么${zhName(t)}的现金流和利润不一样`, `${zhName(t)}的应计比率`, '哪家公司利润和现金差距最大'] : [`Why does ${t}'s cash flow differ from profit?`, `${t} accrual ratio`, 'Which company has the largest profit-to-cash gap?']});
+    offers: lang === 'zh' ? [`为什么${zhName(t)}的现金流和利润不一样`, `${zhName(t)}的应计比率`, '六家公司里哪家利润和现金差距最大'] : [`Why does ${t}'s cash flow differ from profit?`, `${t} accrual ratio`, 'Which of the six has the largest profit-to-cash gap?']});
 }
 
 function latestCheckpoint(bundle, t, asOf) {
@@ -1297,8 +1301,8 @@ function scopeAnswer(r, lang, bundle) {
       `I answer questions about six companies — AAPL, MSFT, NVDA, AMZN, GOOGL and META — from saved official SEC filings and Treasury yields: one figure or ratio for a fiscal year, trends, year-over-year changes, side-by-side comparisons, which of the six is highest, whether profit is backed by operating cash, the latest year-to-date checkpoint and its profit-to-cash bridge, the AI triage percentile, Treasury yields, filing links and definitions. I don't give investment advice, forecasts, share prices or figures the bundle doesn't hold.`,
       `我回答六家公司——AAPL、MSFT、NVDA、AMZN、GOOGL、META——基于已保存的 SEC 官方财报和美国国债收益率的问题：某财年的一个数字或比率、多年走势、同比变化、并列对比、六家里谁最高、利润有没有经营现金支撑、最新年初至今对比和利润到现金的调节、AI 分诊百分位、国债收益率、财报链接和名词解释。我不提供投资建议、预测、股价，也不回答证据包里没有的数字。`),
     table: {columns: [L(lang, 'You can ask', '可以问'), L(lang, 'Example', '例子')], rows: lang === 'zh'
-      ? [['利润有没有现金支撑', '英伟达的利润有现金流支撑吗'], ['某财年的数字', '微软 2024 年经营现金流是多少'], ['比率', '苹果 2025 财年的流动比率'], ['走势', '谷歌近五年的营收'], ['变化', '苹果的应收账款变化'], ['对比', '对比亚马逊和 Meta 的现金转化率'], ['排名', '哪家公司利润和现金差距最大'], ['年初至今', '微软最新季度的经营现金流'], ['AI 分诊', 'Meta 的异常分数是多少'], ['国债收益率', '10 年期美债收益率现在多少'], ['财报链接', '亚马逊最新 10-K 的链接']]
-      : [['Cash support for profit', "Is NVDA's profit backed by operating cash?"], ['A figure for a fiscal year', "MSFT operating cash flow in 2024"], ['A ratio', "Apple's current ratio in FY2025"], ['A trend', 'Alphabet revenue over the last five years'], ['A change', "Apple's receivables change"], ['A comparison', 'Compare AMZN and META cash conversion'], ['A ranking', 'Which company has the largest profit-to-cash gap?'], ['Year to date', "Microsoft's latest quarter operating cash flow"], ['AI triage', 'META anomaly percentile'], ['Treasury yields', 'What is the 10-year Treasury yield?'], ['Filing link', "Link to Amazon's latest 10-K"]]},
+      ? [['利润有没有现金支撑', '英伟达的利润有现金流支撑吗'], ['某财年的数字', '微软 2024 年经营现金流是多少'], ['比率', '苹果 2025 财年的流动比率'], ['走势', '谷歌近五年的营收'], ['变化', '苹果的应收账款变化'], ['对比', '对比亚马逊和 Meta 的现金转化率'], ['排名', '六家公司里哪家利润和现金差距最大'], ['年初至今', '微软最新季度的经营现金流'], ['AI 分诊', 'Meta 的异常分数是多少'], ['国债收益率', '10 年期美债收益率现在多少'], ['财报链接', '亚马逊最新 10-K 的链接']]
+      : [['Cash support for profit', "Is NVDA's profit backed by operating cash?"], ['A figure for a fiscal year', "MSFT operating cash flow in 2024"], ['A ratio', "Apple's current ratio in FY2025"], ['A trend', 'Alphabet revenue over the last five years'], ['A change', "Apple's receivables change"], ['A comparison', 'Compare AMZN and META cash conversion'], ['A ranking', 'Which of the six has the largest profit-to-cash gap?'], ['Year to date', "Microsoft's latest quarter operating cash flow"], ['AI triage', 'META anomaly percentile'], ['Treasury yields', 'What is the 10-year Treasury yield?'], ['Filing link', "Link to Amazon's latest 10-K"]]},
     notes: [ask(lang, `Evidence as of ${bundle.as_of}. Questions are read by fixed rules: unfamiliar wording may get “not understood” rather than a guess.`, `证据截至 ${bundle.as_of}。问题由固定规则读取：不熟悉的说法会得到“没有读懂”，而不是猜测。`)],
     offers: defaultOffers(lang)});
 }

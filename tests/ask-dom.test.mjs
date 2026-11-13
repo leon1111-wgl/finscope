@@ -100,3 +100,32 @@ test('answers follow the information date chosen in the console', async t => {
   await ui.submit('#ask-form', '#ask-input', 'MSFT 2024 revenue');
   assert.ok(ui.$('.answer').classList.contains('answer-refused'));
 });
+
+test('a sector ranking answers with a link that opens Screen filtered and sorted (probe of b12433a)', async t => {
+  const ui = await boot(t, '#workspace');
+  await ui.openAsk();
+  await ui.submit('#ask-form', '#ask-input', '半导体公司里现金转化最差的是哪家');
+  assert.ok(ui.$('.answer').classList.contains('answer-not_in_bundle'));
+  assert.doesNotMatch(ui.$('.answer-summary').textContent, /NVDA|英伟达/);
+  const link = ui.$('.answer-action a[data-screen]');
+  assert.ok(link, 'Screen link');
+  assert.equal(new URL(link.href).search, '?view=screen&peer=ind%3Asic4%3A3674&sort=cash_conversion&dir=asc');
+  link.click();
+  for (let i = 0; i < 200 && !ui.$('#screen-form'); i++) await new Promise(resolve => setImmediate(resolve));
+  assert.equal(ui.$('#screen-form select[name="peer"]').value, 'ind:sic4:3674');
+  const rows = [...ui.dom.window.document.querySelectorAll('.screen-table tbody tr')];
+  assert.ok(rows.length >= 5);
+  const conv = rows.map(r => parseFloat(r.cells[4].textContent)).filter(Number.isFinite);
+  assert.deepEqual(conv, [...conv].sort((a, b) => a - b));
+  assert.ok(rows.every(r => /3674/.test(r.cells[1].textContent)), rows.map(r => r.cells[1].textContent).join(' | '));
+});
+
+for (const [query, peer] of [['?view=screen', ''], ['?view=screen&peer=ind%3Asic4%3A3674&sort=cash_conversion&dir=asc', 'ind:sic4:3674'], ['?view=screen&peer=%3Cscript%3E', '']]) {
+  test(`a view-only link opens the view: ${query}`, async t => {
+    const ui = await boot(t, query);
+    for (let i = 0; i < 200 && !ui.$('#screen-form'); i++) await tick();
+    assert.ok(ui.$('#screen-form'), 'Screen opened');
+    assert.doesNotMatch(ui.dom.window.document.body.textContent, /incomplete|could not be opened/);
+    assert.equal(ui.$('#screen-form select[name="peer"]').value, peer);
+  });
+}

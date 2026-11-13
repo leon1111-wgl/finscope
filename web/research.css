@@ -461,6 +461,7 @@ details p { margin-top: 14px; }
 .calc-result { font-weight: 650; }
 .answer-notes { font-size: 14px; color: var(--text-2); }
 .answer-notes li { margin: 6px 0; }
+.answer-action { margin: 12px 0 4px; font-weight: 600; overflow-wrap: anywhere; }
 .answer-sources { margin: 16px 0 6px; }
 .answer-sources summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 .answer td small.exact { display: block; font: 12px var(--mono); color: var(--text-2); }

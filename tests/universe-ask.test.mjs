@@ -126,3 +126,37 @@ test('fiscal-year labels follow the company\'s own 10-Ks, not one mistyped filin
     assert.ok(a.sources?.length ? a.sources.every(s => s.period.endsWith(end)) : a.summary.includes(end), `${q}: ${a.summary}`);
   }
 });
+
+test('a ranking that names no companies, or names a sector, points to Screen; the six rank only when asked for (probe of b12433a)', () => {
+  const screen = (q, want) => {
+    const a = ask(q);
+    assert.equal(`${a.status}/${a.topic}`, 'not_in_bundle/universe_rank', `${q}: ${a.status}/${a.topic} ${a.summary}`);
+    assert.ok(!a.facts.length, q);
+    assert.deepEqual(a.screen, want, q);
+    return a;
+  };
+  const zh = screen('半导体公司里现金转化最差的是哪家', {peer: 'ind:sic4:3674', template: '', sort: 'cash_conversion', dir: 'asc', label: 'SIC 3674 · Semiconductors & Related Devices'});
+  assert.match(zh.summary, /筛选/);
+  screen('现金转化最差的是哪家', {peer: '', template: '', sort: 'cash_conversion', dir: 'asc', label: ''});
+  screen('哪家公司利润和现金差距最大', {peer: '', template: '', sort: 'cash_conversion', dir: 'asc', label: ''});
+  screen('Among semiconductor companies, which has the highest FCF margin?', {peer: 'ind:sic4:3674', template: '', sort: 'fcf_margin', dir: 'desc', label: 'SIC 3674 · Semiconductors & Related Devices'});
+  screen('Which retailer has the best cash conversion?', {peer: 'ind:div:G', template: '', sort: 'cash_conversion', dir: 'desc', label: 'SIC division G · Retail trade'});
+  screen('软件板块里应计比率最高的是哪家', {peer: 'ind:sic4:7372', template: '', sort: 'accruals', dir: 'desc', label: 'SIC 7372 · Services-Prepackaged Software'});
+  screen('REIT 里自由现金流利润率最低的是哪家', {peer: '', template: 'reit', sort: 'fcf_margin', dir: 'asc', label: 'REITs'});
+  screen('which semiconductor stocks have the most revenue', {peer: 'ind:sic4:3674', template: '', sort: 'revenue', dir: 'desc', label: 'SIC 3674 · Semiconductors & Related Devices'});
+  const banks = ask('银行里哪家净利润最高');
+  assert.equal(`${banks.status}/${banks.topic}`, 'not_in_bundle/universe_rank');
+  assert.equal(banks.screen, undefined);
+  assert.match(banks.summary, /银行/);
+  // ROE is not a Screen column: the pointer says so instead of sorting by something else.
+  const roe = ask('Which company has the highest ROE?');
+  assert.equal(roe.topic, 'universe_rank');
+  assert.match(roe.summary, /ROE|return on equity/i);
+  // The six deep-ledger companies rank only when the question asks for them.
+  for (const q of ['六家公司里现金转化最差的是哪家', '深度账本里哪家营收最高', 'Which of the six has the highest revenue?', 'In the deep ledger, which company has the lowest cash conversion?']) {
+    const a = ask(q);
+    assert.equal(`${a.status}/${a.topic}`, 'answered/rank', `${q}: ${a.status}/${a.topic}`);
+  }
+  // Named companies are compared, not sent to Screen.
+  assert.equal(ask('Which of KO, PEP and MDLZ has the highest gross margin?').status, 'answered');
+});
