@@ -72,9 +72,9 @@ Figures: revenue, net income, operating income, operating cash flow, total asset
 | Forecasts, or a fiscal year not yet filed | Declined: points to the Scenarios tab, where assumptions are the visitor's own |
 | "Is this company committing fraud?" | Declined: no verdict; points to the accrual ratio, cash conversion and the AI percentile |
 | Share prices, market value, P/E | Not in this bundle |
-| A company outside the six | Not in this bundle, with the SEC EDGAR company search |
-| EPS, gross margin, R&D, segments, debt, dividends, buybacks, equity, investing or financing cash flow, a receivables or inventory balance | Not in this bundle, by name; never a substitute figure |
-| A figure whose standard tag is missing (AMZN total liabilities, NVDA and AMZN capital expenditure, and anything derived from them) | Not in this bundle; a missing value is never treated as zero |
+| A company outside the universe (a 20-F filer, a private or non-US company, a company that is not a large accelerated filer) | Not in the data, with the reason when known and the SEC EDGAR company search |
+| Segments, products or regions, EBITDA, non-GAAP figures (FFO, adjusted EPS), investing or financing cash flow, a receivables or inventory balance, shares outstanding at year end, the effective tax rate | Not in the data, by name; never a substitute figure |
+| A figure the company does not report under any tag FinScope reads, or one its template does not support (gross margin for a bank) | Not reported, or not supported for this template; a missing value is never treated as zero |
 | A fiscal year before the bundle's first period, a standalone quarter or half-year, a calendar year for a company whose fiscal year does not end in December, or a date that is not a fiscal year end | Not in this bundle, or a request for a fiscal year |
 | A narrower or broader scope: excluding a part, a region or product, cash plus marketable securities, per-share, CAGR, another currency | Not in this bundle |
 | A ranking by growth of anything but revenue | Not in this bundle |
@@ -109,6 +109,32 @@ It loads the universe shards from `web/data/universe/` for the companies each qu
 
 ## How it was tested
 
+### 0.3.0: the second blind set (universe)
+
+212 SYNTHETIC questions written by a separate model (Sonnet) from [`tests/ask-blind-v3/BLIND_SCOPE.md`](../tests/ask-blind-v3/BLIND_SCOPE.md) only, without the code, rules or data. The scope and the scoring rules ([`SCORING.md`](../tests/ask-blind-v3/SCORING.md)) were committed at `f7142e6`, the set unread at `cdb3874`, and the scorer (`scripts/score-blind-v3.mjs`) at `53c33a4`, all before the first run. The scorer answers each question through the page's engine with the universe loaded from disk and judges the plan (companies, figure, period, topic), not the wording. Membership in the universe and whether a figure is held are resolved from the data by rules fixed in advance.
+
+| Run | Correct | Partial | Wrong | Abstained | Must-not-answer held |
+| --- | --- | --- | --- | --- | --- |
+| **Blind first run at `9a2f1e3`** (data `ec1f904`), as scored by the committed scorer | 171 | 0 | 22 | 18 | 53 / 53 |
+| Same answers, scorer corrected (see below) | 173 | 0 | 20 | 18 | 53 / 53 |
+| Seen rerun after the fix round (not blind) | 210 | 0 | 0 | 1 | 53 / 53 |
+
+211 questions are scored (one ambiguous question is reported separately). Should-answer questions in the first run: 114 of 152 correct, 21 wrong, 17 abstained. Colloquial wording was much weaker than plain wording (16 wrong and 17 abstained against 6 and 1). The first run is kept as [`docs/validation/ask-blind-v3-first-run-9a2f1e3.json`](validation/ask-blind-v3-first-run-9a2f1e3.json).
+
+**The scorer correction.** When the gold answer names two figures ("Costco revenue and net income"), the committed scorer compared the list with the box's first figure only, so two correct two-figure answers (c005, c101) were scored wrong. The correction compares the list with the box's list of figures; it changes no other outcome.
+
+**What the first run found, and the classes fixed** (fixed as classes, never as single sentences; tests in `tests/universe-coverage.json` and `tests/universe-ask.test.mjs`):
+- *Off-target (the worst class, 8 answers):* a company question with a figure word the box did not know fell back to an overview of other figures. An overview now needs overview wording or the bare company name; otherwise the box asks which figure and states none.
+- *Colloquial abbreviations:* ni, gp, rnd, rnd 率, divs, d/e, int coverage, non int income, cash conv, provision, net real estate.
+- *Lower-case tickers as the first word* before a figure or Chinese text (de roe 24, cb premiums 5y, all 负债率); ordinary first words (what, low, all before English) are still not tickers.
+- *Bare spans:* 5y, 3年, 这5年 now mean the last N fiscal years (2 to 10).
+- *Rankings among named companies:* three or more companies with a superlative (最高, highest; not 最新) are ranked.
+- *Smaller classes:* "去年" for a non-December fiscal year now means the fiscal year that mostly covers that calendar year; 賺 as a traditional character; scope and definition wordings (会啥, wat can u, meaning, …啥); dividends + buybacks as payout; data-quality wording (数据有什么质量问题).
+
+The remaining seen-rerun miss is "low gp n op inc latest": `low` (Lowe's) is too common an English word to read as a ticker at the start of an English question, so the box asks which company.
+
+### 0.2.0 checks, still in force
+
 All questions below are SYNTHETIC visitor questions. These numbers describe how well the rules read questions; they are not a measure of financial accuracy, which comes from the bundle and its own checks.
 
 **Blind set.** 145 questions written by a separate model (Sonnet) from [`tests/ask-blind/BLIND_SCOPE.md`](../tests/ask-blind/BLIND_SCOPE.md) only, without the code or rules. The scope was committed at `35d3903` and the set at `f43486b`, before any rule existed. Each answerable intent has a plain and a colloquial wording; 48 must not be answered (advice, forecasts, fraud verdicts, prices, other companies, unsupported or missing figures, out-of-range years, off-topic, gibberish) and 4 are ambiguous. `scripts/score-blind.mjs` scores the plan, not the prose: an answer is **correct** only with the gold companies, figure and period; **wrong** if it names other companies, another figure or period, or answers what must not be answered; **partial** if it has the right companies, figure and period in a different presentation; **abstained** for a non-answer where an answer was expected.
@@ -137,6 +163,8 @@ At `77c82f7` one more evaluative word beside profit ("谷歌和亚马逊谁的�
 **In the page.** jsdom tests cover the intro box, the Ask tab, escaping of the visitor's text, follow-up buttons, empty input and the information date. The release walk (`scripts/release-walk.mjs`, run in CI with screenshots as an artifact) asks real questions and refusals at 1440 and 375 px in both themes, with zero console errors, failed or cross-origin requests allowed.
 
 ## Limits
+
+- Universe answers use the latest filings only: at an earlier information date they decline. Annual figures only outside the six.
 
 - The vocabulary is closed. Unseen colloquial wording will mostly get *Needs more detail*; it should not get a different figure, but the blind set cannot prove a failure class is absent.
 - The topics are the bundle's: annual figures, one year-to-date checkpoint per company, a five-line cash bridge, the anomaly percentile and Treasury yields. Anything else is refused.

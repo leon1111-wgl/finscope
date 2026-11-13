@@ -12,7 +12,7 @@ FinScope 0.2.0 covered six companies. Release 0.3.0 adds a **universe**: every U
 
 **Why this rule.** Large accelerated filer status is a legal test the SEC already applies: a public equity float of at least $700 million at the end of the second fiscal quarter, at least twelve months of reporting and at least one annual report (17 CFR 240.12b-2). It therefore selects established, publicly traded companies without a proprietary index list, it is stated by the company itself on the 10-K cover, and it can be rebuilt by anyone from SEC data alone. It is broader than the S&P 500: it includes mid-caps a student or junior analyst is likely to look at, and it includes banks, insurers and REITs, which get their own templates. It excludes foreign private issuers that file 20-F or 40-F (most ADRs), smaller reporting companies and companies that are not yet large accelerated filers (recent IPOs among them).
 
-**Size.** The build of 2026-11-13 holds **{{COMPANIES}} companies**: {{TEMPLATES}}. The count is written by every build in `web/data/universe/manifest.json`.
+**Size.** The build of 2026-11-13 (data commit `ec1f904`) holds **1,994 companies**: 1,566 industrial, 244 bank and other financial, 64 insurance and 120 REIT. The funnel: 6,033 companies with an NYSE or Nasdaq ticker; 4,021 candidates; 1,998 large accelerated filers with a 10-K in the last 15 months; 4 without an annual USD period in a 10-K; 0 failed validation. The build made 6,028 SEC requests (506 MB compressed) in 12.7 minutes. The count is written by every build in `web/data/universe/manifest.json`.
 
 **How candidates are found.** Checking every SEC registrant's filer status would take tens of thousands of requests, so the build narrows the requests first. Candidates are every company whose 10-K cover reports a public float of at least $560 million (the level below which a large accelerated filer loses that status) in the SEC's `dei:EntityPublicFloat` frames for the last eight quarter ends, plus every company with an NYSE or Nasdaq ticker in `company_tickers_exchange.json` that reports no float in those frames. Filer status is then read from each candidate's Submissions record. The ticker file only supplies tickers; when both it and Submissions omit a ticker (ExxonMobil in November 2026), a short curated list fills it, and failing that the company is listed under its CIK.
 
@@ -97,12 +97,12 @@ The Screen page and Ask's sector percentile use a company's **peer group**: the 
 
 | File | Raw | gzip | When it loads |
 | --- | --- | --- | --- |
-| `research.json` (deep ledger, unchanged) | {{RESEARCH_RAW}} | {{RESEARCH_GZ}} | first visit |
-| `universe/index.json` (search, names, catalog) | {{INDEX_RAW}} | {{INDEX_GZ}} | first visit, in parallel |
-| one company shard | median {{SHARD_MEDIAN}}, max {{SHARD_MAX}} | about {{SHARD_GZ}} | when a company is opened or asked about |
-| `universe/screen.json` | {{SCREEN_RAW}} | {{SCREEN_GZ}} | only when the Screen page or a sector question needs it |
+| `research.json` (deep ledger, unchanged) | 14.4 MB | 632 KB | first visit |
+| `universe/index.json` (search, names, catalog) | 516 KB | 111 KB | first visit, in parallel |
+| one company shard | median 41 KB, max 74 KB | about 4–6 KB | when a company is opened or asked about |
+| `universe/screen.json` | 814 KB | 102 KB | only when the Screen page or a sector question needs it |
 
-A first visit downloads the deep-ledger bundle and the index, then one shard for the default company: **about {{FIRST_LOAD_GZ}} compressed**. The whole universe is {{SHARDS_TOTAL}} on Pages; the site stays under {{SITE_TOTAL}}, well inside the 300 MB budget and GitHub Pages' 1 GB limit.
+A first visit downloads the deep-ledger bundle and the index, then one shard for the default company: **about 750 KB compressed**. The whole universe is 79 MB on Pages; the site stays under 100 MB, well inside the 300 MB budget and GitHub Pages' 1 GB limit.
 
 ## Accuracy
 
