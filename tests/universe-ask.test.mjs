@@ -194,3 +194,11 @@ test('P2 classes from the probe of b12433a: outside name beside a covered one, z
   const reits = screen.rows.filter(r => r.entry.tp === 'reit');
   assert.ok(reits.length > 50 && reits.every(r => r.values.fcf_margin === null && r.pct.fcf_margin === null));
 });
+
+test('short names and the common-stock ticker (0.3.1)', () => {
+  for (const [q, t] of [['Federal Realty FY2025 net income', 'FRT'], ['Roivant FY2025 net income', 'ROIV'], ['Simon Property revenue', 'SPG'], ['Hertz revenue', 'HTZ']]) {
+    const a = ask(q);
+    assert.equal(a.status, 'answered', `${q}: ${a.status} ${a.summary}`);
+    assert.deepEqual(a.plan.tickers, [t], q);
+  }
+});

@@ -123,9 +123,23 @@ def recent_10k(submissions, cutoff):
     return any(form in ('10-K', '10-K/A') and filed >= cutoff for form, filed in zip(recent.get('form', []), recent.get('filingDate', [])))
 
 
-def common_tickers(tickers):
-    plain = [t for t in tickers if '-P' not in t and not t.endswith(('-WT', '-WS', '-U', '-R'))]
-    return plain or list(tickers)
+def common_tickers(tickers, exchanges=None):
+    """A company's tickers with the common stock first, as Submissions lists them otherwise (share classes keep their order).
+
+    Preferred, warrant, unit and right symbols written with a dash (SPG-PJ, NE-WTA) are dropped. A ticker with no exchange
+    or traded OTC goes after the exchange-listed ones (SPGJ, RLJ-A, ELMES), and one that is another listed ticker plus a
+    warrant, unit or right letter goes after it (HTZWW after HTZ).
+    """
+    exchanges = list(exchanges or [])
+    pairs = [(t, exchanges[i] if i < len(exchanges) else 'listed') for i, t in enumerate(tickers) if not re.search(r'-(P|WT|WS|U|R)', t)]
+    if not pairs:
+        return list(tickers)
+    names = {t for t, _ in pairs}
+    unlisted = lambda x: x in (None, '', 'OTC')
+    some_listed = any(not unlisted(x) for _, x in pairs)
+    derived = lambda t: any(t != base and t.startswith(base) and t[len(base):] in ('W', 'WW', 'WS', 'U', 'R') for base in names)
+    order = sorted(range(len(pairs)), key=lambda i: (some_listed and unlisted(pairs[i][1]), derived(pairs[i][0]), i))
+    return [pairs[i][0] for i in order]
 
 
 def curated_ticker(name, curated):
@@ -143,7 +157,7 @@ def clean_name(name):
 
 
 def index_entry(shard, rank, curated):
-    tickers = common_tickers(shard['tickers']) or curated_ticker(shard['name'], curated) or [f"CIK{shard['cik']}"]
+    tickers = common_tickers(shard['tickers'], shard.get('exchanges')) or curated_ticker(shard['name'], curated) or [f"CIK{shard['cik']}"]
     aliases = set(universe.name_aliases(shard['name']))
     zh = []
     for t in tickers:
@@ -162,6 +176,42 @@ def index_entry(shard, rank, curated):
     if any(t in names.LOWER_OK for t in tickers):
         entry['l'] = 1
     return entry
+
+
+def index_entries(shards, rank, curated=None):
+    """The search index's company entries, in rank order. A derived alias shared by two companies is ambiguous and is
+    dropped from both; curated names stay. Used by the build and by scripts/reindex_universe.py (offline).
+    A full name (from the SEC name itself) outranks a short name (its leading words): a short name that is another
+    company's full name, or a one-word short name that begins another company's name, is not used."""
+    curated = names.CURATED if curated is None else curated
+    entries = sorted((index_entry(s, rank[s['cik']], curated) for s in shards), key=lambda e: e['r'])
+    shorts = {s['cik']: set(universe.name_aliases(s['name'])) - set(universe.name_aliases(s['name'], short=False)) for s in shards}
+    owners, strong, first_words = {}, {}, {}
+    for e in entries:
+        for a in e['a']:
+            owners.setdefault(a, set()).add(e['c'])
+            if a not in shorts[e['c']]:
+                strong.setdefault(a, set()).add(e['c'])
+                if ' ' in a:
+                    first_words.setdefault(a.split()[0], set()).add(e['c'])
+    kept = {a.lower() for en, _ in curated.values() for a in en}
+
+    def keep(e, a):
+        if a in kept:
+            return True
+        if a not in shorts[e['c']]:
+            return strong[a] == {e['c']}
+        # A short name: nobody else's name of any kind, and (one word) not the first word of another company's name.
+        return owners[a] == {e['c']} and (' ' in a or first_words.get(a, set()) <= {e['c']})
+    for e in entries:
+        e['a'] = [a for a in e['a'] if keep(e, a)]
+        if 'lw' in e:
+            lw = [a for a in e['lw'] if a not in shorts[e['c']] or a in e['a']]
+            if lw:
+                e['lw'] = lw
+            else:
+                del e['lw']
+    return entries
 
 
 COMPOSED = {
@@ -316,15 +366,7 @@ def main():
             if old.name not in keep:
                 old.unlink()
                 removed += 1
-    entries = sorted((index_entry(s, rank[s['cik']], names.CURATED) for s in shards), key=lambda e: e['r'])
-    # A derived alias shared by two companies is ambiguous and is dropped from both; curated names stay.
-    owners = {}
-    for e in entries:
-        for a in e['a']:
-            owners.setdefault(a, set()).add(e['c'])
-    curated = {a.lower() for en, _ in names.CURATED.values() for a in en}
-    for e in entries:
-        e['a'] = [a for a in e['a'] if len(owners[a]) == 1 or a in curated]
+    entries = index_entries(shards, rank)
     screen = [row for row in (screen_row(s) for s in sorted(shards, key=lambda s: rank[s['cik']])) if row]
     data_as_of = max((p['filed'] for s in shards for p in s['periods']), default=None)
     index = {'schema': 'finscope.universe.index/1', 'built': today.isoformat(), 'data_as_of': data_as_of, 'count': len(entries),
