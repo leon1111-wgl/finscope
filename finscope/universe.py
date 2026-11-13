@@ -41,7 +41,7 @@ METRICS = {
     'shares_diluted': ('flow', 'shares', 'IS', ['WeightedAverageNumberOfDilutedSharesOutstanding', 'WeightedAverageNumberOfShareOutstandingBasicAndDiluted'], ALL),
     'operating_cash_flow': ('flow', 'USD', 'CF', ['NetCashProvidedByUsedInOperatingActivities', 'NetCashProvidedByUsedInOperatingActivitiesContinuingOperations'], ALL),
     'capex': ('flow', 'USD', 'CF', ['PaymentsToAcquirePropertyPlantAndEquipment', 'PaymentsToAcquireProductiveAssets'], NONFIN),
-    'dividends': ('flow', 'USD', 'CF', ['PaymentsOfDividends', 'PaymentsOfDividendsCommonStock'], ALL),
+    'dividends': ('flow', 'USD', 'CF', ['PaymentsOfDividends', 'PaymentsOfDividendsCommonStock', 'PaymentsOfOrdinaryDividends'], ALL),
     'buybacks': ('flow', 'USD', 'CF', ['PaymentsForRepurchaseOfCommonStock', 'PaymentsForRepurchaseOfEquity'], ALL),
     'cash': ('instant', 'USD', 'BS', ['CashAndCashEquivalentsAtCarryingValue', 'CashAndDueFromBanks', 'Cash',
                                       'CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents'], ALL),
@@ -67,7 +67,7 @@ STI_TAGS = ['ShortTermInvestments', 'MarketableSecuritiesCurrent', 'AvailableFor
 EQUITY_TOTAL = ['StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'StockholdersEquity']
 TEMPORARY_EQUITY = ['TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterest', 'TemporaryEquityCarryingAmountAttributableToParent',
                     'RedeemableNoncontrollingInterestEquityCarryingAmount']
-DEBT_TOTAL = ['DebtLongtermAndShorttermCombinedAmount']
+DEBT_TOTAL = ['DebtLongtermAndShorttermCombinedAmount', 'DebtAndCapitalLeaseObligations']
 DEBT_LONG_TOTAL = ['LongTermDebt']  # includes the current portion
 DEBT_NONCURRENT = ['LongTermDebtNoncurrent', 'LongTermDebtAndCapitalLeaseObligations']
 DEBT_CURRENT_TOTAL = ['DebtCurrent']
@@ -389,7 +389,10 @@ def choose_debt(payload, period):
         form = _form(payload, accn)
         whole = _part(payload, DEBT_TOTAL, unit, kind, period, accn)
         if whole and not whole.get('conflict'):
-            return {'v': whole['v'], 'tag': whole['tag'], 'accn': accn, 'filed': filed, 'form': form, 'via': 'primary'}
+            cell = {'v': whole['v'], 'tag': whole['tag'], 'accn': accn, 'filed': filed, 'form': form, 'via': 'primary' if whole['priority'] == 0 else 'fallback'}
+            if whole['tag'] == 'DebtAndCapitalLeaseObligations':
+                cell['note'] = 'Debt including finance lease obligations, as tagged by the company'
+            return cell
         short = _part(payload, DEBT_SHORT, unit, kind, period, accn)
         short = short if short and not short.get('conflict') else None
         long_total = _part(payload, DEBT_LONG_TOTAL, unit, kind, period, accn)
@@ -529,9 +532,12 @@ def name_aliases(name):
         if trimmed == base:
             break
         base = trimmed
+    base = re.sub(r'[\s&,.]+$', '', base)
     if base:
         out.add(base)
     if base.startswith('the '):
         out.add(base[4:])
-    out |= {a.replace('-', ' ') for a in list(out)} | {a.replace(' ', '-') for a in list(out) if ' ' in a and len(a.split()) == 2}
-    return sorted(a for a in out if len(a) >= 3)
+    out |= {a.replace('-', ' ') for a in list(out) if '-' in a}
+    if base and re.fullmatch(r'[a-z]+ [a-z]+', base):
+        out.add(base.replace(' ', '-'))
+    return sorted(a for a in out if len(a) >= 3 and not re.search(r'[,.]-|-[,.]', a))

@@ -3,11 +3,14 @@
     SEC_USER_AGENT="Name contact@example.com" python scripts/build_universe.py [--limit N] [--ciks 320193,21344]
 
 Selection, in order (docs/UNIVERSE.md):
-  1. www.sec.gov/files/company_tickers_exchange.json: companies with a ticker on NYSE or Nasdaq.
-  2. data.sec.gov frames of dei:EntityPublicFloat for the last eight quarter ends: keep a public float of at least
-     $560M (the level below which a large accelerated filer loses that status). This only narrows the requests.
-  3. Submissions: keep `category` starting with "Large accelerated filer" and a 10-K filed in the last 15 months.
-  4. CompanyFacts: keep companies with at least one annual USD period from a 10-K.
+  1. Candidates: every company whose latest 10-K cover (data.sec.gov frames of dei:EntityPublicFloat, last eight
+     quarter ends) reports a public float of at least $560M, the level below which a large accelerated filer loses
+     that status; plus every company with a NYSE or Nasdaq ticker in www.sec.gov/files/company_tickers_exchange.json
+     that reports no float in those frames. This only narrows the requests.
+  2. Submissions: keep `category` starting with "Large accelerated filer" and a 10-K filed in the last 15 months.
+     Large accelerated filer status already requires a public equity float, so no listing test is applied; the
+     ticker file supplies tickers (with Submissions and a curated list as fallbacks).
+  3. CompanyFacts: keep companies with at least one annual USD period from a 10-K.
 Writes web/data/universe/{index,screen,manifest}.json and one shard per company under web/data/universe/c/.
 SEC fair access: one declared User-Agent, at most 8 requests per second across threads, retries with backoff.
 """
@@ -22,6 +25,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import threading
 import time
@@ -123,8 +127,22 @@ def common_tickers(tickers):
     return plain or list(tickers)
 
 
+def curated_ticker(name, curated):
+    """When SEC's ticker file and Submissions both omit a company's ticker, take it from the curated name list."""
+    aliases = set(universe.name_aliases(name))
+    hits = [t for t, (en, _) in curated.items() if aliases & {a.lower() for a in en}]
+    return hits[:1]
+
+
+def clean_name(name):
+    """The SEC conformed name without its state or 'new' suffix: 'PROGRESSIVE CORP/OH/' -> 'PROGRESSIVE CORP'."""
+    out = re.sub(r'\s*(/[A-Za-z]{2,4}/?|\\[A-Za-z]{2}\\|/NEW/?)\s*$', '', name or '').strip()
+    out = re.sub(r'\s*(/[A-Za-z]{2,4}/?|/NEW/?)\s*$', '', out).strip()
+    return out or name
+
+
 def index_entry(shard, rank, curated):
-    tickers = common_tickers(shard['tickers'])
+    tickers = common_tickers(shard['tickers']) or curated_ticker(shard['name'], curated) or [f"CIK{shard['cik']}"]
     aliases = set(universe.name_aliases(shard['name']))
     zh = []
     for t in tickers:
@@ -135,7 +153,7 @@ def index_entry(shard, rank, curated):
     curated_en = {a.lower() for t in tickers for a in curated.get(t, ([], []))[0]}
     # Derived one-word names (Target, Block, Ball) match only when written with a capital; curated names always match.
     single = sorted(a for a in aliases if ' ' not in a and a not in curated_en)
-    entry = {'c': shard['cik'], 't': tickers, 'n': shard['name'], 'a': sorted(aliases), 'z': zh, 's': shard['sic'],
+    entry = {'c': shard['cik'], 't': tickers, 'n': clean_name(shard['name']), 'a': sorted(aliases), 'z': zh, 's': shard['sic'],
             'd': shard['sic_description'], 'v': shard['division'], 'tp': shard['template'], 'fye': shard['fiscal_year_end'],
             'fy': latest['fy'] if latest else None, 'e': latest['end'] if latest else None, 'r': rank}
     if single:
@@ -212,7 +230,9 @@ def main():
 
     listing = sec.get('https://www.sec.gov/files/company_tickers_exchange.json')
     listed = {}
+    file_tickers = {}
     for cik, name, ticker, exchange in listing['data']:
+        file_tickers.setdefault(int(cik), []).append(ticker)
         if exchange in ('NYSE', 'Nasdaq'):
             listed.setdefault(int(cik), []).append(ticker)
     floats = {}
@@ -224,7 +244,8 @@ def main():
     if args.ciks:
         candidates = [int(c) for c in args.ciks.split(',')]
     else:
-        candidates = sorted((c for c in listed if floats.get(c, ('', 0))[1] >= FLOAT_FLOOR or c in SIX), key=lambda c: -floats.get(c, ('', 0))[1])
+        pool = {c for c, (_, v) in floats.items() if v >= FLOAT_FLOOR} | {c for c in listed if c not in floats} | SIX
+        candidates = sorted(pool, key=lambda c: (-floats.get(c, ('', 0))[1], c))
         if args.limit:
             candidates = candidates[:args.limit]
     print(f'listed CIKs {len(listed)}; public-float candidates {len(candidates)}', flush=True)
@@ -259,6 +280,8 @@ def main():
         facts = sec.get(f'https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json')
         if not facts or not facts.get('facts', {}).get('us-gaap'):
             return cik, None, 'no US-GAAP XBRL facts'
+        if not sub.get('tickers') and file_tickers.get(cik):
+            sub = {**sub, 'tickers': file_tickers[cik]}
         try:
             shard = universe.company_shard(facts, sub)
             if not shard['periods']:
@@ -311,7 +334,7 @@ def main():
     manifest = {
         'schema': 'finscope.universe.manifest/1', 'built': today.isoformat(), 'built_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'companies': len(shards), 'templates': {t: sum(1 for s in shards if s['template'] == t) for t in universe.TEMPLATES},
-        'funnel': {'listed_ciks': len(listed), 'float_candidates': len(candidates), 'large_accelerated_with_recent_10k': len(members), 'built': len(shards)},
+        'funnel': {'listed_ciks': len(listed), 'candidates': len(candidates), 'large_accelerated_with_recent_10k': len(members), 'built': len(shards)},
         'excluded': excluded, 'validation_failures': sorted(failures, key=lambda f: f['cik']), 'shards_changed': changed, 'shards_removed': removed,
         'bytes': {'index': (OUT / 'index.json').stat().st_size, 'screen': (OUT / 'screen.json').stat().st_size,
                   'shards_total': sum(sizes), 'shard_median': sizes[len(sizes) // 2] if sizes else 0, 'shard_max': sizes[-1] if sizes else 0},
