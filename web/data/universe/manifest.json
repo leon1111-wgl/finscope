@@ -1,38 +1,40 @@
 {
  "schema": "finscope.universe.manifest/1",
  "built": "2026-11-13",
- "built_at": "2026-11-13T18:30:33.562847Z",
- "companies": 1887,
+ "built_at": "2026-11-13T19:05:34.223053Z",
+ "companies": 1994,
  "templates": {
-  "industrial": 1483,
-  "bank": 229,
-  "insurance": 63,
-  "reit": 112
+  "industrial": 1566,
+  "bank": 244,
+  "insurance": 64,
+  "reit": 120
  },
  "funnel": {
   "listed_ciks": 6033,
-  "float_candidates": 2037,
-  "large_accelerated_with_recent_10k": 1887,
-  "built": 1887
+  "candidates": 4021,
+  "large_accelerated_with_recent_10k": 1998,
+  "built": 1994
  },
  "excluded": {
-  "not a large accelerated filer": 150
+  "not a large accelerated filer": 1715,
+  "no 10-K filed in the last 15 months": 308,
+  "no annual USD period in a 10-K": 4
  },
  "validation_failures": [],
- "shards_changed": 1887,
+ "shards_changed": 1857,
  "shards_removed": 0,
  "bytes": {
-  "index": 506738,
-  "screen": 770868,
-  "shards_total": 74704487,
-  "shard_median": 41009,
-  "shard_max": 73287
+  "index": 516198,
+  "screen": 813608,
+  "shards_total": 78507967,
+  "shard_median": 40772,
+  "shard_max": 73580
  },
  "sec": {
-  "requests": 3933,
-  "compressed_bytes": 461402154,
+  "requests": 6028,
+  "compressed_bytes": 506215879,
   "rate_limit_per_second": 8.0,
-  "seconds": 500
+  "seconds": 762
  },
  "sources": [
   "https://www.sec.gov/files/company_tickers_exchange.json",
