@@ -220,3 +220,102 @@ def test_negative_payments_are_shown_as_payments_with_a_note():
     shard = company_shard(payload(two_years([('PaymentsToAcquirePropertyPlantAndEquipment', 'USD', -70, *Y24, '2025-02-10', '10-K', 'A-25', 2024)])), SUB)
     cell = shard['values']['capex'][1]
     assert cell['v'] == 70 and 'negative sign' in cell['note']
+
+
+# ------------------------------------------------------------------ fiscal-year labels (probe of b12433a)
+def years(ends, owns, filed_after=60):
+    """One 10-K per period: (start, end, own DEI label); each filing also reports the prior year as a comparative."""
+    from datetime import date, timedelta
+    rows = []
+    for k, (end, own) in enumerate(zip(ends, owns)):
+        e = date.fromisoformat(end)
+        start = date.fromisoformat(ends[k - 1]) + timedelta(days=1) if k else e - timedelta(days=364)
+        start = (start if (e - start).days <= 380 else e - timedelta(days=364)).isoformat()
+        rows.append(('Revenues', 'USD', 100 + k, start, end, (e + timedelta(days=filed_after)).isoformat(), '10-K', f'Y-{k}', own))
+    return payload(rows)
+
+
+def labels_of(ends, owns):
+    return [p['fy'] for p in fiscal_periods(years(ends, owns))]
+
+
+DEC = [f'{y}-12-31' for y in range(2016, 2026)]
+SEP = [f'{y}-09-30' for y in range(2016, 2026)]
+JAN = [f'{y}-01-31' for y in range(2017, 2027)]
+
+
+def test_one_mistyped_latest_label_does_not_shift_the_history():
+    # FRT and HUN: the 10-K for the year ended 2025-12-31 says FY2024; every earlier 10-K labels by end year.
+    assert labels_of(DEC, list(range(2016, 2025)) + [2024]) == list(range(2016, 2026))
+    # POST and IESC: the same with a September year end.
+    assert labels_of(SEP, list(range(2016, 2025)) + [2024]) == list(range(2016, 2026))
+    # CRM: January year end labelled by end year; two filings (2021 and 2026) carry one less.
+    owns = [2017, 2018, 2019, 2020, 2020, 2022, 2023, 2024, 2025, 2025]
+    assert labels_of(JAN, owns) == list(range(2017, 2027))
+    shard = company_shard(years(JAN, owns), SUB)
+    note = next(q['text'] for q in shard['quality'] if q['kind'] == 'label')
+    assert 'the year ended 2026-01-31 is FY2026 here (its own filing says FY2025)' in note
+    assert 'the year ended 2021-01-31 is FY2021 here (its own filing says FY2020)' in note
+    assert not any('starts' in q['text'] or 'one less than the calendar year' in q['text'] for q in shard['quality'])
+    assert [p['fy_reported'] for p in shard['periods']] == owns
+
+
+def test_companies_that_name_the_year_before_keep_their_labels():
+    # Roivant: March year end; older 10-Ks label by end year, the three latest by start year (FY2025 ended 2026-03-31).
+    roiv = ['2022-03-31', '2023-03-31', '2024-03-31', '2025-03-31', '2026-03-31']
+    assert labels_of(roiv, [2022, 2023, 2023, 2024, 2025]) == [2021, 2022, 2023, 2024, 2025]
+    # Target and Home Depot: the year ended around 1 February 2026 is fiscal 2025.
+    tgt = ['2022-01-29', '2023-01-28', '2024-02-03', '2025-02-01', '2026-01-31']
+    assert labels_of(tgt, [2021, 2022, 2023, 2024, 2025]) == [2021, 2022, 2023, 2024, 2025]
+    hd = ['2022-01-30', '2023-01-29', '2024-01-28', '2025-02-02', '2026-02-01']
+    shard = company_shard(years(hd, [2021, 2022, 2023, 2024, 2025]), SUB)
+    assert [p['fy'] for p in shard['periods']] == [2021, 2022, 2023, 2024, 2025]
+    note = next(q['text'] for q in shard['quality'] if q['kind'] == 'label')
+    assert 'one less than the calendar year in which they end' in note and 'FY2025 ended 2026-02-01' in note and 'starts' not in note
+    # Walmart: the year ended 2026-01-31 is fiscal 2026.
+    assert labels_of(JAN[-5:], [2022, 2023, 2024, 2025, 2026]) == [2022, 2023, 2024, 2025, 2026]
+
+
+def test_label_majority_edge_cases():
+    # 52/53-week years ending in the first days of January belong to the year before (ONTO, WWW, AAP, HLIO).
+    ends = ['2021-01-02', '2022-01-01', '2022-12-31', '2023-12-30', '2024-12-28', '2026-01-03']
+    assert labels_of(ends, [2020, 2021, 2022, 2023, 2024, 2026]) == [2020, 2021, 2022, 2023, 2024, 2025]
+    # Core & Main: the two latest labels are neither the end year nor one less, so they do not vote.
+    cnm = ['2022-01-30', '2023-01-29', '2024-01-28', '2025-02-02', '2026-02-01']
+    assert labels_of(cnm, [2021, 2022, 2023, 2023, 2023]) == [2021, 2022, 2023, 2024, 2025]
+    # A tie goes to the latest 10-K's labelling.
+    assert labels_of(DEC[-2:], [2024, 2024]) == [2023, 2024]
+    assert labels_of(JAN[-2:], [2025, 2025]) == [2024, 2025]
+    # A change of fiscal year end starts a new run (Royal Gold: June to December via a transition period).
+    rgld = ['2020-06-30', '2021-06-30', '2022-06-30', '2023-12-31', '2024-12-31', '2025-12-31']
+    assert labels_of(rgld, [2020, 2021, 2022, 2023, 2024, 2025]) == [2020, 2021, 2022, 2023, 2024, 2025]
+    # A hole of more than a year starts a new run (CSWC: 2012-2013 labelled by start year, 2023 on by end year).
+    cswc = ['2012-03-31', '2013-03-31', '2023-03-31', '2024-03-31', '2025-03-31', '2026-03-31']
+    assert labels_of(cswc, [2011, 2012, 2023, 2024, 2025, 2026]) == [2011, 2012, 2023, 2024, 2025, 2026]
+    # Kroger: two 10-Ks say end year; the convention note cites only filings that agree with the label shown.
+    kr = ['2022-01-29', '2023-01-28', '2024-02-03', '2025-02-01', '2026-01-31']
+    shard = company_shard(years(kr, [2021, 2022, 2024, 2025, 2025]), SUB)
+    assert [p['fy'] for p in shard['periods']] == [2021, 2022, 2023, 2024, 2025]
+    note = next(q['text'] for q in shard['quality'] if q['kind'] == 'label' and 'one less' in q['text'])
+    assert 'FY2022 ended 2023-01-28, FY2025 ended 2026-01-31' in note
+    # No label at all: end year.
+    assert labels_of(DEC[-3:], [None, None, None]) == [2023, 2024, 2025]
+
+
+def test_committed_universe_labels_follow_the_companies_own_filings():
+    from pathlib import Path
+    data = Path(__file__).resolve().parents[1] / 'web' / 'data' / 'universe'
+    index = json.loads((data / 'index.json').read_text())
+    screen = {r['c']: r for r in json.loads((data / 'screen.json').read_text())['rows']}
+    by = {t: e for e in index['companies'] for t in e['t']}
+    expect = {'FRT': ('2025-12-31', 2025), 'HUN': ('2025-12-31', 2025), 'POST': ('2025-09-30', 2025), 'IESC': ('2025-09-30', 2025),
+              'CRM': ('2026-01-31', 2026), 'ROIV': ('2026-03-31', 2025), 'TGT': ('2026-01-31', 2025), 'HD': ('2026-02-01', 2025), 'WMT': ('2026-01-31', 2026)}
+    for ticker, (end, fy) in expect.items():
+        shard = json.loads((data / 'c' / f"{by[ticker]['c']}.json").read_text())
+        assert (shard['periods'][-1]['end'], shard['periods'][-1]['fy']) == (end, fy), ticker
+        assert by[ticker]['fy'] == fy and (by[ticker]['c'] not in screen or screen[by[ticker]['c']]['fy'] == fy), ticker
+    for entry in index['companies']:
+        shard = json.loads((data / 'c' / f"{entry['c']}.json").read_text())
+        labels = [p['fy'] for p in shard['periods']]
+        assert labels == sorted(set(labels)) and all('fy_reported' in p for p in shard['periods']), entry['t']
+        assert not any('in which it starts' in q['text'] or 'count back one year' in q['text'] for q in shard['quality']), entry['t']

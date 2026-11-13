@@ -185,22 +185,54 @@ def fiscal_periods(payload):
         if end not in periods or filed < periods[end]['filed']:
             periods[end] = candidate
     ordered = [periods[e] for e in sorted(periods)]
-    # Fiscal-year labels: the latest 10-K's own label (when plausible, else its end year), then one less for each
-    # earlier annual period, so labels are consecutive with no holes and no repeats. An earlier filing whose own label
-    # differs is named in the data-quality notes.
+    return label_periods(ordered[-MAX_YEARS:])
+
+
+def _years_between(a, b):
+    return (date.fromisoformat(b) - date.fromisoformat(a)).days / 365.25
+
+
+def default_label(end):
+    """The label when no 10-K gives a usable one: the end year, or the year before for a 52/53-week year ending 1–7 January."""
+    return int(end[:4]) - 1 if end[5:] <= '01-07' else int(end[:4])
+
+
+def label_periods(ordered):
+    """Fiscal-year labels by the labelling most of the company's own 10-Ks use (periods in date order, as shown).
+
+    Periods whose end dates lie one or two whole years apart (within 20 days) form a run; a change of fiscal year end,
+    or a hole of more than a year in the data, starts a new run. Inside a run labels step one per year, so they have no holes or repeats. Each 10-K's own label (its DEI
+    fiscal-year focus, counted only when it is the end year or one less) votes for the run's labelling; the majority
+    wins and a tie goes to the latest 10-K's, so one mistyped filing cannot shift the history. With no usable label the
+    run follows `default_label`. An earlier run that would reach a later run's labels counts back from them instead.
+    fy_source: 'dei' (the filing's own label), 'majority' (its own label is outvoted), 'end_year' (no usable label in
+    the run), 'sequence' (moved below a later run).
+    """
     if not ordered:
         return ordered
-    last = ordered[-1]
-    year = int(last['end'][:4])
-    last['fy'], last['fy_source'] = (last['fy_reported'], 'dei') if last['fy_reported'] in (year, year - 1) else (year, 'end_year')
-    for k in range(len(ordered) - 2, -1, -1):
-        p, nxt = ordered[k], ordered[k + 1]
-        steps = max(1, round((date.fromisoformat(nxt['end']) - date.fromisoformat(p['end'])).days / 365.25))
-        contiguous = (date.fromisoformat(nxt['start']) - date.fromisoformat(p['end'])).days <= 7
-        own, end_year = p['fy_reported'], int(p['end'][:4])
-        # Across a gap (a transition period), an earlier period keeps its own plausible label when it stays below.
-        p['fy'] = own if (not contiguous and own in (end_year, end_year - 1) and own < nxt['fy']) else nxt['fy'] - (1 if contiguous else steps)
-        p['fy_source'] = 'dei' if p['fy'] == p['fy_reported'] else 'sequence'
+    runs = [[ordered[0]]]
+    for p in ordered[1:]:
+        gap = _years_between(runs[-1][-1]['end'], p['end'])
+        if 1 <= round(gap) <= 2 and abs(gap - round(gap)) * 365.25 <= 20:
+            runs[-1].append(p)
+        else:
+            runs.append([p])
+    ceiling = None
+    for run in reversed(runs):
+        last = run[-1]
+        back = [round(_years_between(p['end'], last['end'])) for p in run]
+        votes = [p['fy_reported'] + b for p, b in zip(run, back) if p['fy_reported'] in (int(p['end'][:4]), int(p['end'][:4]) - 1)]
+        if votes:
+            count = Counter(votes)
+            top = max(count.values())
+            anchor = next(v for v in reversed(votes) if count[v] == top)
+        else:
+            anchor = default_label(last['end'])
+        shift = max(0, anchor - ceiling + 1) if ceiling is not None else 0
+        for p, b in zip(run, back):
+            p['fy'] = anchor - b - shift
+            p['fy_source'] = 'dei' if p['fy'] == p['fy_reported'] else 'sequence' if shift else 'majority' if votes else 'end_year'
+        ceiling = run[0]['fy']
     return ordered
 
 
@@ -451,6 +483,21 @@ def _gap_days(a, b):
     return (date.fromisoformat(b['start']) - date.fromisoformat(a['end'])).days
 
 
+def label_notes(periods):
+    """Data-quality notes on fiscal-year labels: every 10-K whose own label differs, and a naming convention that is not the end year."""
+    notes = []
+    relabelled = [p for p in periods if p.get('fy_reported') is not None and p['fy_reported'] != p['fy']]
+    if relabelled:
+        notes.append({'kind': 'label', 'fy': [p['fy'] for p in relabelled],
+                      'text': "Fiscal-year labels follow the labelling most of the company's 10-Ks use (a tie goes to the latest 10-K) and step one per year, "
+                              'so they have no holes or repeats; ' + ', '.join(f"the year ended {p['end']} is FY{p['fy']} here (its own filing says FY{p['fy_reported']})" for p in relabelled) + '.'})
+    behind = [p for p in periods if p['fy_source'] == 'dei' and p['fy'] == int(p['end'][:4]) - 1 and p['end'][5:] > '01-07']
+    if behind:
+        notes.append({'kind': 'label', 'fy': [p['fy'] for p in behind[-2:]],
+                      'text': 'Its 10-Ks name each fiscal year one less than the calendar year in which they end: ' + ', '.join(f"FY{p['fy']} ended {p['end']}" for p in behind[-2:]) + '.'})
+    return notes
+
+
 def company_shard(payload, submissions, ticker_rows=None):
     """Standardized annual figures, lineage and data-quality notes for one company."""
     cik = int(payload['cik'])
@@ -532,14 +579,7 @@ def company_shard(payload, submissions, ticker_rows=None):
     for p in periods:
         for gone in p.get('replaces', []):
             quality.append({'kind': 'fiscal_shift', 'fy': [p['fy']], 'text': f"Two annual periods carry the label FY{p['fy']}: the year ended {gone['end']} is not shown; the year ended {p['end']} is."})
-    relabelled = [p for p in periods if p['fy_source'] in ('end_year', 'sequence') and p['fy_reported'] is not None and p['fy_reported'] != p['fy']]
-    if relabelled:
-        quality.append({'kind': 'label', 'fy': [p['fy'] for p in relabelled],
-                        'text': 'Fiscal-year labels count back one year at a time from the latest 10-K, so they have no holes or repeats; ' + ', '.join(f"the year ended {p['end']} is FY{p['fy']} here (its own filing says FY{p['fy_reported']})" for p in relabelled) + '.'})
-    unusual = [p for p in periods if p['fy_source'] == 'dei' and p['fy'] != int(p['end'][:4])]
-    if unusual:
-        quality.append({'kind': 'label', 'fy': [p['fy'] for p in unusual],
-                        'text': 'The company labels each fiscal year by the year in which it starts: ' + ', '.join(f"FY{p['fy']} ended {p['end']}" for p in unusual[-2:]) + '.'})
+    quality.extend(label_notes(periods))
     if template != 'industrial':
         dropped = [m for m, spec in METRICS.items() if template not in spec[4]]
         quality.append({'kind': 'template', 'text': f"Template: {template} (SIC {sic or 'not assigned'}). Not supported for this template: {', '.join(LABELS[m] for m in dropped)}."})
@@ -561,7 +601,7 @@ def company_shard(payload, submissions, ticker_rows=None):
         'tickers': list(submissions.get('tickers') or []), 'exchanges': list(submissions.get('exchanges') or []),
         'sic': sic, 'sic_description': submissions.get('sicDescription') or '', 'division': sic_division(sic),
         'template': template, 'fiscal_year_end': submissions.get('fiscalYearEnd') or '', 'category': submissions.get('category') or '',
-        'periods': [{k: p[k] for k in ('fy', 'fy_source', 'start', 'end', 'accession', 'filed')} for p in periods],
+        'periods': [{k: p[k] for k in ('fy', 'fy_source', 'fy_reported', 'start', 'end', 'accession', 'filed')} for p in periods],
         'values': values, 'unsupported': [m for m in METRICS if m not in values], 'quality': quality, 'filings': filing_meta, 'splits': splits,
     }
 

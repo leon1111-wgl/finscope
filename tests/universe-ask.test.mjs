@@ -108,3 +108,21 @@ test('the universe modules have no network, storage or model access', () => {
     for (const word of ['fetch(', 'XMLHttpRequest', 'localStorage', 'sessionStorage', 'indexedDB', 'WebSocket', 'import(', 'navigator.gpu']) assert.ok(!src.includes(word), `${file}: ${word}`);
   }
 });
+
+test('fiscal-year labels follow the company\'s own 10-Ks, not one mistyped filing (probe of b12433a)', () => {
+  const crm26 = ask('Salesforce 2026财年营收');
+  assert.equal(crm26.status, 'answered');
+  assert.equal(crm26.plan.period, 'FY2026');
+  assert.match(crm26.summary, /415\.25 亿美元/);
+  assert.ok(crm26.notes.some(n => /10-K 自己标为 2025 财年/.test(n)), crm26.notes.join(' | '));
+  const crm25 = ask('Salesforce fiscal 2025 revenue');
+  assert.equal(crm25.plan.period, 'FY2025');
+  assert.match(crm25.summary, /\$37\.90B/);
+  assert.ok(!crm25.notes.some(n => /labels this year/.test(n)));
+  for (const [q, end] of [['FRT FY2025 net income', '2025-12-31'], ['Huntsman FY2025 revenue', '2025-12-31'], ['Post Holdings FY2025 revenue', '2025-09-30'], ['IESC FY2025 revenue', '2025-09-30'],
+    ['ROIV FY2025 net income', '2026-03-31'], ['Target FY2025 revenue', '2026-01-31'], ['Home Depot FY2025 revenue', '2026-02-01'], ['Walmart FY2026 revenue', '2026-01-31']]) {
+    const a = ask(q);
+    assert.equal(a.status, 'answered', q);
+    assert.ok(a.sources?.length ? a.sources.every(s => s.period.endsWith(end)) : a.summary.includes(end), `${q}: ${a.summary}`);
+  }
+});

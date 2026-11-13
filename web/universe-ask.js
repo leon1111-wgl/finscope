@@ -169,6 +169,12 @@ function noteFor(shard, key, sources, lang) {
     if (s.first) notes.push(L(lang, `${label(s.metric, 'en')} FY${s.fy} was first reported as ${show(s.metric, s.first.v, 'en')} (${s.first.accn}); the later filing's figure is shown.`,
       `${label(s.metric, 'zh')} ${s.fy} 财年最初报告为 ${show(s.metric, s.first.v, 'zh')}（${s.first.accn}），这里显示后来文件中的数字。`));
   }
+  // A year whose own 10-K carries a different label (a mistyped DEI fiscal year, or an outvoted convention) says so.
+  for (const fy of new Set(sources.map(s => s.fy))) {
+    const p = shard.periods.find(x => x.fy === fy);
+    if (p && p.fy_reported != null && p.fy_reported !== p.fy) notes.push(L(lang, `FY${p.fy} (ended ${p.end}): its own 10-K labels this year FY${p.fy_reported}; FinScope follows the labelling most of the company's 10-Ks use.`,
+      `${p.fy} 财年（截至 ${p.end}）：该年 10-K 自己标为 ${p.fy_reported} 财年；FinScope 按公司多数 10-K 的标法标注。`));
+  }
   if (key === 'eps_diluted') notes.push(L(lang, 'EPS is the reported figure; FinScope does not recompute it.', '每股收益为报告值，FinScope 不重新计算。'));
   if (key === 'total_debt' || sources.some(s => s.metric === 'total_debt')) notes.push(L(lang, 'Total debt is borrowings only; operating leases are excluded. The source line names each part.', '总债务只含借款，不含经营租赁；来源行列出每个组成部分。'));
   if (['cash_conversion', 'accruals'].includes(key)) notes.push(L(lang, 'A transparent indicator, not a verdict: read working capital and non-cash items in the filing for the reason.', '这是透明指标，不是结论：原因请读财报中的营运资本和非现金项目。'));

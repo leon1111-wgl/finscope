@@ -190,3 +190,16 @@ test('retry still requires explicit approval when a saved dataset changed',async
  ui.click('#restore-apply');
  const b=await ui.exportJSON();assert.equal(b.requested_date,'2021-10-15');assert.equal(b.assumptions.rateBps,125);
 });
+
+test('the Financials chart names each year with the table\'s FY label (probe of b12433a)',async t=>{
+ for(const [co,last] of [['TGT','2025'],['CRM','2026']]){
+  const ui=await boot(t,`?co=${co}&view=company`);
+  for(let i=0;i<20&&!ui.$('#universe-waterline .wl-year');i++)await tick();
+  const axis=[...ui.dom.window.document.querySelectorAll('#universe-waterline .wl-year')].map(b=>b.firstChild.textContent);
+  const table=[...ui.$('.fin-table').querySelectorAll('thead th')].slice(1).map(th=>th.firstChild.textContent.replace('FY',''));
+  assert.ok(axis.length>=5,co);
+  assert.deepEqual(axis.slice(-table.length),table,co);
+  assert.equal(axis.at(-1),last,co);
+  assert.match(ui.$('#universe-waterline .wl-trace').textContent,new RegExp(`FY${last}, fiscal year ended`));
+ }
+});

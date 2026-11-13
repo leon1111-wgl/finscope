@@ -26,9 +26,9 @@
  "bytes": {
   "index": 516556,
   "screen": 813610,
-  "shards_total": 70506668,
-  "shard_median": 36654,
-  "shard_max": 71396
+  "shards_total": 70833003,
+  "shard_median": 36838,
+  "shard_max": 71586
  },
  "sec": {
   "requests": 6028,
@@ -41,5 +41,12 @@
   "https://data.sec.gov/api/xbrl/frames/dei/EntityPublicFloat/USD/{quarter}.json",
   "https://data.sec.gov/submissions/CIK##########.json",
   "https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json"
- ]
+ ],
+ "relabelled": {
+  "at": "2026-11-13",
+  "script": "scripts/relabel_universe.py",
+  "rule": "finscope/universe.py label_periods (majority of the company's own 10-K labels)",
+  "companies_with_moved_labels": 10,
+  "periods_moved": 95
+ }
 }
