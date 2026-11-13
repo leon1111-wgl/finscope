@@ -63,7 +63,7 @@ const COMPANY_TABLE = Object.entries(COMPANY_ALIASES).flatMap(([t, list]) => lis
 // Companies outside the bundle, by name or ticker. Capitalised tickers are also caught below.
 const OTHER_COMPANIES = ['tesla', '特斯拉', 'tsla', 'netflix', '奈飞', '网飞', 'nflx', 'berkshire', '伯克希尔', 'brk', '贵州茅台', '茅台', 'moutai', '腾讯', 'tencent', '阿里巴巴', '阿里', 'alibaba', 'baba', '百度', 'baidu', 'bidu', '京东', 'jd.com', '拼多多', 'pdd', '台积电', 'tsmc', 'tsm', '三星', 'samsung', '小米', 'xiaomi', '华为', 'huawei', '比亚迪', 'byd', 'intel', '英特尔', 'intc', 'amd', '超威', 'ibm', 'oracle', '甲骨文', 'orcl', 'salesforce', 'adobe', 'adbe', 'qualcomm', '高通', 'qcom', 'broadcom', '博通', 'avgo', 'cisco', '思科', 'csco', 'uber', '优步', 'disney', '迪士尼', 'coca-cola', 'coca cola', '可口可乐', 'walmart', '沃尔玛', 'wmt', 'boeing', '波音', 'jpmorgan', 'jp morgan', '摩根大通', 'jpm', 'goldman sachs', '高盛', 'twitter', '推特', 'openai', 'palantir', 'pltr', '美团', 'meituan', '字节跳动', 'bytedance', 'tiktok', '蔚来', '小鹏', '理想汽车', '宁德时代', '中国石油', '工商银行', '中国平安', 'costco', '好市多', 'nike', '耐克', 'starbucks', '星巴克', "mcdonald's", 'mcdonalds', '麦当劳', 'pfizer', '辉瑞', 'paypal', 'shopify', 'spotify', 'micron', '美光', 'dell', '戴尔', 'arm holdings', 'sony', '索尼', 'toyota', '丰田', 'berkshire hathaway', 'exxon', '埃克森', 'johnson & johnson', '强生', 'visa inc', 'mastercard', '万事达', 'snowflake', 'zoom', 'airbnb', 'nio', 'xpeng', 'li auto', 'pinduoduo', 'asml', 'sap', 'lvmh', 'nestle', '雀巢', '贵州茅台酒'];
 const OTHER_TABLE = OTHER_COMPANIES.map(a => [a, 'other', a]);
-export const NOT_TICKERS = new Set(['EUR', 'GBP', 'JPY', 'CNY', 'HKD', 'CAD', 'AUD', 'CHF', 'TTM', 'LTM', 'CET', 'NIM', 'SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', 'PE', 'ROE', 'ROA', 'ROIC', 'FCF', 'OCF', 'CFO', 'YOY', 'QOQ', 'YTD', 'TTM', 'FY', 'CEO', 'CFO', 'AI', 'IPO', 'ETF', 'API', 'JSON', 'CSV', 'PDF', 'EBIT', 'EBITDA', 'DCF', 'CAPEX', 'AR', 'AP', 'NI', 'OK', 'LOL', 'PS', 'IT', 'ID', 'UK', 'EU', 'CN', 'HK', 'NYSE', 'NASDAQ', 'SP', 'GDP', 'CPI', 'FED', 'IRS', 'DQC', 'URL', 'HTML', 'AWS', 'SBC', 'DA', 'PP', 'PPE', 'SGA', 'COGS', 'BTW', 'FYI', 'ASAP', 'IS', 'THE', 'AND', 'OR', 'OF', 'TO', 'IN', 'FOR', 'VS', 'AN', 'ON', 'AT', 'BY', 'MY', 'ME', 'WE', 'DO', 'BE', 'NO', 'HI', 'SO', 'UP', 'IF', 'HOW', 'WHAT', 'WHY', 'WHO', 'TTL', 'Q', 'QA', 'FAQ', 'MD', 'AM', 'PM', 'GPU', 'CPU', 'PC', 'TV', 'CTO', 'COO', 'HR', 'PR', 'ESG', 'EV', 'VR', 'ML', 'LLM', 'SAAS', 'ARR', 'MAU', 'DAU', 'ADS', 'APP', 'APPS', 'IOS', 'OS', 'NYC', 'SF', 'LA', 'UAE', 'IP', 'R', 'RMB', 'UTC', 'EST', 'CN', 'RMB', 'OTC', 'ADR', 'GMT', 'LTM', 'NTM', 'MRQ', 'KPI', 'OKR', 'CAGR', 'WACC', 'ROI', 'NPV', 'IRR', 'BS', 'IS', 'CF', 'PL', 'PNL', 'OPEX', 'RND', 'RD', 'IR', 'CIK', 'EDGAR', 'TL', 'DR', 'TLDR', 'ELI', 'PLS', 'THX', 'TY', 'IMO', 'IMHO', 'WTF', 'OMG', 'FB']);
+export const NOT_TICKERS = new Set(['REIT', 'REITS', 'ETFS', 'LLC', 'LP', 'INC', 'CORP', 'PLC', 'SPAC', 'MLP', 'LTD', 'CO', 'NV', 'SA', 'AG', 'SE', 'FFO', 'AFFO', 'HQ', 'EUR', 'GBP', 'JPY', 'CNY', 'HKD', 'CAD', 'AUD', 'CHF', 'TTM', 'LTM', 'CET', 'NIM', 'SEC', 'XBRL', 'GAAP', 'US', 'USA', 'USD', 'EPS', 'PE', 'ROE', 'ROA', 'ROIC', 'FCF', 'OCF', 'CFO', 'YOY', 'QOQ', 'YTD', 'TTM', 'FY', 'CEO', 'CFO', 'AI', 'IPO', 'ETF', 'API', 'JSON', 'CSV', 'PDF', 'EBIT', 'EBITDA', 'DCF', 'CAPEX', 'AR', 'AP', 'NI', 'OK', 'LOL', 'PS', 'IT', 'ID', 'UK', 'EU', 'CN', 'HK', 'NYSE', 'NASDAQ', 'SP', 'GDP', 'CPI', 'FED', 'IRS', 'DQC', 'URL', 'HTML', 'AWS', 'SBC', 'DA', 'PP', 'PPE', 'SGA', 'COGS', 'BTW', 'FYI', 'ASAP', 'IS', 'THE', 'AND', 'OR', 'OF', 'TO', 'IN', 'FOR', 'VS', 'AN', 'ON', 'AT', 'BY', 'MY', 'ME', 'WE', 'DO', 'BE', 'NO', 'HI', 'SO', 'UP', 'IF', 'HOW', 'WHAT', 'WHY', 'WHO', 'TTL', 'Q', 'QA', 'FAQ', 'MD', 'AM', 'PM', 'GPU', 'CPU', 'PC', 'TV', 'CTO', 'COO', 'HR', 'PR', 'ESG', 'EV', 'VR', 'ML', 'LLM', 'SAAS', 'ARR', 'MAU', 'DAU', 'ADS', 'APP', 'APPS', 'IOS', 'OS', 'NYC', 'SF', 'LA', 'UAE', 'IP', 'R', 'RMB', 'UTC', 'EST', 'CN', 'RMB', 'OTC', 'ADR', 'GMT', 'LTM', 'NTM', 'MRQ', 'KPI', 'OKR', 'CAGR', 'WACC', 'ROI', 'NPV', 'IRR', 'BS', 'IS', 'CF', 'PL', 'PNL', 'OPEX', 'RND', 'RD', 'IR', 'CIK', 'EDGAR', 'TL', 'DR', 'TLDR', 'ELI', 'PLS', 'THX', 'TY', 'IMO', 'IMHO', 'WTF', 'OMG', 'FB']);
 
 // Figures, indicators, look-alikes the bundle does not hold, and bridge lines.
 const METRIC_ALIASES = {
@@ -364,7 +364,7 @@ const FIGURE_WORDS = new Set(Object.values(METRIC_ALIASES).flat().concat(Object.
 
 export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe = null) {
   const text = normalize(question).slice(0, MAX_QUESTION);
-  const low = text.toLowerCase();
+  let low = text.toLowerCase();
   let lang = /[㐀-鿿]/.test(text) ? 'zh' : 'en';
   if (/用英文|英文回答|英语回答|in english/.test(low)) lang = 'en';
   else if (/用中文|中文回答|in chinese/.test(low)) lang = 'zh';
@@ -374,7 +374,7 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   const inFigure = (a, b) => figureSpans.some(f => a < f.end && f.start < b);
   const sixHits = findSpans(low, COMPANY_TABLE).filter(h => !inFigure(h.start, h.end) || h.alias.length > 4);
   const hits = sixHits.map(h => ({start: h.start, end: h.end, ticker: h.id}));
-  const ucompanies = [];
+  const ucompanies = [], shared = [];
   let others = [], otherReasons = [];
   if (universe) {
     const allCapsText = text === text.toUpperCase();
@@ -389,7 +389,14 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
       figureSpans = findSpans(masked, METRIC_TABLE);
     }
     for (const h of found) {
-      if (hits.some(x => h.start < x.end && x.start < h.end) || (inFigure(h.start, h.end) && h.kind !== 'zh' && !capital(h))) continue;
+      // A universe name of two words or more wins over a six-company name inside it (Apple Hospitality REIT, FB Financial)
+      // and over a figure phrase it reaches beyond (RPM International revenue); otherwise figures and the six come first.
+      const multi = (h.kind === 'name' || h.kind === 'shared') && h.alias.includes(' ');
+      const inside = hits.filter(x => h.start < x.end && x.start < h.end);
+      if (inside.length && !(multi && inside.every(x => h.start <= x.start && x.end <= h.end && h.end - h.start > x.end - x.start))) continue;
+      if (inFigure(h.start, h.end) && h.kind !== 'zh' && !capital(h) && !(multi && !figureSpans.some(f => f.start <= h.start && h.end <= f.end))) continue;
+      for (const x of inside) hits.splice(hits.indexOf(x), 1);
+      if (h.kind === 'shared') { shared.push({start: h.start, end: h.end, alias: h.alias, tickers: h.ciks.map(c => SIX_CIK[c] || primary(universe.byCik.get(c)))}); continue; }
       const entry = universe.byCik.get(h.cik), ticker = SIX_CIK[h.cik] || primary(entry);
       hits.push({start: h.start, end: h.end, ticker});
       if (!SIX_CIK[h.cik]) ucompanies.push(ticker);
@@ -416,8 +423,20 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   const allCaps = text === text.toUpperCase();
   if (!allCaps) for (const m of text.matchAll(/(?<![A-Za-z0-9&\/$])([A-Z]{2,5}(?:\.[A-Z])?)(?![A-Za-z0-9&\/])/g)) {
     const tok = m[1];
-    if (hits.some(x => m.index < x.end && x.start < m.index + tok.length) || FIGURE_WORDS.has(tok.toLowerCase())) continue;
+    if ([...hits, ...shared].some(x => m.index < x.end && x.start < m.index + tok.length) || FIGURE_WORDS.has(tok.toLowerCase())) continue;
     if (!TICKERS.includes(tok) && !NOT_TICKERS.has(tok) && !COMPANY_TABLE.some(([a]) => a === tok.toLowerCase()) && !others.some(o => o.toLowerCase() === tok.toLowerCase())) { others.push(tok); otherReasons.push('unknown'); }
+  }
+  // Company names are settled before anything else is read: their words are blanked, so a name never reads as a figure
+  // (International revenue), a year (Six Flags), a topic or a cue (Best Buy, T. Rowe Price, Weatherford, TTM, Q2).
+  // Topic cues read the question with each company as "it" ("sell it now?", "is it a buy?"), so a name's own words never
+  // open a topic while the refusals still see their object.
+  let cueLow = low;
+  if (hits.length || shared.length) {
+    const named = [...hits, ...shared].sort((x, y) => x.start - y.start);
+    cueLow = named.reduce((acc, h, i) => acc + low.slice(i ? named[i - 1].end : 0, h.start) + ' it ', '') + low.slice(named.at(-1).end);
+    cueLow = cueLow.replace(/\s+/g, ' ').trim();
+    for (const h of named) low = low.slice(0, h.start) + ' '.repeat(h.end - h.start) + low.slice(h.end);
+    figureSpans = findSpans(low, METRIC_TABLE);
   }
   const spans = figureSpans;
   const metrics = [], unsupported = [], bridge = [];
@@ -479,13 +498,13 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   else if (n2) lastN = /\d/.test(n2[1]) ? Number(n2[1]) : EN_NUM[n2[1]];
   else for (const n of [n3, n4]) if (n) { const v = /\d/.test(n[1]) ? Number(n[1]) : CN_NUM[n[1]]; if (v >= 2 && v <= 10) lastN = v; }
   if (lastN !== null && lastN < 2) lastN = null;
-  const has = re => re.test(low);
+  const has = re => re.test(cueLow);
   let masked = low;
   for (const s of spans) masked = masked.slice(0, s.start) + ' '.repeat(s.end - s.start) + masked.slice(s.end);
   const maskedCue = new Set(['change', 'trend']);
   const yearOrder = [...yearPos.entries()].sort((a, b) => a[1] - b[1]).map(([y]) => y);
   return {
-    universe: Boolean(universe), text, low, masked, lang, companies, ucompanies, companySpans: hits, others, otherReasons, metrics, unsupported, bridge, price, spans, dates, badDates,
+    universe: Boolean(universe), text, low, masked, lang, companies, ucompanies, companySpans: hits, ambiguous: shared, others, otherReasons, metrics, unsupported, bridge, price, spans, dates, badDates,
     years: [...yearPos.keys()].sort(), yearOrder, range, relative, relYears, lastN,
     cues: Object.fromEntries(Object.entries(CUE).map(([k, re]) => [k, maskedCue.has(k) ? re.test(masked) : has(re)]))
   };
@@ -527,7 +546,7 @@ const RANK_ASK = /哪家|哪个公司|哪一家|哪间|谁|which|who\b/;
 const RANK_NOUN = /\bwhich (\w+ ){0,2}(compan(y|ies)|firms?|stocks?|retailers?|banks?|insurers?|reits?|chipmakers?|airlines?|utilit(y|ies)|automakers?|names)\b.{0,40}\b(highest|lowest|largest|biggest|smallest|most|least|best|worst|top|bottom|strongest|weakest)\b/;
 function universeRoute(p, bundle, snapshot, prepared) {
   if (!prepared) return false;
-  if (p.ucompanies.length || p.metrics.some(m => UNIVERSE_ONLY.has(m))) return true;
+  if (p.ambiguous?.length || p.ucompanies.length || p.metrics.some(m => UNIVERSE_ONLY.has(m))) return true;
   if (p.companies.length && (UCUE.lineage.test(p.low) || UCUE.quality.test(p.low)) && !p.cues.provenance) return true;
   if (p.companies.length && UCUE.sector.test(p.low) && (UCUE.percentile.test(p.low) || p.cues.rank)) return true;
   // A ranking that names no company covers the universe (a pointer to Screen), unless it asks for the six deep-ledger companies.
@@ -590,9 +609,11 @@ function answerCore(question, bundle, {date, universe} = {}) {
   const meaningful = (c.rateWords && c.tenor) || p.companies.length || p.others.length || p.metrics.length || p.unsupported.length || p.bridge.length || p.price || p.dates.length || p.years.length || Object.entries(c).some(([k, v]) => v && !['latest', 'low', 'gap', 'why', 'rateWords', 'tenor', 'filingDoc', 'change', 'compare', 'rank', 'trend', 'definition'].includes(k));
   const letters = p.text.replace(/[\s\p{P}\p{S}\d]/gu, '');
   if (!letters.length || !meaningful) {
-    return finish(r, {status: 'clarify', topic: 'gibberish', summary: ask(lang,
+    return finish(r, {status: 'clarify', topic: 'gibberish', summary: prepared ? ask(lang,
+      `I could not read a question about a company's filings in that. Name a company (any of the ${prepared.index.count} in the universe, by ticker or name) and a figure, for example “Costco revenue”, or try one of these.`,
+      `我没能从这句话里读出关于公司财报的问题。请写出一家公司（全集 ${prepared.index.count} 家中的任意一家，代码或名称都可以）和一个数字，例如“好市多的营收”，或者试试下面这些。`) : ask(lang,
       'I could not read a question about the six companies in that. Try one of these, or ask what this box can answer.',
-      '我没能从这句话里读出关于这六家公司的问题。可以试试下面这些，或者问“你能回答什么问题”。'), offers: defaultOffers(lang)});
+      '我没能从这句话里读出关于这六家公司的问题。可以试试下面这些，或者问“你能回答什么问题”。'), offers: prepared ? [L(lang, 'Costco revenue', '好市多的营收'), ...defaultOffers(lang).slice(0, 3)] : defaultOffers(lang)});
   }
   if (c.offTopic) return finish(r, {status: 'refused', topic: 'off_topic', summary: prepared ? ask(lang,
     `This box only answers questions about the saved SEC filings: annual figures for ${prepared.index.count} US companies and the six-company deep ledger. It does not follow other instructions or chat about other topics.`,

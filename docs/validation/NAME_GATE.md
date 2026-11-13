@@ -27,6 +27,14 @@ Named probes, from the main session's probe of 0.3.1: "T Rowe Price net income" 
 
 The first run on the fixed head is reported with its commit, whatever it shows; later runs are labelled reruns.
 
+## Corrections made before the first gate run
+
+These were found on a development run of the gate during the fixes, and corrected before the first run on the fixed head. Each is a mistake in how the gate implemented the rule above, not a change to the bar.
+
+- "/ MA" and "/ DE", with a space after the slash, were not removed as state suffixes. The gate asked "Vertex Pharmaceuticals INC / MA revenue", which no visitor would type ("MA" then read as Mastercard). The state pattern now allows the space.
+- A name that is itself one acronym of three letters or fewer (RH) is tried only as written. "Rh" is not how anyone writes it.
+- "Best Buy stock price" was expected to be `refused`. The box answers every price question with `not_in_bundle` (topic `price`: "Share prices… are not in this bundle"), for NVDA as for Best Buy. That has always been the price behaviour, and it states no price. The probe now expects that status and topic, and no figures.
+
 ## Baseline (before any fix; not the gate run)
 
 On `main` at `00fb51b` (data `c75dfa6`): correct 1,879, clarify_listed 0, wrong_company 7, false_outside 9, miss 99. Seven named probes failed: T Rowe Price (both), Best Buy, Weatherford, MoonLake, Q2 Holdings, Burlington. The main session's own count with title case only was wrong 6, false outside 9, about 33 misses. This gate also tries the acronym form, so it counts more misses.

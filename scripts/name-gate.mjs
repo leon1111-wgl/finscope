@@ -12,7 +12,7 @@ import {primary} from '../web/universe-data.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LEGAL = /[,.]?\s+(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|l\.l\.c|lp|l\.p|nv|n\.v|sa|s\.a)\.?$/i;
-const STATE = /\s*(\/[A-Za-z]{2,4}\/?|\\[A-Za-z]{2}\\|\([A-Z]{2}\)|\/)\s*$/;
+const STATE = /\s*(\/\s?[A-Za-z]{2,4}\/?|\\[A-Za-z]{2}\\|\([A-Z]{2}\)|\/)\s*$/;
 const cap = w => w.split('-').map(p => p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : p).join('-');
 
 // The SEC name without "/TX", "/DE/", "/NEW/", "(DE)" and the legal suffix; an all-caps name is title-cased, and also
@@ -26,6 +26,7 @@ export function naturalNames(sec) {
   }
   if (!/[A-Z]/.test(n) || n !== n.toUpperCase()) return [n];
   const words = n.split(' ');
+  if (words.length === 1 && n.length <= 3) return [n];   // a name that is itself an acronym (RH) is written as one
   const title = words.map(cap).join(' ');
   const acronym = words.map(w => /^[A-Z]{1,3}$/.test(w) ? w : cap(w)).join(' ');
   return [...new Set([title, acronym])];
@@ -36,7 +37,7 @@ export const PROBES = [
   ['T Rowe Price net income', {ticker: 'TROW'}], ['T. Rowe Price revenue', {ticker: 'TROW'}], ['Best Buy revenue', {ticker: 'BBY'}],
   ['Weatherford revenue', {ticker: 'WFRD'}], ['MoonLake revenue', {ticker: 'MLTX'}], ['TTM Technologies revenue', {ticker: 'TTMI'}],
   ['Q2 Holdings revenue', {ticker: 'QTWO'}], ['Burlington revenue', {ticker: 'BURL'}],
-  ['Is Best Buy a buy?', {status: 'refused'}], ['should I buy Target stock', {status: 'refused'}], ['Best Buy stock price', {status: 'refused'}],
+  ['Is Best Buy a buy?', {status: 'refused'}], ['should I buy Target stock', {status: 'refused'}], ['Best Buy stock price', {status: 'not_in_bundle', topic: 'price'}],
   ['Will Best Buy revenue grow next year?', {status: 'refused'}]
 ];
 
@@ -66,7 +67,7 @@ export function nameGate({label = 'name gate run', disk = universeFromDisk(path.
   });
   const probes = PROBES.map(([q, want]) => {
     const a = ask(q);
-    const ok = want.ticker ? (a.plan?.tickers || []).length === 1 && a.plan.tickers[0] === want.ticker && a.status !== 'refused' : a.status === want.status;
+    const ok = want.ticker ? (a.plan?.tickers || []).length === 1 && a.plan.tickers[0] === want.ticker && a.status !== 'refused' : a.status === want.status && (!want.topic || a.topic === want.topic) && !(a.facts || []).length;
     return {q, want, ok, status: a.status, topic: a.topic, got: a.plan?.tickers || []};
   });
   const count = o => rows.filter(r => r.outcome === o).length;
