@@ -163,11 +163,11 @@ test('a ranking that names no companies, or names a sector, points to Screen; th
 
 test('P2 classes from the probe of b12433a: outside name beside a covered one, zero, Chinese abstentions, REIT FCF', async () => {
   // A covered company named beside an outside one is answered; the outside one is named as not covered.
-  for (const q of ['特斯拉和比亚迪的营收对比', 'Compare Tesla and BYD revenue']) {
+  for (const q of ['特斯拉和比亚迪的营收对比', 'Compare Tesla and byd revenue']) {
     const a = ask(q);
     assert.equal(a.status, 'answered', `${q}: ${a.status} ${a.summary}`);
     assert.deepEqual(a.plan.tickers, ['TSLA'], q);
-    assert.match(a.summary, /比亚迪|BYD/, q);
+    assert.match(a.summary, /比亚迪|BYD/i, q);
     assert.match(a.summary, /不在|not in/, q);
   }
   // Zero is shown as zero, not 0.0 of a unit.
@@ -230,4 +230,26 @@ test('company names are resolved before anything else is read (0.3.2 name gate c
   // Trusts say what their 10-K holds; the fallback speaks about the universe.
   assert.match(ask('iShares Bitcoin Trust revenue').summary, /exchange-traded trust that holds bitcoin/);
   assert.doesNotMatch(ask('asdf qwer zxcv').summary, /six companies/);
+});
+
+test('a ticker typed in capitals names its own company, or asks while naming it (0.3.3 ticker gate classes)', () => {
+  const one = (q, t) => { const a = ask(q); assert.deepEqual(a.plan.tickers, [t], `${q}: ${a.status}/${a.topic} ${a.summary}`); };
+  const asks = (q, want) => { const a = ask(q); assert.equal(a.status, 'clarify', `${q}: ${a.status} ${a.summary}`); assert.deepEqual([...a.candidates].sort(), [...want].sort(), q); return a; };
+  // An exact ticker beats a typo alias and the outside list (APLE was Apple; MELI was called a 20-F filer).
+  one('APLE revenue', 'APLE'); one('MELI revenue', 'MELI'); one('$PM revenue', 'PM'); one('$BYD revenue', 'BYD'); one('$COKE revenue', 'COKE');
+  // A capital ticker that is also another company's name, or an outside company's name, asks and lists it.
+  asks('COKE revenue', ['COKE', 'KO']); asks('HP revenue', ['HP', 'HPQ']);
+  const byd = asks('BYD revenue', ['BYD']);
+  assert.match(byd.summary, /Boyd/i); assert.match(byd.summary, /not in the FinScope universe/);
+  // Lower case keeps the old meanings: coke is Coca-Cola, byd is the company outside the universe.
+  one('coke revenue', 'KO');
+  assert.equal(ask('byd revenue').topic, 'out_of_universe');
+  // A ticker that is also a word or a figure names the company and how to ask for it.
+  for (const [q, t] of [['PM revenue', 'PM'], ['SO revenue', 'SO'], ['IT revenue', 'IT'], ['A revenue', 'A'], ['CASH revenue', 'CASH'], ['FCF revenue', 'FCF'], ['IT 的营收', 'IT']]) {
+    const a = asks(q, [t]);
+    assert.ok(a.summary.includes(`$${t}`), `${q}: ${a.summary}`);
+  }
+  // ...without taking over ordinary questions.
+  assert.equal(ask('A company with the highest revenue?').topic, 'universe_rank');
+  assert.equal(ask('Is NVDA a buy?').status, 'refused');
 });

@@ -374,7 +374,7 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   const inFigure = (a, b) => figureSpans.some(f => a < f.end && f.start < b);
   const sixHits = findSpans(low, COMPANY_TABLE).filter(h => !inFigure(h.start, h.end) || h.alias.length > 4);
   const hits = sixHits.map(h => ({start: h.start, end: h.end, ticker: h.id}));
-  const ucompanies = [], shared = [];
+  const ucompanies = [], shared = [], wordTickers = [];
   let others = [], otherReasons = [];
   if (universe) {
     const allCapsText = text === text.toUpperCase();
@@ -392,11 +392,18 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
       // A universe name of two words or more wins over a six-company name inside it (Apple Hospitality REIT, FB Financial)
       // and over a figure phrase it reaches beyond (RPM International revenue); otherwise figures and the six come first.
       const multi = (h.kind === 'name' || h.kind === 'shared') && h.alias.includes(' ');
+      // An exact ticker typed in capitals or with $ wins over a six-company alias over the same letters (APLE is not a typo of Apple).
+      const typed = h.kind === 'ticker' && (h.capital || h.dollar);
       const inside = hits.filter(x => h.start < x.end && x.start < h.end);
-      if (inside.length && !(multi && inside.every(x => h.start <= x.start && x.end <= h.end && h.end - h.start > x.end - x.start))) continue;
-      if (inFigure(h.start, h.end) && h.kind !== 'zh' && !capital(h) && !(multi && !figureSpans.some(f => f.start <= h.start && h.end <= f.end))) continue;
+      if (inside.length && !(multi && inside.every(x => h.start <= x.start && x.end <= h.end && h.end - h.start > x.end - x.start)) &&
+        !(typed && inside.every(x => x.start === h.start && x.end === h.end))) continue;
+      if (inFigure(h.start, h.end) && h.kind !== 'zh' && !capital(h) && !(multi && !figureSpans.some(f => f.start <= h.start && h.end <= f.end))) {
+        if (h.kind === 'ticker' && h.capital) wordTickers.push(h);   // CASH, FCF: read as figures; the answer can say how to ask for the company
+        continue;
+      }
       for (const x of inside) hits.splice(hits.indexOf(x), 1);
-      if (h.kind === 'shared') { shared.push({start: h.start, end: h.end, alias: h.alias, tickers: h.ciks.map(c => SIX_CIK[c] || primary(universe.byCik.get(c)))}); continue; }
+      if (h.kind === 'shared') { shared.push({start: h.start, end: h.end, alias: h.alias, via: h.via || 'name', tickers: h.ciks.map(c => SIX_CIK[c] || primary(universe.byCik.get(c)))}); continue; }
+      if (h.outside) { shared.push({start: h.start, end: h.end, alias: h.alias, via: 'ticker_outside', outside: h.outside, tickers: [primary(universe.byCik.get(h.cik))]}); continue; }
       const entry = universe.byCik.get(h.cik), ticker = SIX_CIK[h.cik] || primary(entry);
       hits.push({start: h.start, end: h.end, ticker});
       if (!SIX_CIK[h.cik]) ucompanies.push(ticker);
@@ -407,7 +414,7 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
       const tok = first[1], start = first[0].length - tok.length, entry = universe.byTicker.get(tok.toUpperCase());
       const rest = text.slice(first[0].length);
       const figureNext = figureSpans.some(f => f.start > start + tok.length && /^\s*$/.test(low.slice(start + tok.length, f.start)));
-      if (entry && !inFigure(start, start + tok.length) && (/^\s*[㐀-鿿]/.test(rest) || (figureNext && !FIRST_WORD_STOP.has(tok)))) {
+      if (entry && !universe.outside.has(tok) && !inFigure(start, start + tok.length) && (/^\s*[㐀-鿿]/.test(rest) || (figureNext && !FIRST_WORD_STOP.has(tok)))) {
         hits.push({start, end: start + tok.length, ticker: SIX_CIK[entry.c] || primary(entry)});
         if (!SIX_CIK[entry.c]) ucompanies.push(primary(entry));
       }
@@ -415,11 +422,24 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
     // An outside name that contains a company match wins (Coca-Cola Europacific Partners is not Coca-Cola).
     for (const o of matchOutside(universe, low)) {
       for (const x of hits.filter(x => o.start <= x.start && x.end <= o.end && (o.end - o.start) > (x.end - x.start))) { hits.splice(hits.indexOf(x), 1); const k = ucompanies.indexOf(x.ticker); if (k >= 0) ucompanies.splice(k, 1); }
-      if (!hits.some(x => o.start < x.end && x.start < o.end)) { others.push(text.slice(o.start, o.end)); otherReasons.push(o.reason); }
+      if (![...hits, ...shared].some(x => o.start < x.end && x.start < o.end)) { others.push(text.slice(o.start, o.end)); otherReasons.push(o.reason); }
     }
   } else others = findSpans(low, OTHER_TABLE).map(h => text.slice(h.start, h.end));
   const companies = [];
   for (const h of hits.sort((a, b) => a.start - b.start)) if (!companies.includes(h.ticker)) companies.push(h.ticker);
+  // With no company named, a ticker that is also a word (PM, SO, IT, A) or a figure (CASH, FCF), written first in capitals
+  // and followed by a figure or nothing, is named back to the visitor with how to ask for it ($PM).
+  const tickerWords = [];
+  if (universe && !companies.length && !shared.length) {
+    const rejectedWords = matchCompanies(universe, text, text.toLowerCase(), NOT_TICKERS).rejected || [];
+    for (const h of [...rejectedWords, ...wordTickers]) {
+      const lead = /^[\s$¿¡"'“‘(]*$/.test(text.slice(0, h.start));
+      const rest = text.slice(h.end);
+      const next = /^[\s?？!！。.,，]*$/.test(rest) || figureSpans.some(f => (f.start >= h.end && /^\s*的?\s*$/.test(text.slice(h.end, f.start))) || (f.start <= h.start && h.end <= f.end));
+      const entry = universe.byCik.get(h.cik);
+      if (lead && next && entry && !tickerWords.some(w => w.ticker === primary(entry))) tickerWords.push({alias: h.alias, ticker: primary(entry), figure: wordTickers.includes(h)});
+    }
+  }
   const allCaps = text === text.toUpperCase();
   if (!allCaps) for (const m of text.matchAll(/(?<![A-Za-z0-9&\/$])([A-Z]{2,5}(?:\.[A-Z])?)(?![A-Za-z0-9&\/])/g)) {
     const tok = m[1];
@@ -504,7 +524,7 @@ export function parseQuestion(question, bundle, asOf = bundle?.as_of, universe =
   const maskedCue = new Set(['change', 'trend']);
   const yearOrder = [...yearPos.entries()].sort((a, b) => a[1] - b[1]).map(([y]) => y);
   return {
-    universe: Boolean(universe), text, low, masked, lang, companies, ucompanies, companySpans: hits, ambiguous: shared, others, otherReasons, metrics, unsupported, bridge, price, spans, dates, badDates,
+    universe: Boolean(universe), text, low, masked, lang, companies, ucompanies, companySpans: hits, ambiguous: shared, tickerWords, others, otherReasons, metrics, unsupported, bridge, price, spans, dates, badDates,
     years: [...yearPos.keys()].sort(), yearOrder, range, relative, relYears, lastN,
     cues: Object.fromEntries(Object.entries(CUE).map(([k, re]) => [k, maskedCue.has(k) ? re.test(masked) : has(re)]))
   };
@@ -546,7 +566,7 @@ const RANK_ASK = /哪家|哪个公司|哪一家|哪间|谁|which|who\b/;
 const RANK_NOUN = /\bwhich (\w+ ){0,2}(compan(y|ies)|firms?|stocks?|retailers?|banks?|insurers?|reits?|chipmakers?|airlines?|utilit(y|ies)|automakers?|names)\b.{0,40}\b(highest|lowest|largest|biggest|smallest|most|least|best|worst|top|bottom|strongest|weakest)\b/;
 function universeRoute(p, bundle, snapshot, prepared) {
   if (!prepared) return false;
-  if (p.ambiguous?.length || p.ucompanies.length || p.metrics.some(m => UNIVERSE_ONLY.has(m))) return true;
+  if (p.ambiguous?.length || p.ucompanies.length || p.metrics.some(m => UNIVERSE_ONLY.has(m)) || (!p.companies.length && p.tickerWords?.length)) return true;
   if (p.companies.length && (UCUE.lineage.test(p.low) || UCUE.quality.test(p.low)) && !p.cues.provenance) return true;
   if (p.companies.length && UCUE.sector.test(p.low) && (UCUE.percentile.test(p.low) || p.cues.rank)) return true;
   // A ranking that names no company covers the universe (a pointer to Screen), unless it asks for the six deep-ledger companies.
