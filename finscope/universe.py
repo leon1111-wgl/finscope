@@ -61,6 +61,9 @@ METRICS = {
     'net_investment_income': ('flow', 'USD', 'IS', ['NetInvestmentIncome'], {'insurance'}),
     'real_estate': ('instant', 'USD', 'BS', ['RealEstateInvestmentPropertyNet'], {'reit'}),
 }
+# Leading tags in a chain that are equally standard ways to report the figure; only tags after them count as fallbacks.
+STANDARD = {'revenue': 2, 'cost_of_revenue': 3, 'interest_expense': 2, 'operating_cash_flow': 1}
+via_of = lambda metric, priority: 'primary' if priority < STANDARD.get(metric, 1) else 'fallback'
 # Fallbacks that combine two facts of the same filing. Each part is a tag chain; all parts must come from one filing.
 SGA_PARTS = (['SellingAndMarketingExpense', 'SellingExpense'], ['GeneralAndAdministrativeExpense'])
 STI_TAGS = ['ShortTermInvestments', 'MarketableSecuritiesCurrent', 'AvailableForSaleSecuritiesDebtSecuritiesCurrent']
@@ -260,8 +263,7 @@ def choose_chain(payload, metric, period):
     if not facts:
         return None
     fact = _in_filing(facts, _latest_accn(facts))
-    via = 'primary' if fact['priority'] == 0 else 'fallback'
-    cell = _cell(fact, via, period)
+    cell = _cell(fact, via_of(metric, fact['priority']), period)
     return _with_first(cell, _in_filing(facts, period['accession']))
 
 
@@ -287,7 +289,7 @@ def choose_revenue(payload, period):
             fact['note'] = f"Revenues (total) used; {subset['tag']} = {subset['v']:.0f} covers customer contracts only"
         return fact
     fact = pick(_latest_accn(facts))
-    via = 'total' if fact.get('note') else 'primary' if fact['priority'] == 0 else 'fallback'
+    via = 'total' if fact.get('note') else via_of('revenue', fact['priority'])
     cell = _cell(fact, via, period, note=fact.get('note'))
     return _with_first(cell, pick(period['accession']))
 
@@ -457,7 +459,7 @@ def company_shard(payload, submissions, ticker_rows=None):
                 by_tag[c['tag']].append(y)
         for tag, ys in by_tag.items():
             quality.append({'kind': 'fallback', 'metric': metric, 'fy': ys, 'tag': tag,
-                            'text': f"{LABELS[metric]}: FY{', FY'.join(map(str, ys))} use the fallback tag {tag} (first choice {METRICS[metric][3][0]} not reported)."})
+                            'text': f"{LABELS[metric]}: FY{', FY'.join(map(str, ys))} use the fallback tag {tag} (first choice {' or '.join(METRICS[metric][3][:STANDARD.get(metric, 1)])} not reported)."})
         derived = [y for y, c in zip(years, row) if c and c.get('via') == 'derived']
         if derived:
             notes = sorted({c['note'] for c in row if c and c.get('via') == 'derived'})

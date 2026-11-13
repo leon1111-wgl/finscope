@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#f5f0e3" media="(prefers-color-scheme: light)" data-light="#f5f0e3" data-dark="#0e1612">
 <meta name="theme-color" content="#0e1612" media="(prefers-color-scheme: dark)" data-light="#f5f0e3" data-dark="#0e1612">
 <title>FinScope · Leon Wang</title>
-<meta name="description" content="Set reported profit against operating cash flow for six US companies, match every figure to its SEC filing, test a weaker year and export a reproducible research brief. Built by Leon Wang.">
-<script>/* Theme and intro/console mode before first paint. Keys mirror RESEARCH_KEYS in intro.js. */try{var t=localStorage.getItem('finscope.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}if(/[?&](company|date|view|dataset|calculation|revenuePercent|marginPoints|refinanceBillions|rateBps|collectionDays)(=|&|$)/.test(location.search)||location.hash==='#workspace')document.documentElement.dataset.mode='console';</script>
-<link rel="stylesheet" href="./research.css?v=20261109-profit"><script type="module" src="./research-app.js?v=20261109-profit"></script>
+<meta name="description" content="Standardized financials for about 1,900 US large accelerated filers, every figure traced to its SEC filing: compare up to eight companies, screen earnings quality by sector, watch new filings and ask in Chinese or English. Built by Leon Wang.">
+<script>/* Theme and intro/console mode before first paint. Keys mirror RESEARCH_KEYS in intro.js. */try{var t=localStorage.getItem('finscope.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}if(/[?&](company|date|view|dataset|calculation|revenuePercent|marginPoints|refinanceBillions|rateBps|collectionDays|co)(=|&|$)/.test(location.search)||location.hash==='#workspace')document.documentElement.dataset.mode='console';</script>
+<link rel="stylesheet" href="./research.css?v=20261114-universe"><script type="module" src="./research-app.js?v=20261114-universe"></script>
 </head>
 <body>
 <a class="skip" href="#workspace" data-enter>Skip to research workspace</a>
@@ -24,13 +24,13 @@
 <div id="intro" class="intro">
 <section class="hero" aria-labelledby="intro-title">
  <div class="hero-copy">
-  <p class="kicker">Earnings quality · six US companies · SEC filings</p>
+  <p class="kicker">Earnings quality · US large accelerated filers · SEC filings</p>
   <h1 id="intro-title" tabindex="-1">FinScope</h1>
-  <p class="hero-stack">SEC EDGAR / XBRL · Isolation Forest · Python · JavaScript</p>
-  <p class="hero-lead">FinScope sets each company’s reported net income against the cash its operations brought in, matches every figure to its SEC filing and lets you test a weaker year. You leave with a brief that carries its own audit trail.</p>
+  <p class="hero-stack">SEC EDGAR / XBRL · GitHub Actions · Isolation Forest · Python · JavaScript</p>
+  <p class="hero-lead">Pick any US large accelerated filer, about 1,900 companies. FinScope reads ten years of its 10-K figures with a documented tag order, links every number to its filing, sets profit against operating cash and screens the whole universe by sector. You leave with a table or brief that carries its own audit trail.</p>
   <div class="hero-actions"><button type="button" class="primary big" data-enter>Open the ledger <span aria-hidden="true">→</span></button><a class="button" href="https://github.com/leon1111-wgl/finscope/blob/main/docs/CASE_STUDY.md">Read the worked case ↗</a></div>
-  <form class="ask-intro" id="intro-ask" role="search" aria-labelledby="intro-ask-label"><label id="intro-ask-label" for="intro-ask-input">Ask the ledger <span>Your own question, in Chinese or English. Fixed rules read the saved SEC evidence in your browser and cite every number. No model, no key.</span></label><div class="ask-row"><input id="intro-ask-input" name="q" type="search" maxlength="300" autocomplete="off" enterkeyhint="search" placeholder="NVDA 的利润有现金流支撑吗？" required><button class="primary" type="submit">Ask</button></div></form>
-  <p class="hero-meta" id="intro-freshness">Official SEC and Treasury data · no account, install or API key</p>
+  <form class="ask-intro" id="intro-ask" role="search" aria-labelledby="intro-ask-label"><label id="intro-ask-label" for="intro-ask-input">Ask the ledger <span>Your own question about any company in the universe, in Chinese or English. Fixed rules read the saved SEC data in your browser and cite every number. No model, no key.</span></label><div class="ask-row"><input id="intro-ask-input" name="q" type="search" maxlength="300" autocomplete="off" enterkeyhint="search" placeholder="好市多的利润有现金流支撑吗？" required><button class="primary" type="submit">Ask</button></div></form>
+  <p class="hero-meta" id="intro-freshness">Official SEC and Treasury data, rebuilt on GitHub Actions · no account, install or API key</p>
  </div>
  <figure class="sheet hero-figure" aria-labelledby="intro-figure-title">
   <div class="sheet-head"><p class="sheet-title" id="intro-figure-title">Profit against operating cash</p><div id="intro-tickers" class="ticker-tabs" role="group" aria-label="Choose a company"></div></div>
@@ -51,19 +51,22 @@
 </section>
 
 <section class="index" aria-labelledby="index-title">
- <div class="section-intro"><h2 id="index-title">Inside the ledger</h2><p>Five sections, one company and one information date at a time, and a box for your own questions.</p></div>
+ <div class="section-intro"><h2 id="index-title">Inside the ledger</h2><p>Any company in the universe, and a deep ledger for six of them, one information date at a time.</p></div>
  <ol class="ledger-index">
   <li class="ix" data-section="ask"><button type="button" data-enter data-enter-view="ask"><span class="ix-no" aria-hidden="true">Q</span><span class="ix-name">Ask</span><span class="ix-desc">Your own question in Chinese or English, answered by fixed rules with every number traced to its filing line. No advice, no forecasts.</span></button></li>
-  <li class="ix" data-section="review"><button type="button" data-enter data-enter-view="review"><span class="ix-no" aria-hidden="true">01</span><span class="ix-name">Evidence</span><span class="ix-desc">Profit against cash, matched SEC facts, the newer year-to-date checkpoint, the cash-flow bridge and AI triage.</span></button></li>
-  <li class="ix" data-section="compare"><button type="button" data-enter data-enter-view="compare"><span class="ix-no" aria-hidden="true">02</span><span class="ix-name">Comparison</span><span class="ix-desc">Six financial profiles on the same information date, with a full-precision CSV and its evidence JSON.</span></button></li>
-  <li class="ix" data-section="stress"><button type="button" data-enter data-enter-view="stress"><span class="ix-no" aria-hidden="true">03</span><span class="ix-name">Scenarios</span><span class="ix-desc">Revenue, margin, refinancing and collection assumptions, with official Treasury context.</span></button></li>
-  <li class="ix" data-section="brief"><button type="button" data-enter data-enter-view="brief"><span class="ix-no" aria-hidden="true">04</span><span class="ix-name">Brief</span><span class="ix-desc">Markdown, JSON or print, with sources, data and calculation versions and a reopen link.</span></button></li>
-  <li class="ix" data-section="method"><button type="button" data-enter data-enter-view="method"><span class="ix-no" aria-hidden="true">05</span><span class="ix-name">Method &amp; sources</span><span class="ix-desc">What the model can and cannot say, time boundaries, limitations and foundations.</span></button></li>
+  <li class="ix" data-section="company"><button type="button" data-enter data-enter-view="company"><span class="ix-no" aria-hidden="true">01</span><span class="ix-name">Financials</span><span class="ix-desc">Ten years of standardized statements for any universe company, each cell linked to its 10-K, with tag lineage and data-quality notes.</span></button></li>
+  <li class="ix" data-section="review"><button type="button" data-enter data-enter-view="review"><span class="ix-no" aria-hidden="true">02</span><span class="ix-name">Evidence</span><span class="ix-desc">The deep ledger for six companies: profit against cash, the year-to-date checkpoint, the cash-flow bridge and AI triage.</span></button></li>
+  <li class="ix" data-section="compare"><button type="button" data-enter data-enter-view="compare"><span class="ix-no" aria-hidden="true">03</span><span class="ix-name">Compare</span><span class="ix-desc">Up to eight companies side by side, each on its own fiscal year, with a CSV that keeps the source of every cell.</span></button></li>
+  <li class="ix" data-section="screen"><button type="button" data-enter data-enter-view="screen"><span class="ix-no" aria-hidden="true">04</span><span class="ix-name">Screen</span><span class="ix-desc">Cash conversion, accruals and FCF margin across the universe, with percentiles among sector peers. A screen, not a rating.</span></button></li>
+  <li class="ix" data-section="watch"><button type="button" data-enter data-enter-view="watch"><span class="ix-no" aria-hidden="true">05</span><span class="ix-name">Watch</span><span class="ix-desc">New 10-K, 10-Q and 8-K filings for the companies you follow, fetched by your browser straight from the SEC.</span></button></li>
+  <li class="ix" data-section="stress"><button type="button" data-enter data-enter-view="stress"><span class="ix-no" aria-hidden="true">06</span><span class="ix-name">Scenarios</span><span class="ix-desc">Revenue, margin, refinancing and collection assumptions for the six, with official Treasury context.</span></button></li>
+  <li class="ix" data-section="brief"><button type="button" data-enter data-enter-view="brief"><span class="ix-no" aria-hidden="true">07</span><span class="ix-name">Brief</span><span class="ix-desc">Markdown, JSON or print, with sources, data and calculation versions and a reopen link.</span></button></li>
+  <li class="ix" data-section="method"><button type="button" data-enter data-enter-view="method"><span class="ix-no" aria-hidden="true">08</span><span class="ix-name">Method &amp; sources</span><span class="ix-desc">How the universe is built and checked, what the model can and cannot say, time boundaries and limitations.</span></button></li>
  </ol>
 </section>
 
 <section class="intro-notes" aria-label="Scope and limits">
- <p><strong>Real filings, small universe.</strong> AAPL, MSFT, NVDA, AMZN, GOOGL and META from official SEC CompanyFacts and Submissions, plus daily Treasury yields. Annual accounts with matched year-to-date checkpoints; not a live-price terminal and not investment advice.</p>
+ <p><strong>Real filings, a declared universe.</strong> Every SEC large accelerated filer with XBRL 10-Ks and a ticker on NYSE or Nasdaq, rebuilt weekly from SEC CompanyFacts and Submissions; a deep ledger for AAPL, MSFT, NVDA, AMZN, GOOGL and META with year-to-date checkpoints; daily Treasury yields. Annual figures; not a live-price terminal and not investment advice.</p>
  <p><strong>Separate synthetic track.</strong> The <a href="./lab.html">forecasting lab</a> uses SYNTHETIC companies and events to show information timing and model comparison. None of it describes the real companies above.</p>
 </section>
 </div>
@@ -83,12 +86,12 @@
 </div></details>
 <section id="workspace" class="workspace" aria-label="Company research workspace" tabindex="-1">
 <div class="workspace-heading"><h2>Select company and date</h2></div>
-<form class="filters" id="selection" aria-label="Company and information date"><label>Company<select id="company" disabled><option>Loading…</option></select></label><label>Information date<input id="as-of" type="date" disabled></label><button type="button" id="latest" disabled>Use latest snapshot</button></form>
+<form class="filters" id="selection" aria-label="Deep-ledger company and information date"><label>Deep-ledger company<select id="company" disabled><option>Loading…</option></select></label><label>Information date<input id="as-of" type="date" disabled></label><button type="button" id="latest" disabled>Use latest snapshot</button></form>
 <p id="scope" class="scope"></p>
 <details id="saved-brief" class="saved-brief no-print"><summary>Open a saved brief</summary><p>Restore the company, date and assumptions from a downloaded FinScope JSON brief. The file stays on your device. Financial values and conclusions in the file are not imported.</p><label for="brief-file">Choose evidence brief (.json, up to 2 MB)</label><input id="brief-file" type="file" accept=".json,application/json" disabled></details>
 <p id="restore-message" class="note no-print" role="status" aria-live="polite"></p>
 <div id="restore-preview" class="no-print" hidden></div>
-<nav class="steps" aria-label="Research views"><button data-page="ask"><span class="tab-no" aria-hidden="true">Q</span>Ask</button><button data-page="review" aria-current="page"><span class="tab-no" aria-hidden="true">01</span>Evidence</button><button data-page="compare"><span class="tab-no" aria-hidden="true">02</span>Comparison</button><button data-page="stress"><span class="tab-no" aria-hidden="true">03</span>Scenarios</button><button data-page="brief"><span class="tab-no" aria-hidden="true">04</span>Brief</button><button data-page="method"><span class="tab-no" aria-hidden="true">05</span>Method &amp; sources</button></nav>
+<nav class="steps" aria-label="Research views"><button data-page="ask"><span class="tab-no" aria-hidden="true">Q</span>Ask</button><button data-page="company"><span class="tab-no" aria-hidden="true">01</span>Financials</button><button data-page="review" aria-current="page"><span class="tab-no" aria-hidden="true">02</span>Evidence</button><button data-page="compare"><span class="tab-no" aria-hidden="true">03</span>Compare</button><button data-page="screen"><span class="tab-no" aria-hidden="true">04</span>Screen</button><button data-page="watch"><span class="tab-no" aria-hidden="true">05</span>Watch</button><button data-page="stress"><span class="tab-no" aria-hidden="true">06</span>Scenarios</button><button data-page="brief"><span class="tab-no" aria-hidden="true">07</span>Brief</button><button data-page="method"><span class="tab-no" aria-hidden="true">08</span>Method &amp; sources</button></nav>
 <div class="sheet-body">
 <div id="status" role="status" aria-live="polite"></div>
 <div id="content"><p class="empty">The research workspace is loading. No account or API key is required.</p></div>

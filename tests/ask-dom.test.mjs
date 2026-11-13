@@ -8,13 +8,15 @@ const html = fs.readFileSync(new URL('../web/index.html', import.meta.url), 'utf
 const data = fs.readFileSync(new URL('../web/data/research.json', import.meta.url), 'utf8');
 let sequence = 0;
 const tick = () => new Promise(resolve => setImmediate(resolve));
+const universeFile = url => { const f = new URL('../web/' + url.slice(2), import.meta.url); return fs.existsSync(f) ? {ok: true, json: async () => JSON.parse(fs.readFileSync(f, 'utf8'))} : {ok: false, status: 404}; };
+
 
 async function boot(t, query = '') {
   const dom = new JSDOM(html, {url: 'https://example.test/finscope/' + query});
   const calls = [];
   Object.assign(globalThis, {window: dom.window, document: dom.window.document, history: dom.window.history, location: dom.window.location,
     ResizeObserver: class { observe() {} },
-    fetch: async url => { calls.push(url); return {ok: true, json: async () => JSON.parse(data), text: async () => data}; }});
+    fetch: async url => { calls.push(url); if (url.startsWith('./data/universe/')) return universeFile(url); return {ok: true, json: async () => JSON.parse(data), text: async () => data}; }});
   dom.window.HTMLElement.prototype.scrollIntoView = function () {};
   dom.window.scrollTo = () => {};
   Object.defineProperty(globalThis, 'navigator', {value: {clipboard: {writeText: async () => {}}}, configurable: true});
@@ -26,6 +28,8 @@ async function boot(t, query = '') {
     $(input).value = text;
     $(form).dispatchEvent(new dom.window.Event('submit', {bubbles: true, cancelable: true}));
     await tick();
+    // Ask may load the named companies' universe data first; wait for this question's answer (or a status message).
+    for (let i = 0; i < 200 && !($('#answer-q')?.textContent.includes(text.trim().slice(0, 12))) && !/Type a question|could not/.test($('#status')?.textContent || ''); i++) await tick();
   };
   const openAsk = async () => { $('.steps [data-page="ask"]').click(); await tick(); };
   return {dom, $, submit, calls, openAsk};
@@ -47,7 +51,7 @@ test('the intro box opens the console on Ask and answers with the engine label a
   assert.equal(ui.$('#ask-input').value, 'NVDA 的利润有现金流支撑吗');
   assert.match(ui.$('#ask-live').textContent, /^Answered\./);
   assert.match(ui.dom.window.location.search, /view=ask/);
-  assert.deepEqual(ui.calls, ['./data/research.json']);
+  assert.deepEqual(ui.calls.filter(u => !u.startsWith('./data/universe/')), ['./data/research.json']);
 });
 
 test('refusals and not-in-bundle answers state no figures; visitor text is escaped', async t => {
@@ -60,22 +64,23 @@ test('refusals and not-in-bundle answers state no figures; visitor text is escap
   assert.equal(ui.dom.window.pwned, undefined);
   assert.match(card.querySelector('h3').textContent, /<img src=x/);
   assert.equal(card.querySelector('.answer-sources'), null);
-  await ui.submit('#ask-form', '#ask-input', '英伟达毛利率多少');
+  await ui.submit('#ask-form', '#ask-input', '英伟达的EBITDA是多少');
   assert.ok(ui.$('.answer').classList.contains('answer-not_in_bundle'));
   assert.match(ui.$('.answer-status').textContent, /Not in this bundle/);
+  assert.equal(ui.$('.answer').querySelector('.answer-sources'), null);
 });
 
 test('example and follow-up chips ask through the same engine; empty input is not sent', async t => {
   const ui = await boot(t, '#workspace');
   await ui.openAsk();
-  ui.$('[data-ask="哪家公司利润和现金差距最大"]').click();
-  await tick();
-  assert.match(ui.$('.answer-summary').textContent, /NVDA/);
+  ui.$('[data-ask="好市多的利润有现金流支撑吗"]').click();
+  for (let i = 0; i < 200 && !ui.$('.answer-summary'); i++) await tick();
+  assert.match(ui.$('.answer-summary').textContent, /COST/);
   assert.equal(ui.dom.window.document.activeElement?.id, 'answer-q');
   const follow = ui.$('.ask-offers [data-ask]');
   const asked = follow.dataset.ask;
   follow.click();
-  await tick();
+  for (let i = 0; i < 200 && ui.$('#ask-input').value !== asked; i++) await tick();
   assert.equal(ui.$('#ask-input').value, asked);
   await ui.submit('#ask-form', '#ask-input', '   ');
   assert.equal(ui.$('#ask-input').value.trim(), '');

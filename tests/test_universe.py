@@ -53,8 +53,10 @@ def test_latest_filing_wins_restatement_and_fallback_are_recorded():
     kinds = {(q['kind'], q.get('metric')) for q in shard['quality']}
     assert ('restated', 'net_income') in kinds
     only_old = company_shard(payload([r for r in two_years() if not (r[0].startswith('RevenueFrom') and r[4] == Y23[1])]), SUB)
-    assert only_old['values']['revenue'][0]['tag'] == 'Revenues' and only_old['values']['revenue'][0]['via'] == 'fallback'
-    assert any(q['kind'] == 'fallback' and q['metric'] == 'revenue' and q['fy'] == [2023] for q in only_old['quality'])
+    assert only_old['values']['revenue'][0]['tag'] == 'Revenues' and only_old['values']['revenue'][0]['via'] == 'primary', 'Revenues is a standard revenue tag'
+    sales = company_shard(payload([('SalesRevenueNet', 'USD', 900, *Y23, '2024-02-10', '10-K', 'A-24', 2023)] + [r for r in two_years() if not (r[0] in ('Revenues', 'RevenueFromContractWithCustomerExcludingAssessedTax') and r[4] == Y23[1])]), SUB)
+    assert sales['values']['revenue'][0]['tag'] == 'SalesRevenueNet' and sales['values']['revenue'][0]['via'] == 'fallback'
+    assert any(q['kind'] == 'fallback' and q['metric'] == 'revenue' and q['fy'] == [2023] for q in sales['quality'])
 
 
 def test_missing_is_never_zero_and_template_drops_unsupported():

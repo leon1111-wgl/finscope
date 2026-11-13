@@ -4,7 +4,7 @@ import {renderWaterline} from './waterline.js?v=20261101-ledger';
 import {escapeHTML as e} from './workbench.js';
 
 // Keep in sync with the inline head script in index.html, which picks the mode before first paint.
-export const RESEARCH_KEYS = ['company', 'date', 'view', 'dataset', 'calculation', 'revenuePercent', 'marginPoints', 'refinanceBillions', 'rateBps', 'collectionDays'];
+export const RESEARCH_KEYS = ['company', 'date', 'view', 'dataset', 'calculation', 'revenuePercent', 'marginPoints', 'refinanceBillions', 'rateBps', 'collectionDays', 'co'];
 const INTRO_TICKER = 'NVDA';
 let redrawIntro = null, introObserver = null;
 

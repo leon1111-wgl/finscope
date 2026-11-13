@@ -1,0 +1,34 @@
+name: Universe accuracy check
+# The pre-registered check in docs/validation/ACCURACY_PROTOCOL.md: a salted sample of universe figures against the
+# SEC Financial Statement Data Sets for the same accession. The zips are downloaded here only; the report is an artifact.
+on:
+  push:
+    # Iteration branch only: touching the marker runs the check. Removed at merge; workflow_dispatch stays.
+    branches: [universe-2026-11]
+    paths: [.github/accuracy-run]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Compare the sample with the Financial Statement Data Sets
+        env:
+          SEC_USER_AGENT: ${{ vars.SEC_USER_AGENT }}
+        run: python scripts/accuracy_check.py --out accuracy.json
+      - name: Summary
+        if: always()
+        run: |
+          [ -f accuracy.json ] && python -c "import json; r=json.load(open('accuracy.json')); print('\`\`\`json'); print(json.dumps({k: r[k] for k in ('code_commit','data_commit','summary','pass_bar','passed')}, indent=1)); print('\`\`\`')" >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accuracy-report
+          path: accuracy.json
+          retention-days: 30

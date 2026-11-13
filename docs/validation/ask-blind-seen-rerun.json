@@ -1,9 +1,9 @@
 {
-  "label": "seen rerun (after reading the set; not blind)",
-  "engine_commit": "f88eccc",
+  "label": "seen rerun of the 0.2.0 set (after reading it; not blind), deep ledger without the universe",
+  "engine_commit": "6836007",
   "set_commit": "f43486b",
-  "dataset_sha256": "2d3abdf26ce3e391689d9b00d6ce26a10928c3ce28b2af1ac0b4782b6457cf7c",
-  "bundle_as_of": "2026-11-07",
+  "dataset_sha256": "b2a889bd3cc9e4301bee4e6305a15f7df1260c62a5df647e658697a432dd8967",
+  "bundle_as_of": "2026-11-13",
   "set": {
     "records": 145,
     "written_by": "a separate model (Sonnet) from tests/ask-blind/BLIND_SCOPE.md only",
@@ -2180,7 +2180,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI 分诊（虚线墨，快照 2026-11-07）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
+      "summary": "AI 分诊（虚线墨，快照 2026-11-13）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
     },
     {
       "id": "b067",
@@ -2210,7 +2210,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI 分诊（虚线墨，快照 2026-11-07）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
+      "summary": "AI 分诊（虚线墨，快照 2026-11-13）：Meta（META）最新年度画像（期末 2025-12-31）在 94 个更早的公司年度样本中处于第 89.4 百分位——越高越不像历史常态。偏离训练中位数最多的是：应计比率、经营现金流利润率、现金覆盖率。"
     },
     {
       "id": "b068",
@@ -2240,7 +2240,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI triage (dashed ink, snapshot 2026-11-07): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
+      "summary": "AI triage (dashed ink, snapshot 2026-11-13): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
     },
     {
       "id": "b069",
@@ -2270,7 +2270,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "AI triage (dashed ink, snapshot 2026-11-07): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
+      "summary": "AI triage (dashed ink, snapshot 2026-11-13): Amazon (AMZN)'s latest annual profile (period ended 2025-12-31) sits at the 25.5th percentile of 94 earlier company-years — higher means less typical. Furthest from the training medians: operating margin, operating cash margin, current ratio."
     },
     {
       "id": "b070",
@@ -2296,7 +2296,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "2026-11-06（2026-11-07 当天或之前的最近观测）美国国债收益率：10 年期 4.86%。"
+      "summary": "2026-11-12（2026-11-13 当天或之前的最近观测）美国国债收益率：10 年期 5.10%。"
     },
     {
       "id": "b071",
@@ -2322,7 +2322,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "US Treasury par yields on 2026-11-06 (latest observation on or before 2026-11-07): 10-year 4.86%."
+      "summary": "US Treasury par yields on 2026-11-12 (latest observation on or before 2026-11-13): 10-year 5.10%."
     },
     {
       "id": "b072",
@@ -2832,7 +2832,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "证据包于 2026-11-07 UTC 用当时获取的 SEC 数据构建（截至 2026-11-07）；国债收益率到 2026-11-06。你的信息日期是 2026-11-07（快照 2026-11-07）。定时任务在工作日早上（UTC）刷新。"
+      "summary": "证据包于 2026-11-13 UTC 用当时获取的 SEC 数据构建（截至 2026-11-13）；国债收益率到 2026-11-12。你的信息日期是 2026-11-13（快照 2026-11-13）。定时任务在工作日早上（UTC）刷新。"
     },
     {
       "id": "b091",
@@ -2858,7 +2858,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "The evidence bundle was built 2026-11-07 UTC from SEC data retrieved then (as of 2026-11-07); Treasury yields run through 2026-11-06. Your information date is 2026-11-07 (snapshot 2026-11-07). A scheduled job refreshes it on weekday mornings UTC."
+      "summary": "The evidence bundle was built 2026-11-13 UTC from SEC data retrieved then (as of 2026-11-13); Treasury yields run through 2026-11-12. Your information date is 2026-11-13 (snapshot 2026-11-13). A scheduled job refreshes it on weekday mornings UTC."
     },
     {
       "id": "b092",
@@ -2884,7 +2884,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "The evidence bundle was built 2026-11-07 UTC from SEC data retrieved then (as of 2026-11-07); Treasury yields run through 2026-11-06. Your information date is 2026-11-07 (snapshot 2026-11-07). A scheduled job refreshes it on weekday mornings UTC."
+      "summary": "The evidence bundle was built 2026-11-13 UTC from SEC data retrieved then (as of 2026-11-13); Treasury yields run through 2026-11-12. Your information date is 2026-11-13 (snapshot 2026-11-13). A scheduled job refreshes it on weekday mornings UTC."
     },
     {
       "id": "b093",
@@ -2910,7 +2910,7 @@
       "outcome": "correct",
       "strict_status": null,
       "why": [],
-      "summary": "证据包于 2026-11-07 UTC 用当时获取的 SEC 数据构建（截至 2026-11-07）；国债收益率到 2026-11-06。你的信息日期是 2026-11-07（快照 2026-11-07）。定时任务在工作日早上（UTC）刷新。"
+      "summary": "证据包于 2026-11-13 UTC 用当时获取的 SEC 数据构建（截至 2026-11-13）；国债收益率到 2026-11-12。你的信息日期是 2026-11-13（快照 2026-11-13）。定时任务在工作日早上（UTC）刷新。"
     },
     {
       "id": "b094",
@@ -3176,7 +3176,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "GOOGL's FY2026 has not been filed by 2026-11-07, so it is not in this bundle, and FinScope does not forecast it. The latest filed annual period is FY2025 (2025-01-01 → 2025-12-31)."
+      "summary": "GOOGL's FY2026 has not been filed by 2026-11-13, so it is not in this bundle, and FinScope does not forecast it. The latest filed annual period is FY2025 (2025-01-01 → 2025-12-31)."
     },
     {
       "id": "b103",
@@ -3236,7 +3236,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "截至 2026-11-07，AMZN 的 2026 财年还没有提交年报，不在证据包里，FinScope 也不做预测。最新已提交的年度是 2025 财年（2025-01-01 至 2025-12-31）。"
+      "summary": "截至 2026-11-13，AMZN 的 2026 财年还没有提交年报，不在证据包里，FinScope 也不做预测。最新已提交的年度是 2025 财年（2025-01-01 至 2025-12-31）。"
     },
     {
       "id": "b105",
@@ -3576,7 +3576,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "证据包里没有：毛利与毛利率。FinScope 不会用别的数字代替。它包含营收、净利润、营业利润、经营活动现金流、总资产、总负债、流动资产、流动负债、现金、资本开支、八个比率、现金转化率、自由现金流、最新的年初至今对比、利润到现金的调节、AI 分诊百分位、美国国债收益率和财报链接。"
+      "summary": "毛利率来自 FinScope 的公司全集数据，这里没有加载。FinScope 不会用别的数字代替。"
     },
     {
       "id": "b117",
@@ -3606,7 +3606,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "证据包里没有：毛利与毛利率。FinScope 不会用别的数字代替。它包含营收、净利润、营业利润、经营活动现金流、总资产、总负债、流动资产、流动负债、现金、资本开支、八个比率、现金转化率、自由现金流、最新的年初至今对比、利润到现金的调节、AI 分诊百分位、美国国债收益率和财报链接。"
+      "summary": "毛利率来自 FinScope 的公司全集数据，这里没有加载。FinScope 不会用别的数字代替。"
     },
     {
       "id": "b118",
@@ -3629,14 +3629,14 @@
           "tickers": [
             "MSFT"
           ],
-          "metric": "eps",
+          "metric": "eps_diluted",
           "period": null
         }
       },
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "Not in this bundle: Earnings per share. FinScope will not substitute a different figure. It holds revenue, net income, operating income, operating cash flow, total assets, total liabilities, current assets, current liabilities, cash, capex, eight ratios, cash conversion, free cash flow, the latest fiscal year-to-date checkpoint, its profit-to-cash bridge, the AI triage percentile, Treasury yields and filing links."
+      "summary": "Diluted EPS (reported) comes from FinScope's company universe, which is not loaded here. FinScope will not substitute a different figure."
     },
     {
       "id": "b119",
@@ -3666,7 +3666,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "证据包里没有：研发费用。FinScope 不会用别的数字代替。它包含营收、净利润、营业利润、经营活动现金流、总资产、总负债、流动资产、流动负债、现金、资本开支、八个比率、现金转化率、自由现金流、最新的年初至今对比、利润到现金的调节、AI 分诊百分位、美国国债收益率和财报链接。"
+      "summary": "研发费用来自 FinScope 的公司全集数据，这里没有加载。FinScope 不会用别的数字代替。"
     },
     {
       "id": "b120",
@@ -3689,14 +3689,14 @@
           "tickers": [
             "GOOGL"
           ],
-          "metric": "debt",
+          "metric": "total_debt",
           "period": null
         }
       },
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "证据包里没有：债务（借款）——与总负债不是同一个数。FinScope 不会用别的数字代替。它包含营收、净利润、营业利润、经营活动现金流、总资产、总负债、流动资产、流动负债、现金、资本开支、八个比率、现金转化率、自由现金流、最新的年初至今对比、利润到现金的调节、AI 分诊百分位、美国国债收益率和财报链接。"
+      "summary": "总债务来自 FinScope 的公司全集数据，这里没有加载。FinScope 不会用别的数字代替。"
     },
     {
       "id": "b121",
@@ -3846,7 +3846,7 @@
       "outcome": "correct",
       "strict_status": true,
       "why": [],
-      "summary": "证据包里没有：毛利与毛利率。FinScope 不会用别的数字代替。它包含营收、净利润、营业利润、经营活动现金流、总资产、总负债、流动资产、流动负债、现金、资本开支、八个比率、现金转化率、自由现金流、最新的年初至今对比、利润到现金的调节、AI 分诊百分位、美国国债收益率和财报链接。"
+      "summary": "毛利率来自 FinScope 的公司全集数据，这里没有加载。FinScope 不会用别的数字代替。"
     },
     {
       "id": "b126",

@@ -209,15 +209,25 @@ export function matchCompanies(prepared, text, low, notTickers = new Set()) {
       if (entry) { hits.push({start: i, end: i + n, cik: entry.c, alias: low.slice(i, i + n), kind: 'zh'}); break; }
     }
   }
+  const rejected = [];
   for (const m of text.matchAll(/(?<![A-Za-z0-9$&\/'])\$?([A-Za-z]{1,5}(?:[.-][A-Za-z]{1,2})?)(?![A-Za-z0-9&\/'])/g)) {
     const raw = m[1], upper = raw.toUpperCase().replace('.', '-'), dollar = m[0].startsWith('$');
     const entry = prepared.byTicker.get(upper);
     if (!entry) continue;
+    const start = m.index + (dollar ? 1 : 0), hit = {start, end: start + raw.length, cik: entry.c, alias: raw, kind: 'ticker'};
     const isUpper = raw === raw.toUpperCase();
-    if (!dollar && isUpper && (notTickers.has(upper) || (upper.length === 1 && !SINGLE_LETTER_OK.has(upper)))) continue;
-    if (!dollar && !isUpper && !(entry.l && raw.length >= 2 && raw === raw.toLowerCase())) continue;
-    const start = m.index + (dollar ? 1 : 0);
-    hits.push({start, end: start + raw.length, cik: entry.c, alias: raw, kind: 'ticker'});
+    if ((!dollar && isUpper && (notTickers.has(upper) || (upper.length === 1 && !SINGLE_LETTER_OK.has(upper)))) || (!dollar && !isUpper && !(entry.l && raw.length >= 2 && raw === raw.toLowerCase()))) { rejected.push(hit); continue; }
+    hits.push(hit);
+  }
+  // Inside a list of tickers ("jpm bac wfc c gs ms"), a short or lower-case ticker next to an accepted one is a ticker too.
+  const SEP = /^[\s,，、;；/]*(?:and|和|与|及|跟|vs\.?|versus)?[\s,，、;；/]*$/i;
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const r of [...rejected]) {
+      if (hits.some(h => h.kind === 'ticker' && ((h.end <= r.start && SEP.test(text.slice(h.end, r.start))) || (r.end <= h.start && SEP.test(text.slice(r.end, h.start)))))) {
+        hits.push(r); rejected.splice(rejected.indexOf(r), 1); changed = true;
+      }
+    }
   }
   hits.sort((a, b) => (b.end - b.start) - (a.end - a.start) || a.start - b.start);
   const taken = [];
@@ -254,6 +264,7 @@ export function searchCompanies(prepared, query, limit = 8) {
   }
   return scored.sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, limit).map(x => x[2]);
 }
+export const lc = text => /^[A-Z][a-z]/.test(text) ? text[0].toLowerCase() + text.slice(1) : text;
 export const displayName = (entry, lang = 'en') => lang === 'zh' && entry.z?.length ? `${entry.z[0]}（${primary(entry)}）` : `${entry.n} (${primary(entry)})`;
 
 // ------------------------------------------------------------------ screen and peer groups
@@ -282,18 +293,28 @@ export function buildScreen(screen, prepared) {
     const s = row.sic.padStart(4, '0');
     return /^\d{4}$/.test(row.sic) ? [`sic4:${s}`, `sic3:${s.slice(0, 3)}`, `sic2:${s.slice(0, 2)}`, `div:${row.entry.v}`] : [`div:${row.entry.v}`];
   };
-  for (const row of rows) if (Object.values(row.values).some(Number.isFinite)) for (const k of keysOf(row)) counts.set(k, (counts.get(k) || 0) + 1);
+  // Membership is by classification: a company's peers are every screened company that shares its peer key.
+  const members = new Map();
+  for (const row of rows) if (Object.values(row.values).some(Number.isFinite)) for (const k of keysOf(row)) {
+    counts.set(k, (counts.get(k) || 0) + 1);
+    if (!members.has(k)) members.set(k, []);
+    members.get(k).push(row);
+  }
   for (const row of rows) row.peer = keysOf(row).find(k => (counts.get(k) || 0) >= PEER_MIN) || `div:${row.entry.v}`;
   const groups = new Map();
-  for (const row of rows) { if (!groups.has(row.peer)) groups.set(row.peer, []); groups.get(row.peer).push(row); }
-  for (const members of groups.values()) for (const key of SCREEN_KEYS) {
-    const vals = members.map(m => m.values[key]).filter(Number.isFinite).sort((a, b) => a - b);
-    for (const m of members) {
-      const x = m.values[key];
-      if (!Number.isFinite(x)) { (m.pct ||= {})[key] = null; continue; }
+  for (const row of rows) { if (!groups.has(row.peer)) groups.set(row.peer, members.get(row.peer) || [row]); }
+  const sorted = new Map();
+  for (const row of rows) {
+    const peers = groups.get(row.peer);
+    row.pct = {}; row.peerN = {};
+    for (const key of SCREEN_KEYS) {
+      const id = `${row.peer}|${key}`;
+      if (!sorted.has(id)) sorted.set(id, peers.map(m => m.values[key]).filter(Number.isFinite).sort((a, b) => a - b));
+      const vals = sorted.get(id), x = row.values[key];
+      if (!Number.isFinite(x)) { row.pct[key] = null; continue; }
       const below = vals.filter(v => v < x).length, ties = vals.filter(v => v === x).length;
-      (m.pct ||= {})[key] = Math.round(((below + 0.5 * ties) / vals.length) * 100);
-      (m.peerN ||= {})[key] = vals.length;
+      row.pct[key] = Math.round(((below + 0.5 * ties) / vals.length) * 100);
+      row.peerN[key] = vals.length;
     }
   }
   return {rows, groups};

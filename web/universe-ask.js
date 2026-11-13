@@ -1,7 +1,7 @@
 // Ask the ledger, universe path (0.3.0): answers about any company in the universe and the figures added in 0.3.0.
 // Called by ask-engine.js after its refusal checks, with the parsed question and the loaded shards. Fixed rules only;
 // the program states every number with its source line. No model, no network, no storage.
-import {FIGURES, INDICATORS, TEMPLATE_LABEL, isFigure, label, show, exact, indicator, periodIndex, latestIndex, entryOf, primary, sourceOf, filingUrl, filingIndexUrl} from './universe-data.js';
+import {FIGURES, INDICATORS, TEMPLATE_LABEL, isFigure, label, show, exact, indicator, periodIndex, latestIndex, entryOf, primary, sourceOf, filingUrl, filingIndexUrl, lc} from './universe-data.js';
 
 export const UNIVERSE_ONLY = new Set([...Object.keys(FIGURES), ...Object.keys(INDICATORS)].filter(k => !['revenue', 'net_income', 'operating_income', 'operating_cash_flow', 'assets', 'liabilities', 'current_assets', 'current_liabilities', 'cash', 'capex',
   'operating_margin', 'net_margin', 'cash_margin', 'current_ratio', 'liabilities_assets', 'cash_coverage', 'accruals', 'revenue_growth', 'cash_conversion', 'free_cash_flow', 'profit_cash_gap'].includes(k)));
@@ -110,7 +110,7 @@ function periodProblem(r, p, ctx, t, shard, res, metric) {
   if (res.bad === 'future') return finish(r, {status: 'refused', topic: 'forecast', plan: {...r.plan, tickers: [t], metric, period: `FY${res.y}`}, summary: L(lang,
     `${nameOf(ctx, t, 'en')} has not filed FY${res.y}, so it is not in the data, and FinScope does not forecast it. The latest filed year is ${fyText(shard, shard.periods.length - 1, 'en')}.`,
     `${nameOf(ctx, t, 'zh')}还没有提交 ${res.y} 财年的年报，数据里没有，FinScope 也不做预测。最新已提交的是${fyText(shard, shard.periods.length - 1, 'zh')}。`),
-    offers: [L(lang, `${t} latest ${label(metric || 'revenue', 'en').toLowerCase()}`, `${t} 最新的${label(metric || 'revenue', 'zh')}`)]});
+    offers: [L(lang, `${t} latest ${lc(label(metric || 'revenue', 'en'))}`, `${t} 最新的${label(metric || 'revenue', 'zh')}`)]});
   if (res.bad === 'early') return finish(r, {status: 'not_in_bundle', topic: 'out_of_range', plan: {...r.plan, tickers: [t], metric, period: `FY${res.y}`}, summary: L(lang,
     `FY${res.y} is before the first of the latest ten fiscal years FinScope keeps for ${t} (FY${first.fy}, ended ${first.end}).`,
     `${res.y} 财年早于 FinScope 为 ${t} 保存的最近十个财年中的第一个（${first.fy} 财年，截至 ${first.end}）。`)});
@@ -135,10 +135,10 @@ function unavailable(r, p, ctx, t, shard, metric, i, res) {
   const why = res.reason === 'conflict' ? L(lang, 'the filing reports conflicting values for it', '该文件对它报告了相互矛盾的数值')
     : res.reason === 'nonpositive' ? L(lang, 'the denominator is zero or negative, so the ratio is not meaningful', '分母为零或负数，比率没有意义')
     : res.reason === 'no_prior' ? L(lang, 'it needs the prior fiscal year, which is not available', '需要上一财年的数据，但没有')
-    : L(lang, `${missing.map(m => label(m, 'en').toLowerCase()).join(' and ')} is not reported under the tags FinScope reads${chain.length ? ` (${chain.join('; ')})` : ''}`,
+    : L(lang, `${missing.map(m => lc(label(m, 'en'))).join(' and ')} is not reported under the tags FinScope reads${chain.length ? ` (${chain.join('; ')})` : ''}`,
       `${missing.map(m => label(m, 'zh')).join('和')}没有用 FinScope 读取的标签报告${chain.length ? `（${chain.join('；')}）` : ''}`);
   const period = i == null ? '' : ` ${L(lang, `FY${shard.periods[i].fy}`, `${shard.periods[i].fy} 财年`)}`;
-  return finish(r, {status: 'not_in_bundle', topic: res.reason === 'nonpositive' ? 'not_meaningful' : 'missing_fact', plan, facts: (res.sources || []).map(s => fact(shard, s, lang)), summary: L(lang,
+  return finish(r, {status: 'not_in_bundle', topic: res.reason === 'nonpositive' ? 'not_meaningful' : 'missing_fact', plan, summary: L(lang,
     `${label(metric, 'en')} for ${t}${period} is not stated: ${why}. FinScope does not substitute another figure or treat a missing value as zero.`,
     `${t}${period}的${label(metric, 'zh')}无法给出：${why}。FinScope 不会用别的数字代替，也不把缺失当作零。`),
     offers: [L(lang, `${t} data quality notes`, `${t} 的数据质量说明`), L(lang, `${t} revenue and net income`, `${t} 的营收和净利润`)]});
@@ -146,7 +146,7 @@ function unavailable(r, p, ctx, t, shard, metric, i, res) {
 
 function templateOffers(shard, t, lang) {
   const k = {bank: 'net_interest_income', insurance: 'premiums', reit: 'real_estate', industrial: 'gross_margin'}[shard.template];
-  return [L(lang, `${t} ${label(k, 'en').toLowerCase()}`, `${t} 的${label(k, 'zh')}`), L(lang, `${t} net income trend`, `${t} 近几年的净利润`)];
+  return [L(lang, `${t} ${lc(label(k, 'en'))}`, `${t} 的${label(k, 'zh')}`), L(lang, `${t} net income trend`, `${t} 近几年的净利润`)];
 }
 
 function calcOf(shard, t, key, i, value, lang) {
@@ -181,9 +181,9 @@ function metricAnswer(r, p, ctx, t, key) {
   if (res.note) notes.push(res.note + '.');
   if (p.relative === 'this_year' && !p.years.length) notes.push(L(lang, `“This year” is read as the latest filed fiscal year, FY${shard.periods[i].fy}.`, `“今年”按最新已提交的 ${shard.periods[i].fy} 财年理解。`));
   return finish(r, {topic: isFigure(key) ? 'metric' : 'ratio', plan: {tickers: [t], metric: key, period: p.years.length || p.exactEnd ? `FY${shard.periods[i].fy}` : 'latest'}, facts, calculations: calc ? [calc] : [], notes,
-    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${label(key, 'en').toLowerCase()} for ${fyText(shard, i, 'en')}: ${show(key, res.value, 'en')}.`,
+    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(key, 'en'))} for ${fyText(shard, i, 'en')}: ${show(key, res.value, 'en')}.`,
       `${nameOf(ctx, t, 'zh')}${fyText(shard, i, 'zh')}的${label(key, 'zh')}：${show(key, res.value, 'zh')}。`),
-    offers: [L(lang, `${t} ${label(key, 'en').toLowerCase()} over the last five years`, `${t} 近五年的${label(key, 'zh')}`), L(lang, `Which tag is ${t}'s ${label(key, 'en').toLowerCase()} from?`, `${t} 的${label(key, 'zh')}用的哪个标签`)]});
+    offers: [L(lang, `${t} ${lc(label(key, 'en'))} over the last five years`, `${t} 近五年的${label(key, 'zh')}`), L(lang, `Which tag is ${t}'s ${lc(label(key, 'en'))} from?`, `${t} 的${label(key, 'zh')}用的哪个标签`)]});
 }
 
 function figuresAnswer(r, p, ctx, t, keys) {
@@ -227,7 +227,7 @@ function trendAnswer(r, p, ctx, t, key) {
   if (p.lastN && idx.length < p.lastN) notes.push(L(lang, `Only ${idx.length} fiscal years are available.`, `只有 ${idx.length} 个财年的数据。`));
   return finish(r, {topic: 'trend', plan: {tickers: [t], metric: key, period: p.lastN ? `last${p.lastN}` : span, years: idx.map(i => shard.periods[i].fy)}, facts, calculations: calcs.slice(-3),
     table: {columns: [L(lang, 'Fiscal year', '财年'), L(lang, 'Period end', '期末'), label(key, lang)], rows},
-    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${label(key, 'en').toLowerCase()} ${span}: ${rows.map(x => `${x[0]} ${x[2]}`).join(', ')}.`,
+    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(key, 'en'))} ${span}: ${rows.map(x => `${x[0]} ${x[2]}`).join(', ')}.`,
       `${nameOf(ctx, t, 'zh')} ${span} 的${label(key, 'zh')}：${rows.map(x => `${x[0]} ${x[2]}`).join('，')}。`), notes});
 }
 
@@ -249,7 +249,7 @@ function changeAnswer(r, p, ctx, t, key) {
   calcs.push({label: L(lang, `Change · ${t}`, `变化 · ${t}`), formula: pctPts ? L(lang, 'later − earlier, in percentage points', '后一年 − 前一年（百分点）') : L(lang, 'later − earlier; growth = later ÷ earlier − 1', '后一年 − 前一年；增长率 = 后一年 ÷ 前一年 − 1'), result: changeText});
   return finish(r, {topic: 'change', plan: {tickers: [t], metric: key, period: `FY${shard.periods[i].fy}`, from: `FY${shard.periods[j].fy}`}, facts, calculations: calcs,
     table: {columns: [L(lang, 'Fiscal year', '财年'), L(lang, 'Period end', '期末'), label(key, lang)], rows: [[`FY${shard.periods[j].fy}`, shard.periods[j].end, show(key, b.value, lang)], [`FY${shard.periods[i].fy}`, shard.periods[i].end, show(key, a.value, lang)]]},
-    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${label(key, 'en').toLowerCase()}: ${show(key, b.value, 'en')} in FY${shard.periods[j].fy} → ${show(key, a.value, 'en')} in FY${shard.periods[i].fy}, ${dir} ${changeText}.`,
+    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(key, 'en'))}: ${show(key, b.value, 'en')} in FY${shard.periods[j].fy} → ${show(key, a.value, 'en')} in FY${shard.periods[i].fy}, ${dir} ${changeText}.`,
       `${nameOf(ctx, t, 'zh')}的${label(key, 'zh')}：${shard.periods[j].fy} 财年 ${show(key, b.value, 'zh')} → ${shard.periods[i].fy} 财年 ${show(key, a.value, 'zh')}，${dir} ${changeText}。`),
     notes: noteFor(shard, key, [...a.sources, ...b.sources], lang)});
 }
@@ -322,7 +322,7 @@ function sectorRankAnswer(r, p, ctx, t, key) {
   const group = row.peer.startsWith('div:') ? L(lang, `SIC division ${row.peer.slice(4)}`, `SIC 门类 ${row.peer.slice(4)}`) : `SIC ${row.peer.split(':')[1]}${row.peer.startsWith('sic4') ? '' : row.peer.startsWith('sic3') ? 'x' : 'xx'}`;
   return finish(r, {topic: 'sector_rank', plan: {tickers: [t], metric: key, period: 'latest', peer_group: row.peer, peers: peers.length}, facts: res.sources.map(s => fact(shard, s, lang)),
     calculations: [calcOf(shard, t, key, i, row.values[key], lang), {label: L(lang, 'Peer percentile', '同业百分位'), formula: L(lang, '(peers below + half of ties) ÷ peers with a value × 100, latest fiscal year of each', '（低于它的同业数 + 并列数的一半）÷ 有数值的同业数 × 100，各取最新财年'), result: `${row.pct[key]} / 100`}].filter(Boolean),
-    summary: L(lang, `${nameOf(ctx, t, 'en')}'s ${label(key, 'en').toLowerCase()} (FY${row.fy}) is ${show(key, row.values[key], 'en')}, at the ${row.pct[key]}th percentile of ${peers.length} companies in its peer group (${group}); ${meaning}. A position, not a rating.`,
+    summary: L(lang, `${nameOf(ctx, t, 'en')}'s ${lc(label(key, 'en'))} (FY${row.fy}) is ${show(key, row.values[key], 'en')}, at the ${row.pct[key]}th percentile of ${peers.length} companies in its peer group (${group}); ${meaning}. A position, not a rating.`,
       `${nameOf(ctx, t, 'zh')}的${label(key, 'zh')}（${row.fy} 财年）为 ${show(key, row.values[key], 'zh')}，在同业组（${group}）${peers.length} 家公司中处于第 ${row.pct[key]} 百分位；${meaning}。这只是位置，不是评级。`),
     notes: [L(lang, 'Peer group: the most specific SIC level (4-digit, 3-digit, 2-digit, then division) with at least 10 companies. Each peer uses its own latest fiscal year. Banks and insurers are not in the screen.', '同业组取至少有 10 家公司的最细 SIC 层级（四位、三位、两位，再到门类）。每家同业用自己最新的财年。银行和保险公司不在筛选范围内。')],
     offers: [L(lang, `${t} cash conversion over the last five years`, `${t} 近五年的现金转化率`)]});
@@ -341,7 +341,7 @@ function lineageAnswer(r, p, ctx, t, key) {
   const how = {primary: L(lang, 'the first tag in its chain', '标签链中的第一个标签'), fallback: L(lang, 'a fallback tag (the first choice was not reported)', '备用标签（首选标签未报告）'), derived: L(lang, 'a composition of reported parts from one filing', '同一文件中报告的几个部分之和'), total: L(lang, 'the total Revenues tag, larger than contract revenue alone', '总营收标签 Revenues（大于仅含合同收入的标签）')}[s.via] || s.via;
   const what = s.parts ? s.parts.map(x => `${x.sign < 0 ? '−' : '+'}${x.tag} ${exact(x.v)}`).join(' ') : s.tag;
   return finish(r, {topic: 'lineage', plan: {tickers: [t], metric: k, period: p.years.length ? `FY${shard.periods[i].fy}` : 'latest'}, facts: [fact(shard, s, lang)],
-    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${label(k, 'en').toLowerCase()} for ${fyText(shard, i, 'en')}: ${what}, from ${s.form} ${s.accession} filed ${s.filed}, chosen as ${how}. The chain FinScope reads for this figure: ${chain}.`,
+    summary: L(lang, `${nameOf(ctx, t, 'en')}, ${lc(label(k, 'en'))} for ${fyText(shard, i, 'en')}: ${what}, from ${s.form} ${s.accession} filed ${s.filed}, chosen as ${how}. The chain FinScope reads for this figure: ${chain}.`,
       `${nameOf(ctx, t, 'zh')}${fyText(shard, i, 'zh')}的${label(k, 'zh')}：${what}，来自 ${s.filed} 提交的 ${s.form}（${s.accession}），选取方式为${how}。FinScope 对这个数字读取的标签顺序：${chain}。`),
     notes: [L(lang, 'The latest filing that reports the period wins; inside it, the earlier tag in the chain wins. A later restatement replaces the first-reported figure, and the data-quality notes say so.', '报告该期间的最新文件优先；同一文件内，链中靠前的标签优先。后来的重述会替换最初报告的数字，数据质量说明会写明。'), ...noteFor(shard, k, [s], lang)]});
 }
@@ -428,14 +428,19 @@ export function answerUniverse(r, p, ctx, helpers) {
   if (has(UCUE.lineage) && !c.provenance) return p.companies.length === 1 ? lineageAnswer(r, p, u, t, key) : helpers.oneAtATime(r, p, 'lineage');
   if (c.filingLink || (c.filingDoc && !metricKeys.length && !c.cashSupport)) return p.companies.length === 1 ? filingAnswer(r, p, u, t) : helpers.oneAtATime(r, p, 'filing');
   const screenKey = ['cash_conversion', 'accruals', 'fcf_margin'].includes(key) ? key : (c.cashSupport || !key ? 'cash_conversion' : null);
-  if (has(UCUE.sector) && (has(UCUE.percentile) || c.rank)) {
+  if (has(UCUE.sector) && (has(UCUE.percentile) || c.rank || c.compare)) {
     if (p.companies.length !== 1) return helpers.oneAtATime(r, p, 'sector');
     if (!screenKey) return finish(r, {status: 'not_in_bundle', topic: 'sector_rank', plan: {tickers: [t], metric: key, period: 'latest'}, summary: L(lang,
-      `Sector percentiles are computed for cash conversion, the accrual ratio and FCF margin. For ${label(key, 'en').toLowerCase()}, compare named companies instead.`, `行业百分位只计算现金转化率、应计比率和自由现金流利润率。${label(key, 'zh')}请点名几家公司比较。`),
+      `Sector percentiles are computed for cash conversion, the accrual ratio and FCF margin. For ${lc(label(key, 'en'))}, compare named companies instead.`, `行业百分位只计算现金转化率、应计比率和自由现金流利润率。${label(key, 'zh')}请点名几家公司比较。`),
       offers: [L(lang, `Where does ${t} rank in its sector on cash conversion?`, `${t} 的现金转化率在行业里排第几`)]});
     return sectorRankAnswer(r, p, u, t, screenKey);
   }
   if (sel.decline) return helpers.declineCombination(r, p, sel.decline);
+  // Profit (net income) with any word beyond size, amount or direction asks about its quality: cash support.
+  if (key === 'net_income' && !sel.figures && !c.trend && !c.change && !p.range && !p.lastN && p.yearOrder.length < 2 && helpers.profitEvaluative(p)) {
+    if (p.companies.length === 1) return cashSupportAnswer(r, p, u, t);
+    return compareAnswer(r, p, u, p.companies, 'cash_conversion');
+  }
   if (sel.route === 'cash_support' || (c.cashSupport && p.companies.length === 1 && !key)) return cashSupportAnswer(r, p, u, t);
   if (c.cashSupport && p.companies.length === 1 && ['cash_conversion', 'net_income', 'operating_cash_flow'].includes(key) && !c.trend && !c.change) return cashSupportAnswer(r, p, u, t);
   if (sel.figures) {
@@ -450,7 +455,7 @@ export function answerUniverse(r, p, ctx, helpers) {
   }
   if (p.companies.length >= 2) {
     if (c.trend || p.range || p.lastN) return finish(r, {status: 'clarify', topic: 'clarify', plan: {...r.plan, tickers: [...p.companies], metric: key}, summary: L(lang, 'Trends are shown one company at a time. Pick one:', '走势一次只显示一家公司，请选一家：'),
-      offers: p.companies.map(x => L(lang, `${x} ${label(key, 'en').toLowerCase()} trend`, `${x} 近几年的${label(key, 'zh')}`))});
+      offers: p.companies.map(x => L(lang, `${x} ${lc(label(key, 'en'))} trend`, `${x} 近几年的${label(key, 'zh')}`))});
     let k = key;
     if ((c.growthCompare || c.growthRank || (c.change && p.yearOrder.length < 2)) && isFigure(k)) k = k === 'revenue' ? 'revenue_growth' : k;
     return compareAnswer(r, p, u, p.companies, k);

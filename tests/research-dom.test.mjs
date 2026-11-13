@@ -11,11 +11,12 @@ const inputs={revenuePercent:-10,marginPoints:-2.25,refinanceBillions:10,rateBps
 const saved=()=>buildBrief(data,data.snapshots.at(-1),data.companies.find(c=>c.ticker==='NVDA'),inputs,data.as_of);
 let sequence=0;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
+const universeFile = url => { const f = new URL('../web/' + url.slice(2), import.meta.url); return fs.existsSync(f) ? {ok: true, json: async () => JSON.parse(fs.readFileSync(f, 'utf8'))} : {ok: false, status: 404}; };
 async function boot(t,query='',monitor=false,researchFetch=null) {
  const dom=new JSDOM(html,{url:'https://example.test/finscope/'+query});
  const calls=[],downloads=[];
  Object.assign(globalThis,{window:dom.window,document:dom.window.document,history:dom.window.history,location:dom.window.location,
-  ResizeObserver:class{observe(){}},fetch:async (url,options)=>{calls.push(url);if(monitor&&url==='./data/updates.json')return{ok:true,text:async()=>fs.readFileSync(new URL('../web/data/updates.json',import.meta.url),'utf8')};assert.equal(url,'./data/research.json');return researchFetch?researchFetch(options):{ok:true,json:async()=>data};}});
+  ResizeObserver:class{observe(){}},fetch:async (url,options)=>{calls.push(url);if(monitor&&url==='./data/updates.json')return{ok:true,text:async()=>fs.readFileSync(new URL('../web/data/updates.json',import.meta.url),'utf8')};if(url.startsWith('./data/universe/'))return universeFile(url);assert.equal(url,'./data/research.json');return researchFetch?researchFetch(options):{ok:true,json:async()=>data};}});
  const originalURL=URL.createObjectURL;
  URL.createObjectURL=blob=>{downloads.push(blob);return 'blob:test';};
  dom.window.HTMLAnchorElement.prototype.click=function(){};
@@ -40,7 +41,7 @@ test('saved JSON preview and cancel preserve the current company and do not send
  assert.match(ui.$('#restore-preview').textContent,/NVDA/);
  ui.click('#restore-cancel');
  assert.equal(ui.$('#company').value,'MSFT');assert.equal(ui.$('#company').disabled,false);
- assert.deepEqual(ui.calls,['./data/research.json']);
+ assert.deepEqual(ui.calls.filter(u=>!u.startsWith('./data/universe/')),['./data/research.json']);
 });
 test('restored brief recomputes official facts and exports a versioned reopening link',async t=>{
  const ui=await boot(t);const edited=saved();edited.facts={revenue:{value:1}};edited.scenario={profitProxy:1e99};
@@ -51,7 +52,7 @@ test('restored brief recomputes official facts and exports a versioned reopening
  assert.equal(exported.facts.revenue.value,data.snapshots.at(-1).companies.NVDA.at(-1).metrics.revenue.value);
  assert.notEqual(exported.scenario.profitProxy,1e99);
  assert.ok(exported.reopen_url.includes(`dataset=${data.dataset_sha256}`));
- assert.deepEqual(ui.calls,['./data/research.json']);
+ assert.deepEqual(ui.calls.filter(u=>!u.startsWith('./data/universe/')),['./data/research.json']);
 });
 test('changed shared dataset blocks calculation until the explicit current-data choice',async t=>{
  const ui=await boot(t,`?company=NVDA&date=${data.as_of}&view=brief&revenuePercent=-10&dataset=${'0'.repeat(64)}`);
@@ -152,7 +153,7 @@ test('current coverage uses the shared loaded bundle while a historical brief st
  assert.equal(new URL(ui.$('.updates-coverage a').href).searchParams.get('company'),'NVDA');
  const after=await ui.exportJSON();delete before.exported_at;delete after.exported_at;
  assert.deepEqual(after,before);assert.equal(after.requested_date,'2021-10-15');
- assert.deepEqual(ui.calls,['./data/research.json','./data/updates.json']);
+ assert.deepEqual(ui.calls.filter(u=>!u.startsWith('./data/universe/')),['./data/research.json','./data/updates.json']);
 });
 
 // A transient load failure must not strand a recipient or erase their shared inputs.
@@ -175,7 +176,7 @@ test('failed evidence can be retried once and restores the original versioned se
  assert.equal(ui.$('#company').value,'NVDA');
  assert.deepEqual((await ui.exportJSON()).assumptions,inputs);
  assert.equal(ui.downloads.length,1,'recovery must not duplicate download listeners');
- assert.deepEqual(ui.calls,['./data/research.json','./data/research.json']);
+ assert.deepEqual(ui.calls.filter(u=>!u.startsWith('./data/universe/')),['./data/research.json','./data/research.json']);
 });
 
 test('retry still requires explicit approval when a saved dataset changed',async t=>{

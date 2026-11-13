@@ -56,10 +56,11 @@ test('saved research links open the console; a bare address opens the intro',()=
  }
 });
 
+const universeFile = url => { const f = new URL('../web/' + url.slice(2), import.meta.url); return fs.existsSync(f) ? {ok: true, json: async () => JSON.parse(fs.readFileSync(f, 'utf8'))} : {ok: false, status: 404}; };
 async function boot(t,query=''){
  const dom=new JSDOM(html,{url:'https://example.test/finscope/'+query});
  Object.assign(globalThis,{window:dom.window,document:dom.window.document,history:dom.window.history,location:dom.window.location,
-  ResizeObserver:class{observe(){}},fetch:async url=>{assert.equal(url,'./data/research.json');return {ok:true,json:async()=>data};}});
+  ResizeObserver:class{observe(){}},fetch:async url=>{if(url.startsWith('./data/universe/'))return universeFile(url);assert.equal(url,'./data/research.json');return {ok:true,json:async()=>data};}});
  dom.window.scrollTo=()=>{};dom.window.HTMLElement.prototype.scrollIntoView=function(){};
  Object.defineProperty(globalThis,'navigator',{value:{clipboard:{writeText:async()=>{}}},configurable:true});
  await import(`../web/research-app.js?ledgerTest=${++sequence}`);
