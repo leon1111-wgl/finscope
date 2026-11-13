@@ -115,8 +115,10 @@ units_seen = set()
 
 
 def unit_matches(found, expected):
+    # The data sets record per-share facts with the unit 'USD' (the only unit seen in the second run), where
+    # CompanyFacts says 'USD/shares'; the value comparison and its 0.005 tolerance still apply.
     norm = lambda u: u.lower().replace(' ', '').replace('per', '/').replace('_', '/').rstrip('s')
-    return norm(found) == norm(expected) or (expected == 'USD' and found == 'USD')
+    return norm(found) == norm(expected) or (expected == 'USD/shares' and found == 'USD')
 
 
 def judge(cell, num, pre, available_until):
