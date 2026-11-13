@@ -4,6 +4,9 @@
 // Desktop 1440 and phone 375, light and dark: intro, the Ask box (answers and refusals), every console tab.
 // Failure paths: a missing bundle with retry, a stale bundle, a saved brief from an older data version,
 // deep links (versioned, unknown view, unknown company, out-of-range date, repeated field) and reduced motion.
+// 0.3.0: Financials (search, ten years, CSV), Compare (add, fiscal year, CSV), Screen (filter, sort, CSV) and Watch (SEC
+// Submissions answered by a SYNTHETIC fixture in the walk; SEC unreachable), plus a missing shard, a missing index,
+// an unknown company, a bank template and a missing tag.
 // Fails on any console error, failed request, horizontal overflow at 375 px or missing expected content.
 import fs from 'node:fs';
 import http from 'node:http';
@@ -20,6 +23,11 @@ const pw = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(path.join(
 const bundle = JSON.parse(fs.readFileSync(path.join(web, 'data/research.json'), 'utf8'));
 
 // A static server shaped like GitHub Pages: /finscope/ prefix, no directory listings, 404 for unknown paths.
+const SEC_FIXTURE = {cik: '21344', name: 'SYNTHETIC walk fixture', filings: {recent: {
+  accessionNumber: ['0000021344-26-900001', '0000021344-26-900002', '0000021344-26-900003', '0000021344-26-900004'],
+  filingDate: [new Date().toISOString().slice(0, 10), new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10), new Date(Date.now() - 9 * 86400000).toISOString().slice(0, 10), '2020-01-02'],
+  reportDate: ['', '2026-09-26', '', '2019-12-31'], form: ['8-K', '10-Q', '4', '10-K'], items: ['2.02,9.01', '', '', ''],
+  primaryDocument: ['walk-8k.htm', 'walk-10q.htm', 'walk-form4.xml', 'walk-10k.htm'], primaryDocDescription: ['8-K (walk fixture)', '10-Q (walk fixture)', '4', '10-K']}}};
 const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.csv': 'text/csv', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon'};
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
@@ -49,7 +57,16 @@ async function context({width, height, scheme, motion = 'no-preference'}) {
   page.on('requestfailed', r => { if (!page.allowedFailures.some(re => re.test(r.url()))) fail(`${width}/${scheme} request failed: ${r.url()} ${r.failure()?.errorText}`); });
   page.on('response', r => { if (r.status() >= 400 && !page.allowedFailures.some(re => re.test(r.url()))) fail(`${width}/${scheme} HTTP ${r.status()}: ${r.url()}`); });
   // Only the site itself: block anything cross-origin so a walk never depends on, or calls, an outside host.
-  await ctx.route(url => !url.href.startsWith(base), route => { if (!page.allowedFailures.some(re => re.test(route.request().url()))) fail(`cross-origin request: ${route.request().url()}`); route.abort(); });
+  page.sec = null; // null: fail the walk on any cross-origin request; 'fixture' or 'down': the Watch page's SEC request
+  await ctx.route(url => !url.href.startsWith(base), route => {
+    const url = route.request().url();
+    if (page.sec && /^https:\/\/data\.sec\.gov\/submissions\/CIK\d{10}\.json$/.test(url)) {
+      page.secRequests = (page.secRequests || 0) + 1;
+      return page.sec === 'fixture' ? route.fulfill({status: 200, contentType: 'application/json', headers: {'access-control-allow-origin': '*'}, body: JSON.stringify(SEC_FIXTURE)}) : route.abort();
+    }
+    if (!page.allowedFailures.some(re => re.test(url))) fail(`cross-origin request: ${url}`);
+    route.abort();
+  });
   return {ctx, page};
 }
 const shot = async (page, name) => {
@@ -75,11 +92,18 @@ const QUESTIONS = [
   ['MSFT 2024 年经营现金流是多少', 'answered', /1185\.48 亿美元/],
   ['compare AMZN and META cash conversion', 'answered', /AMZN .*META/],
   ['Should I buy NVDA now?', 'refused', /investment advice/],
-  ['英伟达毛利率多少', 'not_in_bundle', /毛利/],
-  ['TSLA revenue', 'not_in_bundle', /TSLA is not in this bundle/],
+  ['英伟达毛利率多少', 'answered', /毛利率/],
+  ['TSLA revenue', 'answered', /Tesla/],
+  ['Compare KO, PEP and MDLZ gross margin', 'answered', /KO .*PEP|PEP .*KO/],
+  ['好市多的利润有现金流支撑吗', 'answered', /经营活动现金流/],
+  ['JPM 的毛利率是多少', 'not_in_bundle', /银行/],
+  ['Coca-Cola R&D 2024', 'not_in_bundle', /not reported/],
+  ['Alibaba revenue 2024', 'not_in_bundle', /20-F/],
+  ['Which tag is Walmart revenue from?', 'answered', /Revenues/],
   ['asdkjh qwe', 'clarify', /could not read/]
 ];
-const TABS = ['ask', 'review', 'compare', 'stress', 'brief', 'method'];
+const TABS = ['ask', 'company', 'review', 'compare', 'screen', 'watch', 'stress', 'brief', 'method'];
+const UNIVERSE_TABS = new Set(['company', 'compare', 'screen', 'watch']);
 
 for (const [width, height] of [[1440, 900], [375, 812]]) for (const scheme of ['light', 'dark']) {
   const label = `${width}-${scheme}`;
@@ -111,9 +135,84 @@ for (const [width, height] of [[1440, 900], [375, 812]]) for (const scheme of ['
     await page.waitForFunction(t => document.body.dataset.page === t && document.querySelector('#content h2'), tab);
     check(await page.$eval('#content h2', h => h.textContent.trim().length > 0), `${label}: ${tab} tab renders`);
     if (tab === 'review') await page.waitForSelector('#profit-chart svg');
+    if (tab === 'company') await page.waitForSelector('#universe-waterline svg, .fin-table', {timeout: 30000});
+    if (tab === 'screen') await page.waitForSelector('.screen-table', {timeout: 30000});
     await noOverflow(page, `${label} ${tab}`);
     await shot(page, `${label}-${String(i + 3).padStart(2, '0')}-${tab}`);
   }
+  // Financials for a visitor's own company: search by Chinese name, ten years, traced cells, CSV with sources.
+  await page.click('.steps [data-page="company"]');
+  await page.waitForSelector('#company-search:not([disabled])', {timeout: 30000});
+  await page.fill('#company-search', '可口可乐');
+  await page.waitForSelector('#company-options li[data-cik]');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => /COCA COLA/.test(document.querySelector('#company-title')?.textContent || ''), null, {timeout: 30000});
+  check(await page.$$eval('.fin-table a.traced', as => as.length > 40 && as.every(a => /^https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/21344\//.test(a.href))), `${label}: KO cells link to KO's filings on sec.gov`);
+  check(/Data-quality notes/.test(await page.textContent('#content')), `${label}: KO data-quality notes shown`);
+  await page.click('[data-years="10"]');
+  await page.waitForFunction(() => document.querySelectorAll('.fin-table thead th').length >= 11);
+  await noOverflow(page, `${label} financials`);
+  await shot(page, `${label}-20-financials-KO`);
+  if (width === 1440 && scheme === 'light') {
+    const [csv] = await Promise.all([page.waitForEvent('download'), page.click('#export-financials')]);
+    const text = fs.readFileSync(await csv.path(), 'utf8');
+    check(/^company,ticker,cik,template,fiscal_year/.test(text) && /source_url/.test(text.split('\n')[0]) && text.split('\n').length > 200, 'financials CSV carries source columns on every row');
+    check(text.split('\n').slice(1).filter(l => l.includes(',revenue,Revenue,')).every(l => /https:\/\/www\.sec\.gov\//.test(l)), 'financials CSV: every revenue row has its filing URL');
+  }
+  // Compare: peers, a second company by search, a fiscal year, CSV.
+  await page.click('#compare-peers');
+  await page.waitForFunction(() => document.body.dataset.page === 'compare' && document.querySelectorAll('.compare-table thead th').length >= 3, null, {timeout: 30000});
+  await page.fill('#compare-search', 'JPM');
+  await page.waitForSelector('#compare-options li[data-cik]');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => [...document.querySelectorAll('.compare-table thead th')].some(th => /JPM/.test(th.textContent)), null, {timeout: 30000});
+  check(/n\/a/.test(await page.textContent('.compare-table')), `${label}: compare marks bank-template figures n/a`);
+  await noOverflow(page, `${label} compare`);
+  await shot(page, `${label}-21-compare`);
+  if (width === 1440 && scheme === 'light') {
+    const [csv] = await Promise.all([page.waitForEvent('download'), page.click('#export-compare')]);
+    check(/source_url/.test(fs.readFileSync(await csv.path(), 'utf8').split('\n')[0]), 'compare CSV carries source columns');
+  }
+  // Screen: sector filter, a threshold, sort, CSV.
+  await page.click('.steps [data-page="screen"]');
+  await page.waitForSelector('.screen-table');
+  await page.selectOption('#screen-form select[name="peer"]', 'sic2:28');
+  await page.waitForFunction(() => /of [\d,]+ companies/.test(document.querySelector('#content [role="status"]')?.textContent || ''));
+  await page.fill('#screen-form input[name="cc"]', '1');
+  await page.dispatchEvent('#screen-form input[name="cc"]', 'change');
+  await page.click('[data-sort="accruals"]');
+  await page.waitForFunction(() => document.querySelectorAll('.screen-table tbody tr').length > 0);
+  check(/not a rating/.test(await page.textContent('#content')), `${label}: screen says it is not a rating`);
+  await noOverflow(page, `${label} screen`);
+  await shot(page, `${label}-22-screen`);
+  if (width === 1440 && scheme === 'light') {
+    const [csv] = await Promise.all([page.waitForEvent('download'), page.click('#export-screen')]);
+    const head = fs.readFileSync(await csv.path(), 'utf8').split('\n')[0];
+    check(/peer_group/.test(head) && /xbrl_tags/.test(head) && /source_url/.test(head), 'screen CSV carries peer group, tags and source');
+  }
+  // Watch: add KO, check the SEC (a SYNTHETIC fixture stands in for data.sec.gov in the walk).
+  await page.click('.steps [data-page="watch"]');
+  await page.fill('#watch-search', 'KO');
+  await page.waitForSelector('#watch-options li[data-cik]');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('.watch-item');
+  check(/Only one request per watched company|only one request per watched company/i.test(await page.textContent('.privacy-note')), `${label}: watch states what leaves the page`);
+  page.sec = 'fixture';
+  await page.click('#watch-check');
+  await page.waitForFunction(() => document.querySelectorAll('.filings li').length >= 2, null, {timeout: 30000});
+  const forms = await page.$$eval('.filings .form', els => els.map(e => e.textContent));
+  check(forms.includes('8-K') && forms.includes('10-Q') && !forms.includes('4'), `${label}: watch lists new 8-K and 10-Q, not Form 4`);
+  await noOverflow(page, `${label} watch`);
+  await shot(page, `${label}-23-watch`);
+  await page.click('#watch-seen');
+  page.sec = 'down';
+  page.allowedFailures = [/data\.sec\.gov/, /Failed to load resource|ERR_FAILED|CORS/];
+  await page.click('#watch-check');
+  await page.waitForFunction(() => /Could not reach the SEC/.test(document.querySelector('.watch-list')?.textContent || ''), null, {timeout: 30000});
+  check(true, `${label}: SEC unreachable is stated per company`);
+  await shot(page, `${label}-24-watch-sec-down`);
+  page.sec = null;
+  page.allowedFailures = [];
   // Downloads on the brief tab work without a server.
   if (width === 1440 && scheme === 'light') {
     await page.click('.steps [data-page="brief"]');
@@ -184,6 +283,40 @@ for (const [width, height] of [[1440, 900], [375, 812]]) for (const scheme of ['
   await shot(page, 'failure-05-updates-feed');
   await page.unroute('**/data/updates.json');
   page.allowedFailures = [];
+  // 4b. Universe failures: an unknown company, a missing shard (with retry), a missing index (Ask falls back to six).
+  await page.goto(base + '?co=KO');
+  await ready(page);
+  await page.waitForSelector('#company-search:not([disabled])');
+  await page.fill('#company-search', 'zzqx');
+  await page.waitForSelector('#company-options .no-match');
+  check(/20-F/.test(await page.textContent('#company-options')), 'unknown company: the search says what the universe covers');
+  await shot(page, 'failure-06-unknown-company');
+  page.allowedFailures = [/universe\/c\/21344\.json/, /Failed to load resource/];
+  let shardDown = true;
+  await page.route('**/data/universe/c/21344.json', route => shardDown ? route.fulfill({status: 404, body: 'gone'}) : route.continue());
+  await page.goto(base + '?co=KO');
+  await ready(page);
+  await page.waitForSelector('#retry-shard', {timeout: 30000});
+  check(/could not be loaded/.test(await page.textContent('#content')) && !(await page.$('.fin-table')), 'missing shard: says so, shows no figures');
+  await shot(page, 'failure-07-missing-shard');
+  shardDown = false;
+  await page.click('#retry-shard');
+  await page.waitForSelector('.fin-table', {timeout: 30000});
+  check(true, 'missing shard: retry loads the company');
+  await page.unroute('**/data/universe/c/21344.json');
+  page.allowedFailures = [/universe\/index\.json/, /Failed to load resource/];
+  await page.route('**/data/universe/index.json', route => route.fulfill({status: 503, body: 'down'}));
+  await page.goto(base + '#workspace');
+  await ready(page);
+  await page.click('.steps [data-page="ask"]');
+  const fallback = await ask(page, 'NVDA 的利润有现金流支撑吗');
+  check(fallback.status.includes('answer-answered'), 'missing index: the six-company deep ledger still answers');
+  check(/could not be loaded/.test(await page.textContent('#content')), 'missing index: Ask says the universe is unavailable');
+  await page.click('.steps [data-page="company"]');
+  check(/could not be loaded/.test(await page.textContent('#content')), 'missing index: Financials says so');
+  await shot(page, 'failure-08-missing-index');
+  await page.unroute('**/data/universe/index.json');
+  page.allowedFailures = [];
   // 5. Deep links.
   const q = `company=NVDA&date=${bundle.as_of}&view=ask&dataset=${bundle.dataset_sha256}&calculation=1`;
   await page.goto(`${base}?${q}#workspace`);
@@ -191,7 +324,7 @@ for (const [width, height] of [[1440, 900], [375, 812]]) for (const scheme of ['
   check(await page.evaluate(() => document.body.dataset.page) === 'ask' && Boolean(await page.$('#ask-form')), 'deep link: a versioned link opens the Ask tab directly');
   for (const [link, re, name] of [
     ['?view=bogus#workspace', /not recognized/, 'unknown view'],
-    ['?company=TSLA#workspace', /not supported/, 'unknown company'],
+    ['?company=TSLA#workspace', /not supported/, 'unknown deep-ledger company'],
     ['?date=2031-01-01#workspace', /Choose a real calendar date/, 'future date'],
     ['?company=NVDA&company=MSFT#workspace', /repeats company/, 'repeated field']
   ]) {

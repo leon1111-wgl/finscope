@@ -532,7 +532,7 @@ h2 .zh, h3 .zh { margin-left: 6px; }
 .company-options li small { display: block; color: var(--text-2); font-size: 12px; }
 .company-options li[aria-selected="true"], .company-options li:hover { background: var(--aqua-soft); }
 .company-options li.no-match { cursor: default; color: var(--text-2); font-size: 14px; }
-.company-card h3 { flex-wrap: wrap; font-size: 22px; }
+.company-card h3 { flex-wrap: wrap; font-size: 22px; overflow-wrap: anywhere; }
 .company-card .tick { font: 600 15px var(--mono); color: var(--gold); }
 .facts-line { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 10px 0 0; font-size: 14px; }
 .facts-line div { min-width: 0; }
@@ -558,7 +558,7 @@ a.traced sup { margin-left: 2px; font: 600 10px var(--mono); color: var(--gold);
 .missing { color: var(--text-2); }
 .flag-red { color: var(--coral); font-weight: 650; font-size: 12px; }
 .quality-list { margin: 10px 0 0; padding: 0; list-style: none; font-size: 14px; }
-.quality-list li { padding: 7px 0; border-bottom: 1px solid var(--rule); }
+.quality-list li { padding: 7px 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
 .q-kind { display: inline-block; min-width: 92px; margin-right: 8px; font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); }
 .q-conflict .q-kind, .q-restated .q-kind, .q-amended .q-kind { color: var(--coral); }
 .q-fallback .q-kind, .q-derived .q-kind { color: var(--gold); }
@@ -581,17 +581,17 @@ a.traced sup { margin-left: 2px; font: 600 10px var(--mono); color: var(--gold);
 .screen-table td { text-align: left; }
 button.sort { min-height: 30px; padding: 2px 6px; border: 0; background: transparent; font: inherit; font-weight: 650; color: var(--text-2); }
 button.sort:hover { color: var(--text); }
-.privacy-note { margin: 14px 0; padding: 12px 14px; font-size: 14px; background: var(--raise); border: 1px solid var(--rule); border-left: 3px solid var(--stone); border-radius: 4px; }
+.privacy-note { overflow-wrap: anywhere; margin: 14px 0; padding: 12px 14px; font-size: 14px; background: var(--raise); border: 1px solid var(--rule); border-left: 3px solid var(--stone); border-radius: 4px; }
 .watch-list { margin: 16px 0 0; padding: 0; list-style: none; }
 .watch-item { padding: 12px 0 14px; border-top: 1px solid var(--rule); }
 .watch-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .watch-head strong { font: 650 15px var(--mono); }
 .watch-head small { color: var(--text-2); font-size: 13px; }
 .filings { margin: 8px 0 0; padding-left: 0; list-style: none; font-size: 14px; }
-.filings li { padding: 5px 0; }
+.filings li { padding: 5px 0; overflow-wrap: anywhere; }
 .filings .form { display: inline-block; min-width: 54px; font: 600 12px var(--mono); color: var(--gold); }
 .filings small { display: block; margin-left: 58px; color: var(--text-2); }
-.deep-note { margin: 0 0 16px; padding: 10px 14px; font-size: 14px; background: var(--raise); border: 1px solid var(--rule); border-left: 3px solid var(--aqua); border-radius: 4px; }
+.deep-note { overflow-wrap: anywhere; margin: 0 0 16px; padding: 10px 14px; font-size: 14px; background: var(--raise); border: 1px solid var(--rule); border-left: 3px solid var(--aqua); border-radius: 4px; }
 @media (max-width: 680px) {
   .screen-filters { grid-template-columns: minmax(0, 1fr); }
   .fin-table tbody th { min-width: 132px; max-width: 150px; }

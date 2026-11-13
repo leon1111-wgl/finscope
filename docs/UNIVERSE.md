@@ -1,0 +1,109 @@
+# The company universe (0.3.0)
+
+FinScope 0.2.0 covered six companies. Release 0.3.0 adds a **universe**: every US company that files 10-Ks with XBRL and reports itself to the SEC as a large accelerated filer, with ten years of standardized annual figures, each traced to its filing. The six keep their deep ledger (year-to-date checkpoint, cash-flow bridge, AI triage, information dates and scenarios); the universe is what a visitor uses for a company of their own.
+
+## Which companies, and why this set
+
+**Rule.** A company is in the universe when, at the weekly build:
+
+1. its SEC Submissions record has `category` starting with *Large accelerated filer*, and
+2. it filed a 10-K or 10-K/A in the last 15 months, and
+3. its CompanyFacts hold at least one annual US-GAAP period in USD from a 10-K.
+
+**Why this rule.** Large accelerated filer status is a legal test the SEC already applies: a public equity float of at least $700 million at the end of the second fiscal quarter, at least twelve months of reporting and at least one annual report (17 CFR 240.12b-2). It therefore selects established, publicly traded companies without a proprietary index list, it is stated by the company itself on the 10-K cover, and it can be rebuilt by anyone from SEC data alone. It is broader than the S&P 500: it includes mid-caps a student or junior analyst is likely to look at, and it includes banks, insurers and REITs, which get their own templates. It excludes foreign private issuers that file 20-F or 40-F (most ADRs), smaller reporting companies and companies that are not yet large accelerated filers (recent IPOs among them).
+
+**Size.** The build of 2026-11-13 holds **{{COMPANIES}} companies**: {{TEMPLATES}}. The count is written by every build in `web/data/universe/manifest.json`.
+
+**How candidates are found.** Checking every SEC registrant's filer status would take tens of thousands of requests, so the build narrows the requests first. Candidates are every company whose 10-K cover reports a public float of at least $560 million (the level below which a large accelerated filer loses that status) in the SEC's `dei:EntityPublicFloat` frames for the last eight quarter ends, plus every company with an NYSE or Nasdaq ticker in `company_tickers_exchange.json` that reports no float in those frames. Filer status is then read from each candidate's Submissions record. The ticker file only supplies tickers; when both it and Submissions omit a ticker (ExxonMobil in November 2026), a short curated list fills it, and failing that the company is listed under its CIK.
+
+## How it is built
+
+`scripts/build_universe.py` runs weekly on GitHub Actions (`.github/workflows/universe.yml`) and commits `web/data/universe/` to `main`, which deploys Pages.
+
+- **SEC fair access.** One declared User-Agent with a contact address (the repository variable `SEC_USER_AGENT`), at most 8 requests per second across threads (the SEC's limit is 10), gzip, and up to five retries with backoff on 403, 429 and 5xx. The manifest records the number of requests, bytes and seconds.
+- **Determinism.** A company's shard is rewritten only when its content changes, so a weekly build commits only the companies with a new filing.
+- **Validation.** Every shard is checked before it is written: periods strictly increasing with unique fiscal-year labels, every cell's accession present in the filing table, every cell filed on or after its period end, and every composed cell equal to the sum of its parts. One malformed company is excluded and named in the manifest; more than 1% fails the build. The shards must stay under 200 MB.
+
+## Fiscal years
+
+The annual periods come from the company's **original 10-K filings**: the current period of a 10-K is the latest annual duration (330 to 400 days) it reports. The fiscal-year label is the filing's own DEI fiscal-year focus, so retailers keep their own naming (Walmart calls the year ended 31 January 2026 FY2026, Target calls the year ended 31 January 2026 FY2025). A label that is not the end year or the year before, or that does not increase, falls back to the end year and the data-quality notes say so. When a change of fiscal year end leaves two annual periods under one label, the later one is kept and the earlier one is named in the notes. Transition-period 10-KT filings are not annual periods; the gap they leave is noted. FinScope keeps the latest ten fiscal years.
+
+## How each figure is chosen
+
+For each figure and period: the **latest filing** (10-K or 10-K/A) that reports the period wins; inside that filing, the **earlier tag** in the figure's chain wins. Leading tags that are equally standard (for revenue: contract revenue and `Revenues`) count as first choice; later tags are *fallbacks* and are marked. Flows must match the period's start and end; balances its end. Only facts without dimensions are read (CompanyFacts carries no segment facts). A value is never treated as zero when it is missing, and never replaced by a different concept.
+
+| id | Figure | Statement | Kind | Unit | Tag chain (fallback order) | Templates |
+| --- | --- | --- | --- | --- | --- | --- |
+| `revenue` | Revenue | IS | flow | USD | RevenueFromContractWithCustomerExcludingAssessedTax → Revenues → SalesRevenueNet → RevenueFromContractWithCustomerIncludingAssessedTax → SalesRevenueGoodsNet → SalesRevenueServicesNet → RevenuesNetOfInterestExpense | all |
+| `cost_of_revenue` | Cost of revenue | IS | flow | USD | CostOfRevenue → CostOfGoodsAndServicesSold → CostOfGoodsSold → CostOfServices → CostOfGoodsAndServiceExcludingDepreciationDepletionAndAmortization | industrial, REIT |
+| `gross_profit` | Gross profit | IS | flow | USD | GrossProfit (never computed for a company that does not present it) | industrial |
+| `operating_income` | Operating income | IS | flow | USD | OperatingIncomeLoss | all |
+| `rnd` | Research and development | IS | flow | USD | ResearchAndDevelopmentExpense → ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost | industrial |
+| `sga` | Selling, general and administrative | IS | flow | USD | SellingGeneralAndAdministrativeExpense; else SellingAndMarketingExpense or SellingExpense plus GeneralAndAdministrativeExpense from the same filing | industrial, REIT |
+| `interest_expense` | Interest expense | IS | flow | USD | InterestExpense → InterestExpenseNonoperating → InterestExpenseDebt → InterestAndDebtExpense | all |
+| `pretax_income` | Income before income taxes | IS | flow | USD | IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest → IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments | all |
+| `income_tax` | Income tax expense | IS | flow | USD | IncomeTaxExpenseBenefit | all |
+| `net_income` | Net income | IS | flow | USD | NetIncomeLoss → ProfitLoss (includes noncontrolling interests; marked as a fallback) | all |
+| `eps_diluted` | Diluted EPS, as reported | IS | flow | USD/share | EarningsPerShareDiluted → EarningsPerShareBasicAndDiluted | all |
+| `shares_diluted` | Diluted weighted-average shares | IS | flow | shares | WeightedAverageNumberOfDilutedSharesOutstanding → WeightedAverageNumberOfShareOutstandingBasicAndDiluted | all |
+| `operating_cash_flow` | Operating cash flow | CF | flow | USD | NetCashProvidedByUsedInOperatingActivities → NetCashProvidedByUsedInOperatingActivitiesContinuingOperations | all |
+| `capex` | Capital expenditure | CF | flow | USD | PaymentsToAcquirePropertyPlantAndEquipment → PaymentsToAcquireProductiveAssets (may include intangibles) | industrial, REIT |
+| `dividends` | Dividends paid | CF | flow | USD | PaymentsOfDividends → PaymentsOfDividendsCommonStock → PaymentsOfOrdinaryDividends | all |
+| `buybacks` | Share repurchases | CF | flow | USD | PaymentsForRepurchaseOfCommonStock → PaymentsForRepurchaseOfEquity | all |
+| `cash` | Cash and cash equivalents | BS | balance | USD | CashAndCashEquivalentsAtCarryingValue → CashAndDueFromBanks → Cash → CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents (includes restricted cash) | all |
+| `cash_sti` | Cash and short-term investments | BS | balance | USD | CashCashEquivalentsAndShortTermInvestments; else cash plus ShortTermInvestments, MarketableSecuritiesCurrent or AvailableForSaleSecuritiesDebtSecuritiesCurrent from the same filing; cash alone (said so) when none is tagged | industrial |
+| `assets` | Total assets | BS | balance | USD | Assets | all |
+| `liabilities` | Total liabilities | BS | balance | USD | Liabilities; else LiabilitiesAndStockholdersEquity minus total equity including noncontrolling interest, minus temporary equity where tagged, from the same filing | all |
+| `equity` | Shareholders' equity | BS | balance | USD | StockholdersEquity → StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest | all |
+| `current_assets`, `current_liabilities` | Current assets and liabilities | BS | balance | USD | AssetsCurrent; LiabilitiesCurrent | industrial, REIT |
+| `total_debt` | Total debt (borrowings) | BS | balance | USD | DebtLongtermAndShorttermCombinedAmount → DebtAndCapitalLeaseObligations (includes finance leases; noted); else LongTermDebt (which includes its current portion) plus ShortTermBorrowings or CommercialPaper; else LongTermDebtNoncurrent or LongTermDebtAndCapitalLeaseObligations plus DebtCurrent, or plus LongTermDebtCurrent and ShortTermBorrowings or CommercialPaper. All parts from one filing; an untagged current part counts as zero and the cell says so; operating leases are never included | all |
+| `net_interest_income`, `noninterest_income`, `provision`, `deposits`, `loans` | Bank lines | IS / BS | | USD | InterestIncomeExpenseNet; NoninterestIncome; ProvisionForLoanLeaseAndOtherLosses → ProvisionForLoanAndLeaseLosses → FinancingReceivableCreditLossExpenseReversal; Deposits; LoansAndLeasesReceivableNetReportedAmount → FinancingReceivableExcludingAccruedInterestAfterAllowanceForCreditLoss | bank |
+| `premiums`, `net_investment_income` | Insurance lines | IS | flow | USD | PremiumsEarnedNet; NetInvestmentIncome | insurance |
+| `real_estate` | Real estate investment property, net | BS | balance | USD | RealEstateInvestmentPropertyNet | REIT |
+
+**Revenue exception.** Some companies report both contract revenue (`RevenueFromContractWithCustomer…`) and a larger total `Revenues` that includes leases or interest. Inside one filing, the larger total wins, and the cell says which subset it replaced.
+
+**Indicators** (computed in the browser from the traced figures, never stored): gross margin, operating margin, net margin, R&D intensity, operating cash margin, free cash flow (operating cash flow − capital expenditure), FCF margin, cash conversion (operating cash flow ÷ net income, only when net income is positive), the Sloan accrual ratio ((net income − operating cash flow) ÷ average total assets), the profit-to-cash gap, current ratio, cash coverage, liabilities ÷ assets, debt ÷ equity, interest coverage (operating income ÷ interest expense), ROE and ROA on average balances, revenue growth and shareholder payout (dividends + buybacks). A ratio with a zero or negative denominator is *not meaningful* and is not stated. Ratios that need the prior year use it only when the two periods are 300 to 430 days apart.
+
+## Templates
+
+| Template | Rule | Not supported (answered as "not supported for this template") |
+| --- | --- | --- |
+| Industrial | the default | bank, insurance and REIT lines |
+| Bank / other financial | SIC 6000–6799 (except REITs and insurers), or no SIC, **and** no classified balance sheet (no `AssetsCurrent`) | gross profit, cost of revenue, R&D, SG&A, current assets and liabilities, capex, cash and short-term investments and the ratios built on them (gross margin, current ratio, FCF, FCF margin, cash conversion, accruals, debt ÷ equity, interest coverage), insurance and REIT lines |
+| Insurance | SIC 6311–6399 or 6411 **and** no classified balance sheet | as for banks, plus bank lines |
+| REIT | SIC 6798 | gross profit and gross margin, R&D, cash and short-term investments, bank and insurance lines |
+
+The balance-sheet test keeps health insurers, insurance brokers, exchanges and payment networks with classified balance sheets (UnitedHealth, Visa) on the industrial template.
+
+## Data-quality notes
+
+Each shard carries notes written by the build, shown on the Financials page and answered by Ask ("any data issues with …?"):
+
+- **missing**: a supported figure not reported under any tag in its chain, with the fiscal years;
+- **fallback**: a figure read from a later tag in its chain, with the tag and years;
+- **derived**: a figure composed from parts of one filing, with the rule;
+- **restated**: the latest filing's value differs from the value first reported in the period's original 10-K (a restatement or reclassification); both values and accessions are given, and the later value is shown;
+- **conflict**: one filing reports two values for the same tag and period; no value is stated;
+- **amended**: a value that comes from a 10-K/A;
+- **fiscal shift / gap / label**: a change of fiscal year end, an uncovered gap between periods (a transition period or a missing 10-K), or a fiscal-year label taken from the end year;
+- **template**: the template and what it does not support.
+
+## Sector peer groups and the screen
+
+The Screen page and Ask's sector percentile use a company's **peer group**: the most specific SIC level (four digits, then three, then two, then the SIC division) that has at least 10 screened companies. A company's peers are every screened company at that level. Percentile = (peers below + half of ties) ÷ peers with a value × 100, each peer on its own latest fiscal year. Banks and insurers are not screened, because cash conversion, accruals and FCF margin do not describe their statements.
+
+## Download budget
+
+| File | Raw | gzip | When it loads |
+| --- | --- | --- | --- |
+| `research.json` (deep ledger, unchanged) | {{RESEARCH_RAW}} | {{RESEARCH_GZ}} | first visit |
+| `universe/index.json` (search, names, catalog) | {{INDEX_RAW}} | {{INDEX_GZ}} | first visit, in parallel |
+| one company shard | median {{SHARD_MEDIAN}}, max {{SHARD_MAX}} | about {{SHARD_GZ}} | when a company is opened or asked about |
+| `universe/screen.json` | {{SCREEN_RAW}} | {{SCREEN_GZ}} | only when the Screen page or a sector question needs it |
+
+A first visit downloads the deep-ledger bundle and the index, then one shard for the default company: **about {{FIRST_LOAD_GZ}} compressed**. The whole universe is {{SHARDS_TOTAL}} on Pages; the site stays under {{SITE_TOTAL}}, well inside the 300 MB budget and GitHub Pages' 1 GB limit.
+
+## Accuracy
+
+The pre-registered check against the SEC Financial Statement Data Sets is described in [validation/ACCURACY_PROTOCOL.md](validation/ACCURACY_PROTOCOL.md); its first run is reported in [CHANGELOG.md](../CHANGELOG.md) and the report is kept in `docs/validation/`.

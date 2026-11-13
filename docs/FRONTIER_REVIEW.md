@@ -1,4 +1,4 @@
-# Frontier review (2026-11-09)
+# Frontier review (2026-11-09, extended 2026-11-14 for 0.3.0)
 
 This review looked at current work near FinScope's job: turning official filings into answers a reader can check. Each candidate is judged by one question: would a visitor or a reviewer notice the difference, and can the change be verified in this release? The review covers eight candidates, with primary sources and dates. It was written for the 0.2.0 iteration ("Ask the ledger"); see [CHANGELOG.md](../CHANGELOG.md).
 
@@ -70,3 +70,44 @@ Other projects in this portfolio tried a small open-weights model in the browser
 ## 8. Time-series foundation models for the forecasting lab
 
 TimesFM 2.5 ([Google Research, September 2025](https://github.com/google-research/timesfm)) and Chronos-2 ([Amazon, arXiv October 2025](https://arxiv.org/abs/2510.15821)) are open forecasting models that perform well on public benchmarks. The forecasting lab is a separate, synthetic volatility study with five pre-registered model variants and transaction-cost sensitivity. Adding a foundation model would need runner-side inference, a new pre-registered comparison and new synthetic data, and a visitor would not see the difference. Forecasting real companies would also contradict the product's "no forecasts" rule. Skipped.
+
+## What practitioners use (added 2026-11-14 for 0.3.0)
+
+Release 0.3.0 asks one question of every feature: would a student, an independent researcher or a junior analyst use it on a company *they* chose, and save time or catch something? This section names the tools professionals use for the same jobs, with dated sources, and says what FinScope mirrors and where it deliberately differs.
+
+### Standardized financials with click-to-source links
+
+- **S&P Capital IQ** describes its fundamentals as "auditable down to the source documents", with the location of each data item bookmarked, and offers click-through from an Excel data item to the underlying calculation and source document ([S&P Capital IQ platform brochure](https://www.spglobal.com/content/dam/spglobal/mi/en/documents/general/S-P-Capital-IQ-Platform-Brochure.pdf), accessed 2026-11-14; [Capital IQ Fundamentals guide](https://leqr.wiwi.hu-berlin.de/content/howto/SP_CIQ_Fundamentals_v2.pdf)). Its release notes add "navigate to source documents where available" ([March 2025 release notes](https://capitaliq.spglobal.com/releasenotes/announcements/march-2025-capital-iq-pro-release-notes)).
+- **Fiscal.ai** (formerly FinChat, renamed with its June 2025 Series A) sells standardized and as-reported financials and a "Sourcing to Filing" add-on that links each data point to the source table ([Fiscal.ai API documentation](https://docs.fiscal.ai/), accessed 2026-11-14).
+- **Koyfin** states that its market and fundamentals data are powered by S&P Capital IQ ([Koyfin data sources](https://www.koyfin.com/llm-info/), accessed 2026-11-14).
+
+**What 0.3.0 mirrors.** Standardized statements for any company in a declared universe, ten years, with each value one click from the filing it came from (the hover text names the XBRL tag and accession) and a downloadable table that keeps those sources ([UNIVERSE.md](UNIVERSE.md)).
+
+**Where it deliberately differs.** The vendors normalise figures (for example adjusting for non-recurring items) with analyst teams and proprietary mappings. FinScope does not adjust anything: it reads the company's own XBRL facts through a published tag order, marks every fallback and composition, and leaves a figure missing rather than estimating it. The link goes to the filing document, not to a highlighted cell, because the SEC's XBRL APIs do not give a page location. The universe is US large accelerated filers with 10-Ks, annual only, refreshed weekly, not global and not intraday. And its accuracy claim is a measured one, against an independent SEC source, with the protocol published before the run.
+
+### Screeners
+
+- Koyfin offers screeners over equities, funds and ETFs with hundreds of fundamental, technical and estimate filters (Koyfin, as above). Professional terminals and free screeners alike sort companies by valuation, growth and quality factors.
+
+**What 0.3.0 mirrors.** A screen across the universe with filters, sorting and an export, plus a percentile within a sector peer group, which is how practitioners read a ratio (a 1.0× cash conversion means different things for a retailer and a software company).
+
+**Where it deliberately differs.** Three earnings-quality indicators only, each with its formula on the page: cash conversion, the Sloan accrual ratio and FCF margin (section 3 above). No prices, valuation multiples, estimates, composite scores or "buy" lists: the product gives no advice and the screen says it is not a rating. Peer groups come from SEC SIC codes, which are coarse and sometimes dated, and the page names the group used for every percentile.
+
+### Filing alerts
+
+- The SEC itself offers **EDGAR full-text search** over more than twenty years of filings, with filters by form, company and date, **Latest Filings**, a real-time listing filterable by company and form, and **RSS feeds** on many EDGAR searches; its email updates do not cover company filings ([SEC search filings](https://www.sec.gov/search-filings); [SEC RSS feeds](https://www.sec.gov/about/secrss.shtml), accessed 2026-11-14). Developers use the Submissions API, which lists each filer's recent filings ([SEC EDGAR APIs](https://www.sec.gov/search-filings/edgar-application-programming-interfaces)). Commercial terminals and third-party services push alerts by email or app.
+
+**What 0.3.0 mirrors.** A watchlist that lists new 10-K, 10-Q and 8-K filings (with 8-K item numbers such as 2.02 Results of operations) since the last visit, linked to the filing.
+
+**Where it deliberately differs.** There is no server: the visitor's browser asks the SEC's Submissions API directly (it allows cross-origin reads, section 6 above), the list lives in the browser's local storage, and the page says that this request is the only thing that leaves it. So there are no push notifications; the visitor checks when they visit. For full-text alerts the page points to the SEC's own search and RSS.
+
+### Independent verification
+
+The SEC's **Financial Statement Data Sets** (DERA) publish the numeric facts of every filing's primary statements each quarter; they were reprocessed and reduced to primary-statement data in December 2024 ([SEC Financial Statement Data Sets](https://www.sec.gov/data/financial-statement-data-sets), accessed 2026-11-14). Vendors verify against filings with analyst review. FinScope uses the data sets as an independent check of its extraction: a salted sample, the same accession, a declared tolerance and pass bar, committed before the first run ([validation/ACCURACY_PROTOCOL.md](validation/ACCURACY_PROTOCOL.md)).
+
+### Candidates considered for 0.3.0 and left out
+
+- **Quarterly figures for the universe.** Honest quarters need 10-Q year-to-date differencing and Q4 = FY − nine months, with checks that the four quarters sum to the year; that is a second extraction with its own accuracy run. Left out of this release; the six deep-ledger companies keep their year-to-date checkpoint.
+- **XLSX export.** CSV opens in every spreadsheet and carries the same source columns; a hand-written XLSX writer would add code without adding information.
+- **Segment and non-GAAP figures (FFO, adjusted EPS, EBITDA).** CompanyFacts holds no dimensional facts, and non-GAAP figures are not XBRL-tagged consistently; the box says so by name.
+- **A browser language model.** Unchanged from section 7: the answers are numbers the program must state.
