@@ -1,7 +1,7 @@
 {
  "schema": "finscope.universe.manifest/1",
- "built": "2026-11-13",
- "built_at": "2026-11-13T19:42:12.335546Z",
+ "built": "2026-11-14",
+ "built_at": "2026-11-14T14:01:35.098712Z",
  "companies": 1994,
  "templates": {
   "industrial": 1566,
@@ -10,50 +10,36 @@
   "reit": 120
  },
  "funnel": {
-  "listed_ciks": 6033,
-  "candidates": 4021,
+  "listed_ciks": 6030,
+  "candidates": 4022,
   "large_accelerated_with_recent_10k": 1998,
   "built": 1994
  },
  "excluded": {
-  "not a large accelerated filer": 1715,
+  "not a large accelerated filer": 1716,
   "no 10-K filed in the last 15 months": 308,
   "no annual USD period in a 10-K": 4
  },
  "validation_failures": [],
- "shards_changed": 1994,
+ "shards_changed": 64,
  "shards_removed": 0,
  "bytes": {
-  "index": 529357,
-  "screen": 813610,
-  "shards_total": 70833003,
+  "index": 529358,
+  "screen": 813609,
+  "shards_total": 70872366,
   "shard_median": 36838,
   "shard_max": 71586
  },
  "sec": {
-  "requests": 6028,
-  "compressed_bytes": 506217383,
+  "requests": 6029,
+  "compressed_bytes": 506248627,
   "rate_limit_per_second": 8.0,
-  "seconds": 806
+  "seconds": 855
  },
  "sources": [
   "https://www.sec.gov/files/company_tickers_exchange.json",
   "https://data.sec.gov/api/xbrl/frames/dei/EntityPublicFloat/USD/{quarter}.json",
   "https://data.sec.gov/submissions/CIK##########.json",
   "https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json"
- ],
- "relabelled": {
-  "at": "2026-11-13",
-  "script": "scripts/relabel_universe.py",
-  "rule": "finscope/universe.py label_periods (majority of the company's own 10-K labels)",
-  "companies_with_moved_labels": 10,
-  "periods_moved": 95
- },
- "reindexed": {
-  "at": "2026-11-13",
-  "script": "scripts/reindex_universe.py",
-  "shown_ticker_changed": 0,
-  "search_names_added": 0,
-  "search_names_removed": 0
- }
+ ]
 }
